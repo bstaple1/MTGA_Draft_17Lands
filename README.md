@@ -31,35 +31,30 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data
 
 - Current Draft: Lists the current draft type (Premier, Quick, or Traditional) that the application has identified
 
-Notes: 
-  - The application has only ever been tested on Premier and Quick drafts. 
-  - The Arena logs don't contain the pack data for pack 1, pick 1 for Premier drafts
+    - The application has only ever been tested on Premier and Quick drafts. 
+    - The Arena logs don't contain the pack data for pack 1, pick 1 for Premier drafts
   
 - Deck Filter: A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
 
-Notes:
-  - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color ratings page on 17 Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
-  - The "All Decks" option lists the combined rating across all of the deck color combinations
-	- The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards.
+    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color ratings page on 17 Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
+    - The "All Decks" option lists the combined rating across all of the deck color combinations
+        -The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards.
 	
 - Pack, Pick Table: This table lists the cards contained in the current pack. 
 
-Notes: 
-  - The "All" column lists the card rating for the "All Decks" filter. This is visible regardless of the Deck Filter option chosen.
-	- The last column will list the card rating for the chosen Deck Filter option.
-	- The card rating is derived from the Games in Hand Win Rate, Average Last Seen At, and Improvement When Drawn fields from 17 Lands. The individual values can be seen by clicking on the card in the table.
-	- For Premier drafts, the pack 1, pick 1 card isn't available in the logs.
+    - The "All" column lists the card rating for the "All Decks" filter. This is visible regardless of the Deck Filter option chosen.
+        - The last column will list the card rating for the chosen Deck Filter option.
+        - The card rating is derived from the Games in Hand Win Rate, Average Last Seen At, and Improvement When Drawn fields from 17 Lands. The individual values can be seen by clicking on the card in the table.
+        - For Premier drafts, the pack 1, pick 1 card isn't available in the logs.
 	
 - Missing Cards Table: This table will list the cards missing from a pack that's already been seen. 
 
-Notes: 
-  - The user's chosen card will have an asterisk next to the name.
-	- For premier drafts, the missing cards from pack 1, pick 1 will not be available.
+    - The user's chosen card will have an asterisk next to the name.
+        -For premier drafts, the missing cards from pack 1, pick 1 will not be available.
 	
 - Deck Stats Table: This table lists the card distribution and total for creatures, noncreatures, and all cards.
 
-Notes:
-  - The numbered columns represent the cost of the card (cmc).
+    - The numbered columns represent the cost of the card (cmc).
 
 ## Menu Features
 
@@ -67,27 +62,24 @@ Notes:
 
 - Download Set Data: Get to the Add Sets window by selecting Data->View Sets. Enter the set information and click on the ADD SET button to begin downloading the set data.
 
-Notes: 
-  - For the ID field, keep the value at 0.
-  - The download can take several minutes.
-  - The firefox browser is required if the Color Ratings option is checked; you will see the application briefly open the "https://www.17lands.com/color_ratings" page while it collects the color ratings data
+    - For the ID field, keep the value at 0.
+    - The download can take several minutes.
+    - The firefox browser is required if the Color Ratings option is checked; you will see the application briefly open the "https://www.17lands.com/color_ratings" page while it collects the color ratings data
  
 - List Taken Cards: Go to Taken Cards window by selecting Cards->Taken Cards. This table lists the cards that were taken by the user over the course of the draft.
 
 - List Suggested Decks: Go to Suggested Decks window by selecting Cards->Suggested Decks. This table lists a 40 card deck that the application has built from your taken cards. You might see multiple decks if the application is able to build them.
  
-Notes:
-  - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
-    - The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
+    - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
+        - The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 	
 	
 ## Additional Features
 
 - Hotkey: The user can use the hotkey ctrl+f to toggle between minimizing and maximizing the main application window.
 
-Notes: 
-  - This feature doesn't work on Mac.
-  - You need to run the executable as an administrator for this feature to work in Arena.
+    - This feature doesn't work on Mac.
+    - You need to run the executable as an administrator for this feature to work in Arena.
 
 - Top-Level Window: The main application window, and subsequent windows, will act as an overlay and remain above all other windows, including the Arena screen.
 
