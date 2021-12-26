@@ -78,14 +78,16 @@ Notes:
  
 Notes:
   - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
-	- The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
+    - The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 	
 	
 ## Additional Features
 
 - Hotkey: The user can use the hotkey ctrl+f to toggle between minimizing and maximizing the main application window.
 
-Note: This feature doesn't work on Mac.
+Notes: 
+  - This feature doesn't work on Mac.
+  - You need to run the executable as an administrator for this feature to work in Arena.
 
 - Top-Level Window: The main application window, and subsequent windows, will act as an overlay and remain above all other windows, including the Arena screen.
 
