@@ -31,8 +31,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data
 
 - Current Draft: Lists the current draft type (Premier, Quick, or Traditional) that the application has identified
 
-Note: The application has only ever been tested on Premier and Quick drafts. 
-
+Notes: 
+  - The application has only ever been tested on Premier and Quick drafts. 
+  - The Arena logs don't contain the pack data for pack 1, pick 1 for Premier drafts
+  
 - Deck Filter: A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
 
 Notes:
