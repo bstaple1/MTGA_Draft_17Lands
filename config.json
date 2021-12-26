@@ -1,0 +1,58 @@
+{
+    "features": {
+        "hotkey_enabled": false,
+        "images_enabled": true
+    },
+    "settings": {
+        "table_width": 270
+    },
+    "card_logic": {
+        "minimum_creatures": 13,
+        "minimum_noncreatures": 6,
+        "ratings_threshold": 500,
+        "deck_types": {
+            "Mid": {
+                "distribution": [
+                    0,
+                    0,
+                    4,
+                    3,
+                    2,
+                    1,
+                    0
+                ],
+                "maximum_card_count": 23,
+                "recommended_creature_count": 15,
+                "cmc_average": 3.04
+            },
+            "Aggro": {
+                "distribution": [
+                    0,
+                    1,
+                    4,
+                    5,
+                    2,
+                    1,
+                    0
+                ],
+                "maximum_card_count": 24,
+                "recommended_creature_count": 17,
+                "cmc_average": 2.4
+            },
+            "Control": {
+                "distribution": [
+                    0,
+                    0,
+                    3,
+                    3,
+                    3,
+                    1,
+                    1
+                ],
+                "maximum_card_count": 22,
+                "recommended_creature_count": 14,
+                "cmc_average": 3.68
+            }
+        }
+    }
+}
