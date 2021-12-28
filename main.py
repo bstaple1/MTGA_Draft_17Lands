@@ -215,10 +215,10 @@ def CopySuggested(deck_colors, deck, set_data, color_options, set):
         print("CopySuggested Error: %s" % error)
     return 
     
-def CopyTaken(taken_cards, set_data, set):
+def CopyTaken(taken_cards, set_data, set, color):
     deck_string = ""
     try:
-        stacked_cards = CL.StackCards(taken_cards)
+        stacked_cards = CL.StackCards(taken_cards, color)
         deck_string = CL.CopyDeck(stacked_cards, None, set_data["card_ratings"], set)
         CopyClipboard(deck_string)
 
@@ -252,34 +252,41 @@ class LogScanner:
         self.draft_type = DRAFT_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
+        self.search_offset = 0
         self.draft_set = None
-        self.current_pack_pick = 0
+        self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
         self.pack_cards = [None] * 8
         self.initial_pack = [None] * 8
-        self.previous_passed_pack = 0
+        self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
         
-    def ClearDraft(self):
+    def ClearDraft(self, full_clear):
+        if full_clear:
+            self.search_offset = 0
+            
+        self.set_data = None
+        self.deck_colors = {}
+        self.deck_limits = {}
+        self.draft_type = DRAFT_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
         self.draft_set = None
-        self.current_pack_pick = 0
+        self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
         self.pack_cards = [None] * 8
         self.initial_pack = [None] * 8
-        self.previous_passed_pack = 0
+        self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
 
-    def DraftStartSearch(self):
-        self.ClearDraft()
-        offset = 0
+    def DraftStartSearch(self):   
+        offset = self.search_offset
         #Open the file
-        
+        print("DraftStartSearch: %u" % offset)
         switcher={
                 "[UnityCrossThreadLogger]==> Event_Join " : (lambda x, y: self.DraftStartSearchV1(x, y)),
                 "[UnityCrossThreadLogger]==> Event.Join " : (lambda x, y: self.DraftStartSearchV2(x, y)),
@@ -289,12 +296,15 @@ class LogScanner:
         
         try:
             with open(self.log_file, 'r', errors="ignore") as log:
+                log.seek(offset)
                 for line in log:
                     offset += len(line)
                     
                     for search_string in switcher.keys():
                         string_offset = line.find(search_string)
                         if string_offset != -1:
+                            self.search_offset = offset
+                            print("Draft found at %u" % offset)
                             start_parser = switcher.get(search_string, lambda: None)
                             event_data = json.loads(line[string_offset + len(search_string):])
                             start_parser(event_data, offset)
@@ -362,7 +372,9 @@ class LogScanner:
             
     #Wrapper function for performing a search based on the draft type
     def DraftSearch(self):
+        print("Draft Search")
         if self.draft_set == None:
+            self.ClearDraft(False)
             self.DraftStartSearch()
         
         if self.draft_type == DRAFT_TYPE_PREMIER_V1:
@@ -468,7 +480,7 @@ class LogScanner:
                                 
                             pack_index = (pick - 1) % 8
                             
-                            if self.previous_passed_pack != pack:
+                            if self.current_pack != pack:
                                 self.initial_pack = [None] * 8
                         
                             if self.initial_pack[pack_index] == None:
@@ -476,8 +488,8 @@ class LogScanner:
                                 
                             self.pack_cards[pack_index] = pack_cards
                             
-                            self.previous_passed_pack = pack
-                            self.current_pack_pick = pick
+                            self.current_pack = pack
+                            self.current_pick = pick
                             
                             if(self.step_through):
                                 break
@@ -532,7 +544,7 @@ class LogScanner:
                                 
                             pack_index = (pick - 1) % 8
                             
-                            if self.previous_passed_pack != pack:
+                            if self.current_pack != pack:
                                 self.initial_pack = [None] * 8
                         
                             if self.initial_pack[pack_index] == None:
@@ -540,8 +552,8 @@ class LogScanner:
                                 
                             self.pack_cards[pack_index] = pack_cards
                             
-                            self.previous_passed_pack = pack
-                            self.current_pack_pick = pick
+                            self.current_pack = pack
+                            self.current_pick = pick
                             
                             if(self.step_through):
                                 break
@@ -661,7 +673,7 @@ class LogScanner:
                                     
                                 pack_index = (pick - 1) % 8
                                 
-                                if self.previous_passed_pack != pack:
+                                if self.current_pack != pack:
                                     self.initial_pack = [None] * 8
                             
                                 if self.initial_pack[pack_index] == None:
@@ -669,8 +681,8 @@ class LogScanner:
                                     
                                 self.pack_cards[pack_index] = pack_cards
                                     
-                                self.previous_passed_pack = pack
-                                self.current_pack_pick = pick
+                                self.current_pack = pack
+                                self.current_pick = pick
                                 
                                 if(self.step_through):
                                     break
@@ -733,7 +745,7 @@ class LogScanner:
                             self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
                             self.taken_cards.append(self.set_data["card_ratings"][card])
     
-                            print("Picked - Pack: %u, Pick: %u, Cards: %s" % (pack, pick, self.picked_cards[pack_index]))
+                            print("Picked - Pack: %u, Pick: %u, Cards: %s, offset: %u" % (pack, pick, self.picked_cards[pack_index], self.pack_offset))
                             
                             if self.step_through:
                                 break;
@@ -920,7 +932,7 @@ class WindowUI:
         self.stat_label.pack(side=LEFT, expand = True, fill = None)
         self.stat_options.pack(side=RIGHT, expand = True, fill = None)
         
-        self.draft.DraftStartSearch()
+        #self.draft.DraftSearch()
         self.check_timestamp = 0
         self.previous_timestamp = 0
         
@@ -1197,8 +1209,8 @@ class WindowUI:
         filtered_color = CL.ColorFilter(self.draft.taken_cards, self.deck_colors_options_selection.get(), self.draft.deck_colors)
 
         self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
-        self.UpdatePackPick(self.draft.previous_passed_pack, self.draft.current_pack_pick)
-        pack_index = (self.draft.current_pack_pick - 1) % 8
+        self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
+        pack_index = (self.draft.current_pick - 1) % 8
         self.UpdatePackTable(self.draft.pack_cards[pack_index], 
                              self.draft.taken_cards,
                              filtered_color,
@@ -1224,19 +1236,25 @@ class WindowUI:
             if self.current_timestamp != self.previous_timestamp:
                 self.previous_timestamp = self.current_timestamp
                 
-                previous_pick = self.draft.current_pack_pick
+                previous_pick = self.draft.current_pick
+                previous_pack = self.draft.current_pack
                 
                 while(1):
 
                     self.UpdateCallback()
-                    if self.draft.step_through and (previous_pick != self.draft.current_pack_pick):
+                    print("previous pick: %u, current pick: %u" % (previous_pick, self.draft.current_pick))
+                    if self.draft.current_pack < previous_pack:
+                        self.DraftReset(False)
+                        print("Resetting")
+                        
+                    if self.draft.step_through and (previous_pick != self.draft.current_pick):
                         input("Continue?")
                     else:
                         print("Exiting Step Loop")
                         break
                         
-                    previous_pick = self.draft.current_pack_pick
-                        
+                    previous_pick = self.draft.current_pick
+                    previous_pack = self.draft.current_pack
         except Exception as error:
             error_string = "UpdateUI Error: %s" % error
             print(error_string)
@@ -1335,12 +1353,17 @@ class WindowUI:
         popup.wm_title("Taken Cards")
         
         try:
-            Grid.rowconfigure(popup, 0, weight = 1)
+            Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
+            
+            filtered_color = CL.ColorFilter(self.draft.taken_cards, 
+                                            self.deck_colors_options_selection.get(), 
+                                            self.draft.deck_colors)
             
             copy_button = Button(popup, command=lambda:CopyTaken(self.draft.taken_cards,
                                                                  self.draft.set_data,
-                                                                 self.draft.draft_set),
+                                                                 self.draft.draft_set,
+                                                                 filtered_color),
                                                                  text="Copy to Clipboard")
             
             headers = {"Card"  : {"width" : .55, "anchor" : W},
@@ -1358,9 +1381,6 @@ class WindowUI:
             taken_table_frame.grid(row=1, column=0, stick = "nsew")
             taken_table.pack(expand = True, fill = "both")
             
-            filtered_color = CL.ColorFilter(self.draft.taken_cards, 
-                                            self.deck_colors_options_selection.get(), 
-                                            self.draft.deck_colors)
             
             self.UpdateTakenTable(taken_table,
                                   self.draft.taken_cards,
@@ -1518,8 +1538,8 @@ class WindowUI:
                                               
         if filename:
             self.filename = filename
-            self.draft = LogScanner(self.filename, self.step_through, self.diag_log_enabled, self.os)
-            self.deck_colors_options_list = []
+            self.DraftReset(True)
+            self.draft.log_file = filename
             self.UpdateCallback()
             
     def ToggleLog(self):
@@ -1531,6 +1551,10 @@ class WindowUI:
             log_value_string = "Disable Log"
             self.diag_log_enabled = True 
         self.datamenu.entryconfigure(1, label=log_value_string)
+        
+    def DraftReset(self, full_reset):
+        self.draft.ClearDraft(full_reset)
+        self.deck_colors_options_list = []
     
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, alsa, iwd, gihwr, image, images_enabled, os):
