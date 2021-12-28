@@ -18,7 +18,7 @@
 #
 # @brief 
 #
-# @section description_doxygen_example Description
+# @section Description
 # A program that utilizes 17Lands data to dispay pick ratings, deck statistics, and deck suggestions
 #
 # @section libraries_main Libraries/Modules
@@ -49,13 +49,13 @@
 # - card_logic module (local)
 #   - Access to the functions used for processing the card data.
 #
-# @section notes_doxygen_example Notes
+# @section Notes
 # - Comments are Doxygen compatible.
 #
-# @section todo_doxygen_example TODO
+# @section TODO
 # - None.
 #
-# @section author_doxygen_example Author(s)
+# @section Author(s)
 # - Created by Bryan Stapleton on 12/25/2021
 
 # Imports
@@ -365,7 +365,7 @@ class LogScanner:
                     self.pick_offset = offset 
                     self.pack_offset = offset
                     self.diag_log_file = "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
-                    LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                    #LogEntry(self.diag_log_file, event_data, self.diag_log_enabled)
                                 
         except Exception as error:
             print("DraftStartSearchV2 Error: %s" % error)
@@ -1245,8 +1245,7 @@ class WindowUI:
                     print("previous pick: %u, current pick: %u" % (previous_pick, self.draft.current_pick))
                     if self.draft.current_pack < previous_pack:
                         self.DraftReset(False)
-                        print("Resetting")
-                        
+                        self.UpdateCallback()
                     if self.draft.step_through and (previous_pick != self.draft.current_pick):
                         input("Continue?")
                     else:
@@ -1291,7 +1290,7 @@ class WindowUI:
             
             draft_value = StringVar(self.root)
             draft_value.set('QuickDraft')
-            draft_entry = OptionMenu(popup, draft_value, choices[0], *choices, )
+            draft_entry = OptionMenu(popup, draft_value, choices[0], *choices)
             
             set_entry = Entry(popup)
             set_entry.insert(END, 'MID')
@@ -1415,7 +1414,7 @@ class WindowUI:
             deck_colors_label = Label(popup, text="Deck Colors:", anchor = 'e', font='Helvetica 9 bold')
             
             deck_colors_value = StringVar(popup)
-            deck_colors_entry = OptionMenu(popup, deck_colors_value, choices[0], *choices, )
+            deck_colors_entry = OptionMenu(popup, deck_colors_value, choices[0], *choices)
             
             deck_colors_button = Button(popup, command=lambda:self.UpdateSuggestDeckTable(suggest_table,
                                                                                           deck_colors_value,
