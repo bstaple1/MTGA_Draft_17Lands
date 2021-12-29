@@ -283,10 +283,8 @@ class LogScanner:
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
 
-    def DraftStartSearch(self):   
-        offset = self.search_offset
+    def DraftStartSearch(self): 
         #Open the file
-        print("DraftStartSearch: %u" % offset)
         switcher={
                 "[UnityCrossThreadLogger]==> Event_Join " : (lambda x, y: self.DraftStartSearchV1(x, y)),
                 "[UnityCrossThreadLogger]==> Event.Join " : (lambda x, y: self.DraftStartSearchV2(x, y)),
@@ -295,7 +293,14 @@ class LogScanner:
         
         
         try:
+            #Check if a new player.log was created (e.g. application was started before Arena was started)
+            if self.search_offset > os.path.getsize(self.log_file):
+                self.ClearDraft(True)
+            offset = self.search_offset
+            previous_draft_type = self.draft_type
+            previous_draft_set = self.draft_set
             with open(self.log_file, 'r', errors="ignore") as log:
+                print("DraftStarSearch: %u" % offset)
                 log.seek(offset)
                 for line in log:
                     offset += len(line)
@@ -311,7 +316,9 @@ class LogScanner:
                             LogEntry(self.diag_log_file, line, self.diag_log_enabled)
                             break
                                 
-            if self.draft_type != DRAFT_TYPE_UNKNOWN:
+            if (self.draft_type != DRAFT_TYPE_UNKNOWN) and \
+               ((self.draft_type != previous_draft_type) or \
+                (self.draft_set != previous_draft_set)):
                 self.RetrieveSet()
 
         except Exception as error:
@@ -341,7 +348,10 @@ class LogScanner:
                         self.draft_set = event_set
                         self.pick_offset = offset 
                         self.pack_offset = offset
-                        self.diag_log_file = "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
+                        directory = "Logs\\"
+                        if self.os == "MAC":
+                            directory = "Logs/"
+                        self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                         break
         except Exception as error:
             print("DraftStartSearchV1 Error: %s" % error)
@@ -364,7 +374,10 @@ class LogScanner:
                     self.draft_set = event_set
                     self.pick_offset = offset 
                     self.pack_offset = offset
-                    self.diag_log_file = "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
+                    directory = "Logs\\"
+                    if self.os == "MAC":
+                        directory = "Logs/"
+                    self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                     #LogEntry(self.diag_log_file, event_data, self.diag_log_enabled)
                                 
         except Exception as error:
@@ -373,9 +386,9 @@ class LogScanner:
     #Wrapper function for performing a search based on the draft type
     def DraftSearch(self):
         print("Draft Search")
-        if self.draft_set == None:
-            self.ClearDraft(False)
-            self.DraftStartSearch()
+        #if self.draft_set == None:
+        #    self.ClearDraft(False)
+        self.DraftStartSearch()
         
         if self.draft_type == DRAFT_TYPE_PREMIER_V1:
             self.DraftPackSearchPremierV1()
@@ -762,6 +775,7 @@ class LogScanner:
             error_string = "DraftPickedSearchQuick Error: %s" % error
             print(error_string)
             LogEntry(self.diag_log_file, error_string)
+            
     def RetrieveSet(self):
         file_location = ''
         self.deck_colors = {"All Decks" : "","Auto" : "", "AI" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
