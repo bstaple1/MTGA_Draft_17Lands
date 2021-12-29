@@ -405,11 +405,13 @@ class LogScanner:
                     string_offset = line.find(draft_string)
                     
                     if string_offset != -1:
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
                         self.pick_offset = offset
+                        start_offset = line.find("{\"id\"")
+                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+
                         try:
                             #Identify the pack
-                            draft_data = json.loads(line[len(draft_string):])
+                            draft_data = json.loads(line[start_offset:])
                             
                             request_data = json.loads(draft_data["request"])
                             param_data = json.loads(request_data["Payload"])
@@ -461,10 +463,11 @@ class LogScanner:
                     
                     if string_offset != -1:
                         self.pack_offset = offset
+                        start_offset = line.find("{\"draftId\"")
                         LogEntry(self.diag_log_file, line, self.diag_log_enabled)
                         pack_cards = []
                         #Identify the pack
-                        draft_data = json.loads(line[len(draft_string):])
+                        draft_data = json.loads(line[start_offset:])
                         parsed_cards = []
                         try:
                                 
@@ -636,7 +639,6 @@ class LogScanner:
         pack = 0
         pick = 0
         #Identify and print out the log lines that contain the draft packs
-        print("DraftPackSearchQuick") 
         try:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
