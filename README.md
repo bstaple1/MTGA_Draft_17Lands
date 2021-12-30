@@ -19,13 +19,19 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data
 
 - Step 4: Install the python image library Pillow by opening the Mac terminal and entering "python3.10 -m pip install --upgrade Pillow".
 
-- Step 5: Install web certificates by going to "/Applications/Python 3.10/" and double-clicking the file "Install Certificates.command".
+- Step 5: Install the python input monitoring library Pynput by opening the Mac terminal and entering "python3.10 -m pip install --upgrade pynput".
 
-- Step 6: Open the config.json file in a text editor and change the "hotkey_enabled" field from "true" to "false".
+- Step 6: Install web certificates by going to "/Applications/Python 3.10/" and double-clicking the file "Install Certificates.command".
 
-- Step 7: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes
+- Step 7: Open the config.json file in a text editor and change the "hotkey_enabled" field from "true" to "false".
 
-- Step 8: Start the draft in Arena
+- Step 8: Decrease the table width by setting the table_width field to 220 in the config.json file.
+
+- Step 9: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
+
+- Step 10: Set Arena to window mode.
+
+- Step 11: Start the draft in Arena.
 
 ## UI Features
 

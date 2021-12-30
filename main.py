@@ -257,6 +257,7 @@ class LogScanner:
         self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
+        self.sideboard = []
         self.pack_cards = [None] * 8
         self.initial_pack = [None] * 8
         self.current_pack = 0
@@ -277,6 +278,7 @@ class LogScanner:
         self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
+        self.sideboard = []
         self.pack_cards = [None] * 8
         self.initial_pack = [None] * 8
         self.current_pack = 0
@@ -319,6 +321,8 @@ class LogScanner:
             if (self.draft_type != DRAFT_TYPE_UNKNOWN) and \
                ((self.draft_type != previous_draft_type) or \
                 (self.draft_set != previous_draft_set)):
+                self.pick_offset = self.search_offset 
+                self.pack_offset = self.search_offset
                 self.RetrieveSet()
 
         except Exception as error:
@@ -342,12 +346,9 @@ class LogScanner:
                             event_set = event_string[count + 1]
                         else:
                             event_set = event_string[count - 1]
-                        
                 
                         self.draft_type = draft_types_dict[event_type]
                         self.draft_set = event_set
-                        self.pick_offset = offset 
-                        self.pack_offset = offset
                         directory = "Logs\\"
                         if self.os == "MAC":
                             directory = "Logs/"
@@ -372,8 +373,6 @@ class LogScanner:
                 if event_type in draft_types_dict.keys():
                     self.draft_type = draft_types_dict[event_type]
                     self.draft_set = event_set
-                    self.pick_offset = offset 
-                    self.pack_offset = offset
                     directory = "Logs\\"
                     if self.os == "MAC":
                         directory = "Logs/"
@@ -763,7 +762,7 @@ class LogScanner:
                             print("Picked - Pack: %u, Pick: %u, Cards: %s, offset: %u" % (pack, pick, self.picked_cards[pack_index], self.pack_offset))
                             
                             if self.step_through:
-                                break;
+                                break
                             
                         except Exception as error:
                             error_string = "DraftPickedSearchQuick Sub Error: %s" % error
