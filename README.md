@@ -1,5 +1,7 @@
 # MTGA_Draft_17Lands
-Magic: The Gathering Arena draft tool that utilizes 17Lands data
+Magic: The Gathering Arena draft tool that utilizes 17Lands data.
+
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier.png?raw=true)
 
 ## Steps for Windows
 
