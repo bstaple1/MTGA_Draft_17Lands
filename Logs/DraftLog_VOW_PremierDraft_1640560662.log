@@ -1,0 +1,168 @@
+<18:17:42 12/26/21>[UnityCrossThreadLogger]==> Event_Join {"id":"d3f83365-370e-4e41-b7e7-b138aa498aa9","request":"{\"Type\":600,\"TransId\":\"d3f83365-370e-4e41-b7e7-b138aa498aa9\",\"Payload\":\"{\\\"EventName\\\":\\\"PremierDraft_VOW_20211111\\\",\\\"EntryCurrencyType\\\":\\\"DraftToken\\\",\\\"EntryCurrencyPaid\\\":1,\\\"CustomTokenId\\\":null}\"}"}
+
+<18:18:39 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":2,"SelfPack":1,"PackCards":"78971,78854,78994,78924,79038,78841,79010,78793,78796,79024,78807,78779,78975"}
+
+<18:18:39 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"55e9b6c2-97ce-4606-9351-5692115de550","request":"{\"Type\":620,\"TransId\":\"55e9b6c2-97ce-4606-9351-5692115de550\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78914,\\\"Pack\\\":1,\\\"Pick\\\":1}\"}"}
+
+<18:19:07 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":3,"SelfPack":1,"PackCards":"79081,78797,79042,78912,78910,78869,78979,78810,78936,78974,79030,78782"}
+
+<18:19:07 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"ff4f5765-7a43-4cfa-a4f9-b40f4502bb55","request":"{\"Type\":620,\"TransId\":\"ff4f5765-7a43-4cfa-a4f9-b40f4502bb55\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78854,\\\"Pack\\\":1,\\\"Pick\\\":2}\"}"}
+
+<18:19:24 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"b67fdb92-33ca-40cf-99ad-36e4ab73356a","request":"{\"Type\":620,\"TransId\":\"b67fdb92-33ca-40cf-99ad-36e4ab73356a\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78782,\\\"Pack\\\":1,\\\"Pick\\\":3}\"}"}
+
+<18:19:49 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":4,"SelfPack":1,"PackCards":"78888,78971,78811,78788,79084,79014,79081,78909,78868,79048,78983"}
+
+<18:20:01 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"617ff973-c5c9-4d64-887c-972ab8e67237","request":"{\"Type\":620,\"TransId\":\"617ff973-c5c9-4d64-887c-972ab8e67237\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78888,\\\"Pack\\\":1,\\\"Pick\\\":4}\"}"}
+
+<18:20:12 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":5,"SelfPack":1,"PackCards":"78910,78944,78865,78796,78815,79006,78923,78889,78930,78953"}
+
+<18:20:53 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":6,"SelfPack":1,"PackCards":"78944,78831,79042,78841,78867,79081,79023,79087,78882"}
+
+<18:20:53 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"f96a0ee1-45f8-461e-9354-afb148732d95","request":"{\"Type\":620,\"TransId\":\"f96a0ee1-45f8-461e-9354-afb148732d95\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78796,\\\"Pack\\\":1,\\\"Pick\\\":5}\"}"}
+
+<18:21:12 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"b1f2e432-0c34-47cb-b5dc-9dfeebb2d973","request":"{\"Type\":620,\"TransId\":\"b1f2e432-0c34-47cb-b5dc-9dfeebb2d973\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78841,\\\"Pack\\\":1,\\\"Pick\\\":6}\"}"}
+
+<18:21:13 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":7,"SelfPack":1,"PackCards":"79024,78776,78994,78840,78958,78920,78968,79002"}
+
+<18:21:51 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"0a43ac95-d767-422b-ad26-becf219e4d88","request":"{\"Type\":620,\"TransId\":\"0a43ac95-d767-422b-ad26-becf219e4d88\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78840,\\\"Pack\\\":1,\\\"Pick\\\":7}\"}"}
+
+<18:22:08 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":8,"SelfPack":1,"PackCards":"78819,78824,79025,78804,78837,79048,79070"}
+
+<18:22:28 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":9,"SelfPack":1,"PackCards":"78875,79031,78805,78806,79081,78882"}
+
+<18:22:28 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"8cca3b2b-3987-4d4c-995a-75ef9e27757a","request":"{\"Type\":620,\"TransId\":\"8cca3b2b-3987-4d4c-995a-75ef9e27757a\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78837,\\\"Pack\\\":1,\\\"Pick\\\":8}\"}"}
+
+<18:22:36 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"5ee0cc0e-c407-44ef-b0b8-45de2f4ada3f","request":"{\"Type\":620,\"TransId\":\"5ee0cc0e-c407-44ef-b0b8-45de2f4ada3f\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78875,\\\"Pack\\\":1,\\\"Pick\\\":9}\"}"}
+
+<18:22:52 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":10,"SelfPack":1,"PackCards":"78971,78994,79024,78807,78779"}
+
+<18:23:04 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"3f9736f9-4a65-4548-867f-8eb930a5c4fa","request":"{\"Type\":620,\"TransId\":\"3f9736f9-4a65-4548-867f-8eb930a5c4fa\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78994,\\\"Pack\\\":1,\\\"Pick\\\":10}\"}"}
+
+<18:23:20 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":11,"SelfPack":1,"PackCards":"79081,78869,78979,78974"}
+
+<18:23:25 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"488fa8d2-d0d5-4f50-911d-4ab0f298b39f","request":"{\"Type\":620,\"TransId\":\"488fa8d2-d0d5-4f50-911d-4ab0f298b39f\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78869,\\\"Pack\\\":1,\\\"Pick\\\":11}\"}"}
+
+<18:23:26 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":12,"SelfPack":1,"PackCards":"78811,79081,78868"}
+
+<18:23:31 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"12ed2b52-d937-4042-af0a-2aeff9c30d6e","request":"{\"Type\":620,\"TransId\":\"12ed2b52-d937-4042-af0a-2aeff9c30d6e\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78811,\\\"Pack\\\":1,\\\"Pick\\\":12}\"}"}
+
+<18:23:46 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":13,"SelfPack":1,"PackCards":"78815,78930"}
+
+<18:23:50 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":14,"SelfPack":1,"PackCards":"78867"}
+
+<18:23:50 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"7209c714-d6fb-4975-a207-ca91caa3526d","request":"{\"Type\":620,\"TransId\":\"7209c714-d6fb-4975-a207-ca91caa3526d\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78930,\\\"Pack\\\":1,\\\"Pick\\\":13}\"}"}
+
+<18:23:52 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":1,"SelfPack":2,"PackCards":"78791,78805,78899,79024,78888,78985,78920,78875,79087,78776,79003,79079,78968,78836"}
+
+<18:23:52 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"e42ced85-19f2-4552-a8e1-3b9f3cced019","request":"{\"Type\":620,\"TransId\":\"e42ced85-19f2-4552-a8e1-3b9f3cced019\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78867,\\\"Pack\\\":1,\\\"Pick\\\":14}\"}"}
+
+<18:23:59 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"db4961ce-7188-4acb-8b26-2b13cb20b669","request":"{\"Type\":620,\"TransId\":\"db4961ce-7188-4acb-8b26-2b13cb20b669\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78836,\\\"Pack\\\":2,\\\"Pick\\\":1}\"}"}
+
+<18:24:30 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":2,"SelfPack":2,"PackCards":"78824,78947,79087,78869,78902,78867,78959,79033,79084,78832,78885,79028,79007"}
+
+<18:25:23 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"b74cb7c0-fc27-44f6-916a-1986855c3144","request":"{\"Type\":620,\"TransId\":\"b74cb7c0-fc27-44f6-916a-1986855c3144\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78832,\\\"Pack\\\":2,\\\"Pick\\\":2}\"}"}
+
+<18:25:24 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":3,"SelfPack":2,"PackCards":"79034,78837,78989,78971,79087,78868,79042,78886,78796,78866,79071,79060"}
+
+<18:25:39 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":4,"SelfPack":2,"PackCards":"78831,78929,78956,79037,78776,78924,78947,78840,78983,79002,78778"}
+
+<18:25:39 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"8fe90681-ac25-4e3f-a7e9-b9cdf3a3751c","request":"{\"Type\":620,\"TransId\":\"8fe90681-ac25-4e3f-a7e9-b9cdf3a3751c\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78886,\\\"Pack\\\":2,\\\"Pick\\\":3}\"}"}
+
+<18:26:03 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":5,"SelfPack":2,"PackCards":"79087,79039,78786,78910,78815,78944,79031,78837,78974,79035"}
+
+<18:26:03 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"9e20d91a-9590-4b71-8916-df242bca252b","request":"{\"Type\":620,\"TransId\":\"9e20d91a-9590-4b71-8916-df242bca252b\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78929,\\\"Pack\\\":2,\\\"Pick\\\":4}\"}"}
+
+<18:26:18 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":6,"SelfPack":2,"PackCards":"79014,79077,78864,78876,78875,78806,78843,78834,78866"}
+
+<18:26:18 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"de17207c-bd64-4821-b425-a26c5f7a7e19","request":"{\"Type\":620,\"TransId\":\"de17207c-bd64-4821-b425-a26c5f7a7e19\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78910,\\\"Pack\\\":2,\\\"Pick\\\":5}\"}"}
+
+<18:26:47 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":7,"SelfPack":2,"PackCards":"78934,78876,78985,78776,78998,78834,78963,78986"}
+
+<18:26:47 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"1381800f-f335-4e52-8d2f-5ed23b5dc923","request":"{\"Type\":620,\"TransId\":\"1381800f-f335-4e52-8d2f-5ed23b5dc923\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78876,\\\"Pack\\\":2,\\\"Pick\\\":6}\"}"}
+
+<18:26:53 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":8,"SelfPack":2,"PackCards":"78897,78883,78958,79025,79022,78983,78877"}
+
+<18:26:53 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"865e42ed-3f14-464b-a86c-5c67a4f31127","request":"{\"Type\":620,\"TransId\":\"865e42ed-3f14-464b-a86c-5c67a4f31127\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78834,\\\"Pack\\\":2,\\\"Pick\\\":7}\"}"}
+
+<18:26:59 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":9,"SelfPack":2,"PackCards":"78805,79024,78888,78875,79087,78776"}
+
+<18:26:59 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"7688232a-7663-4149-b67d-088a377ce66f","request":"{\"Type\":620,\"TransId\":\"7688232a-7663-4149-b67d-088a377ce66f\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78877,\\\"Pack\\\":2,\\\"Pick\\\":8}\"}"}
+
+<18:27:05 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":10,"SelfPack":2,"PackCards":"78824,78869,78867,79033,78885"}
+
+<18:27:05 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"d2a40375-1048-487c-b3b1-a8508f27ae02","request":"{\"Type\":620,\"TransId\":\"d2a40375-1048-487c-b3b1-a8508f27ae02\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78888,\\\"Pack\\\":2,\\\"Pick\\\":9}\"}"}
+
+<18:27:10 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":11,"SelfPack":2,"PackCards":"78837,78868,78866,79071"}
+
+<18:27:10 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"d85b3e18-ace4-4a4c-9a1c-2f928708bda2","request":"{\"Type\":620,\"TransId\":\"d85b3e18-ace4-4a4c-9a1c-2f928708bda2\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78885,\\\"Pack\\\":2,\\\"Pick\\\":10}\"}"}
+
+<18:27:13 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":12,"SelfPack":2,"PackCards":"78831,78924,78840"}
+
+<18:27:13 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"b5018a33-54e5-4354-9822-cdda6240f53b","request":"{\"Type\":620,\"TransId\":\"b5018a33-54e5-4354-9822-cdda6240f53b\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":79071,\\\"Pack\\\":2,\\\"Pick\\\":11}\"}"}
+
+<18:27:19 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":13,"SelfPack":2,"PackCards":"79031,78837"}
+
+<18:27:19 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a431f041-3419-4875-a036-6276b0af784b","request":"{\"Type\":620,\"TransId\":\"a431f041-3419-4875-a036-6276b0af784b\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78831,\\\"Pack\\\":2,\\\"Pick\\\":12}\"}"}
+
+<18:27:22 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"8fa8dadd-4af8-4061-b71b-5b568071310c","request":"{\"Type\":620,\"TransId\":\"8fa8dadd-4af8-4061-b71b-5b568071310c\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78837,\\\"Pack\\\":2,\\\"Pick\\\":13}\"}"}
+
+<18:28:06 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":14,"SelfPack":2,"PackCards":"78864"}
+
+<18:28:08 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":1,"SelfPack":3,"PackCards":"79037,78801,79087,78876,78924,78897,78837,78869,78980,78817,78866,78834,78885,79085"}
+
+<18:28:08 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"958ccc8a-5050-48e1-b4c9-09fe0864e84f","request":"{\"Type\":620,\"TransId\":\"958ccc8a-5050-48e1-b4c9-09fe0864e84f\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78864,\\\"Pack\\\":2,\\\"Pick\\\":14}\"}"}
+
+<18:28:19 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":2,"SelfPack":3,"PackCards":"79077,78979,78992,78989,79004,78811,78909,78796,78864,78969,79026,78794,79065"}
+
+<18:28:19 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"42719f5d-b607-49e8-934a-081aec23631a","request":"{\"Type\":620,\"TransId\":\"42719f5d-b607-49e8-934a-081aec23631a\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78834,\\\"Pack\\\":3,\\\"Pick\\\":1}\"}"}
+
+<18:28:53 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":3,"SelfPack":3,"PackCards":"78950,78901,79034,78909,78867,78821,78887,79084,78897,79073,78838,78784"}
+
+<18:28:53 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a5e57fbd-ccce-49ea-83ea-0fed597adeee","request":"{\"Type\":620,\"TransId\":\"a5e57fbd-ccce-49ea-83ea-0fed597adeee\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78864,\\\"Pack\\\":3,\\\"Pick\\\":2}\"}"}
+
+<18:29:17 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"8da2d71a-94eb-4072-80b2-7a4f717323aa","request":"{\"Type\":620,\"TransId\":\"8da2d71a-94eb-4072-80b2-7a4f717323aa\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78838,\\\"Pack\\\":3,\\\"Pick\\\":3}\"}"}
+
+<18:29:22 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":4,"SelfPack":3,"PackCards":"79038,79033,78875,79045,78992,78923,78841,78840,79021,78913,78870"}
+
+<18:29:39 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a7379edd-e696-4c67-81c8-c93ab30e1678","request":"{\"Type\":620,\"TransId\":\"a7379edd-e696-4c67-81c8-c93ab30e1678\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78875,\\\"Pack\\\":3,\\\"Pick\\\":4}\"}"}
+
+<18:29:40 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":5,"SelfPack":3,"PackCards":"78806,78831,78873,78965,79084,78950,79034,78924,78859,79002"}
+
+<18:29:57 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":6,"SelfPack":3,"PackCards":"78971,78865,79006,78934,78845,78843,78867,78903,78913"}
+
+<18:29:57 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"09f44b94-50e2-49b0-b2a2-126aabcc12fd","request":"{\"Type\":620,\"TransId\":\"09f44b94-50e2-49b0-b2a2-126aabcc12fd\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78859,\\\"Pack\\\":3,\\\"Pick\\\":5}\"}"}
+
+<18:30:08 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":7,"SelfPack":3,"PackCards":"78936,78845,78950,78929,78793,78805,79033,78879"}
+
+<18:30:08 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"0e3a82df-2c38-423f-92ce-12b379066905","request":"{\"Type\":620,\"TransId\":\"0e3a82df-2c38-423f-92ce-12b379066905\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78865,\\\"Pack\\\":3,\\\"Pick\\\":6}\"}"}
+
+<18:30:23 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":8,"SelfPack":3,"PackCards":"78920,78854,78776,78864,78810,78998,78969"}
+
+<18:30:23 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"c80ab691-4454-4ec9-887c-995a88f64fb9","request":"{\"Type\":620,\"TransId\":\"c80ab691-4454-4ec9-887c-995a88f64fb9\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78845,\\\"Pack\\\":3,\\\"Pick\\\":7}\"}"}
+
+<18:30:26 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"3426ce2d-72ee-4976-8ab2-db7a7d1994e2","request":"{\"Type\":620,\"TransId\":\"3426ce2d-72ee-4976-8ab2-db7a7d1994e2\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78854,\\\"Pack\\\":3,\\\"Pick\\\":8}\"}"}
+
+<18:30:32 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":9,"SelfPack":3,"PackCards":"78876,78924,78897,78869,78866,78885"}
+
+<18:30:38 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"68698c0f-ff86-4409-8d74-4c27a1128316","request":"{\"Type\":620,\"TransId\":\"68698c0f-ff86-4409-8d74-4c27a1128316\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78885,\\\"Pack\\\":3,\\\"Pick\\\":9}\"}"}
+
+<18:30:53 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":10,"SelfPack":3,"PackCards":"78979,78992,79004,78811,78969"}
+
+<18:31:03 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"60665598-d279-4a12-99dc-9ef06ea9017d","request":"{\"Type\":620,\"TransId\":\"60665598-d279-4a12-99dc-9ef06ea9017d\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78969,\\\"Pack\\\":3,\\\"Pick\\\":10}\"}"}
+
+<18:31:15 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":11,"SelfPack":3,"PackCards":"78950,78867,79084,78897"}
+
+<18:31:27 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":12,"SelfPack":3,"PackCards":"79033,78840,78870"}
+
+<18:31:27 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"bf9c39f3-126f-4a3b-8321-92380586f51c","request":"{\"Type\":620,\"TransId\":\"bf9c39f3-126f-4a3b-8321-92380586f51c\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78897,\\\"Pack\\\":3,\\\"Pick\\\":11}\"}"}
+
+<18:31:32 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":13,"SelfPack":3,"PackCards":"78831,78924"}
+
+<18:31:32 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"0e8acd31-d391-4462-a4e3-87d552ca5fad","request":"{\"Type\":620,\"TransId\":\"0e8acd31-d391-4462-a4e3-87d552ca5fad\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78840,\\\"Pack\\\":3,\\\"Pick\\\":12}\"}"}
+
+<18:31:34 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"896df705-fd3e-406c-88da-8d6ad07eb74e","request":"{\"Type\":620,\"TransId\":\"896df705-fd3e-406c-88da-8d6ad07eb74e\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78831,\\\"Pack\\\":3,\\\"Pick\\\":13}\"}"}
+
+<18:31:43 12/26/21>[UnityCrossThreadLogger]Draft.Notify {"draftId":"6c8f65f1-c649-43d4-a7c5-13c73b109cbc","SelfPick":14,"SelfPack":3,"PackCards":"78843"}
+
+<18:31:44 12/26/21>[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a2e396c9-ea58-4131-b53c-c01e97ca968b","request":"{\"Type\":620,\"TransId\":\"a2e396c9-ea58-4131-b53c-c01e97ca968b\",\"Payload\":\"{\\\"DraftId\\\":\\\"6c8f65f1-c649-43d4-a7c5-13c73b109cbc\\\",\\\"GrpId\\\":78843,\\\"Pack\\\":3,\\\"Pick\\\":14}\"}"}
+

@@ -56,7 +56,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data
 - Missing Cards Table: This table will list the cards missing from a pack that's already been seen. 
 
     - The user's chosen card will have an asterisk next to the name.
-        -For premier drafts, the missing cards from pack 1, pick 1 will not be available.
+    - For premier drafts, the missing cards from pack 1, pick 1 will not be available.
 	
 - Deck Stats Table: This table lists the card distribution and total for creatures, noncreatures, and all cards.
 
