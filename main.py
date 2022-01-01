@@ -390,16 +390,93 @@ class LogScanner:
         self.DraftStartSearch()
         
         if self.draft_type == DRAFT_TYPE_PREMIER_V1:
+            if self.initial_pack[0] == None:
+                self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV1()
             self.DraftPickedSearchPremierV1()
         elif self.draft_type == DRAFT_TYPE_PREMIER_V2:
+            if self.initial_pack[0] == None:
+                self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV2()
-            self.DraftPickedSearchPremierV2()  
+            self.DraftPickedSearchPremierV2() 
         elif self.draft_type == DRAFT_TYPE_QUICK:
             self.DraftPackSearchQuick()
             self.DraftPickedSearchQuick()
             
         return
+        
+    def DraftPackSearchPremierP1P1(self):
+        offset = self.pack_offset
+        draft_data = object()
+        draft_string = "CardsInPack"
+        pack_cards = []
+        pack = 0
+        pick = 0
+        #Identify and print out the log lines that contain the draft packs
+        try:
+            with open(self.log_file, 'r') as log:
+                log.seek(offset)
+
+                for line in log:
+                    offset += len(line)
+                    
+                    string_offset = line.find(draft_string)
+                    
+                    if string_offset != -1:
+                        #Remove any prefix (e.g. log timestamp)
+                        start_offset = line.find("{\"id\":")                       
+                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        draft_data = json.loads(line[start_offset:])
+                        request_data = draft_data["request"]
+                        payload_data = json.loads(request_data)["Payload"]
+                        
+                        pack_cards = []
+                        parsed_cards = []
+                        try:
+
+                            card_data = json.loads(payload_data)
+                            cards = card_data["CardsInPack"]
+
+                            for card in cards:
+                                card_string = str(card)
+                                if card_string in self.set_data["card_ratings"].keys():
+                                    if len(self.set_data["card_ratings"][card_string]):
+                                        parsed_cards.append(self.set_data["card_ratings"][card_string]["name"])
+                                        pack_cards.append(self.set_data["card_ratings"][card_string])
+                            
+                            pack = card_data["PackNumber"]
+                            pick = card_data["PickNumber"]
+                            
+                            pack_index = (pick - 1) % 8
+                            
+                            if self.current_pack != pack:
+                                self.initial_pack = [None] * 8
+                        
+                            if self.initial_pack[pack_index] == None:
+                                self.initial_pack[pack_index] = pack_cards
+                                
+                            self.pack_cards[pack_index] = pack_cards
+                                
+                            if (self.current_pack == 0) and (self.current_pick == 0):
+                                self.current_pack = pack
+                                self.current_pick = pick
+                            
+                            if(self.step_through):
+                                break
+        
+                        except Exception as error:
+                            error_string = "DraftPackSearchPremierP1P1 Sub Error: %s" % error
+                            print(error_string)
+                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                        print("Pack: %u, Pick: %u, Cards: %s" % (pack, pick, parsed_cards))
+            if log.closed == False:
+                log.close() 
+        except Exception as error:
+            error_string = "DraftPackSearchPremierP1P1 Error: %s" % error
+            print(error_string)
+            LogEntry(self.diag_log_file, error_string,  self.diag_log_enabled)
+        
+        return pack_cards
     def DraftPickedSearchPremierV1(self):
         offset = self.pick_offset
         draft_data = object()
@@ -711,7 +788,7 @@ class LogScanner:
         except Exception as error:
             error_string = "DraftPackSearchQuick Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string)
+            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
         return pack_cards
         
@@ -982,7 +1059,17 @@ class WindowUI:
             print(error_string)
             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         return list_box
-        
+    def UpdateP1P1(self, pack, pick, card_list, taken_cards, filtered_color, color_options, limits):
+        #This function will update P1P1 for the following edge cases:
+        #   - Pack 3 was reached and P1P1 was received after P1P2
+        # The result will be that the CardFilter logic receives the P1P1 data twice if P1P1 was sent before P1P2
+        if (pack == 1) and (pick == 3):
+            CL.CardFilter(card_list[0],
+                          taken_cards,
+                          filtered_color,
+                          color_options,
+                          limits)  
+
     def UpdatePackTable(self, card_list, taken_cards, filtered_color, color_options, limits):
         try:
             filtered_list = CL.CardFilter(card_list,
@@ -1226,6 +1313,16 @@ class WindowUI:
         self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
+
+        #Addressing P1P1 edge case
+        self.UpdateP1P1(self.draft.current_pack,
+                        self.draft.current_pick,
+                        self.draft.pack_cards, 
+                        self.draft.taken_cards,
+                        filtered_color,
+                        self.draft.deck_colors,
+                        self.draft.deck_limits)
+
         self.UpdatePackTable(self.draft.pack_cards[pack_index], 
                              self.draft.taken_cards,
                              filtered_color,
