@@ -31,9 +31,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 9: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
 
-- Step 10: Set Arena to window mode.
+- Step 10: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
 
-- Step 11: Start the draft in Arena.
+- Step 11: Set Arena to window mode.
+
+- Step 12: Start the draft in Arena.
 
 ## UI Features
 

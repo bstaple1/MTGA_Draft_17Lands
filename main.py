@@ -44,10 +44,14 @@
 #   - Access to the command line argument list.
 # - PIL library (https://pillow.readthedocs.io/en/stable/)
 #   - Access to image manipulation modules.
+# - ttkwidgets library (https://github.com/TkinterEP/ttkwidgets)
+#   - Access to the autocomplete entry box widget.
 # - file_extractor module (local)
 #   - Access to the functions used for downloading the data sets.
 # - card_logic module (local)
 #   - Access to the functions used for processing the card data.
+# - log_scanner module (local)
+#   - Access to the functions used for reading the arena log.
 #
 # @section Notes
 # - Comments are Doxygen compatible.
