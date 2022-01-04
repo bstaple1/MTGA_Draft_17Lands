@@ -5,37 +5,40 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Steps for Windows
 
-- Step 1: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box
+- Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file or clone the repository.
 
-- Step 2: Double-click the Draft Tool executable (.exe) to start the application.
+- Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box
 
-- Step 3: Start the draft in Arena.
+- Step 3: Double-click the Draft Tool executable (.exe) to start the application.
+
+- Step 4: Start the draft in Arena.
 
 ## Steps for Mac
+- Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file or clone the repository.
 
-- Step 1: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
+- Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
-- Step 2: Download and install the latest version of python 3 from this location: https://www.python.org/downloads/macos/.
+- Step 3: Download and install the latest version of python 3 from this location: https://www.python.org/downloads/macos/.
 
-- Step 3: Install the python package installer Pip by opening the Mac terminal and entering "python3.10 -m ensurepip --upgrade".
+- Step 4: Install the python package installer Pip by opening the Mac terminal and entering "python3.10 -m ensurepip --upgrade".
 
-- Step 4: Install the python image library Pillow by opening the Mac terminal and entering "python3.10 -m pip install --upgrade Pillow".
+- Step 5: Install the python image library Pillow by opening the Mac terminal and entering "python3.10 -m pip install --upgrade Pillow".
 
-- Step 5: Install the python input monitoring library Pynput by opening the Mac terminal and entering "python3.10 -m pip install --upgrade pynput".
+- Step 6: Install the python input monitoring library Pynput by opening the Mac terminal and entering "python3.10 -m pip install --upgrade pynput".
 
-- Step 6: Install web certificates by going to "/Applications/Python 3.10/" and double-clicking the file "Install Certificates.command".
+- Step 7: Install web certificates by going to "/Applications/Python 3.10/" and double-clicking the file "Install Certificates.command".
 
-- Step 7: Open the config.json file in a text editor and change the "hotkey_enabled" field from "true" to "false".
+- Step 8: Open the config.json file in a text editor and change the "hotkey_enabled" field from "true" to "false".
 
-- Step 8: Decrease the table width by setting the table_width field to 220 in the config.json file.
+- Step 9: Decrease the table width by setting the table_width field to 220 in the config.json file.
 
-- Step 9: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
+- Step 10: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
 
-- Step 10: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
+- Step 11: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
 
-- Step 11: Set Arena to window mode.
+- Step 12: Set Arena to window mode.
 
-- Step 12: Start the draft in Arena.
+- Step 13: Start the draft in Arena.
 
 ## UI Features
 
@@ -74,15 +77,18 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
     - For the ID field, keep the value at 0.
     - The download can take several minutes.
-    - The firefox browser is required if the Color Ratings option is checked; you will see the application briefly open the "https://www.17lands.com/color_ratings" page while it collects the color ratings data
+    - The firefox browser is required if the Color Ratings option is checked; you will see the application briefly open the "https://www.17lands.com/color_ratings" page while it collects the color ratings data.
  
-- List Taken Cards: Go to Taken Cards window by selecting Cards->Taken Cards. This table lists the cards that were taken by the user over the course of the draft.
+- List Taken Cards: Get to the Taken Cards window by selecting Cards->Taken Cards. 
+    - This table lists the cards that were taken by the user over the course of the draft.
 
-- List Suggested Decks: Go to Suggested Decks window by selecting Cards->Suggested Decks. This table lists a 40 card deck that the application has built from your taken cards. You might see multiple decks if the application is able to build them.
- 
+- List Suggested Decks: Get to the Suggested Decks window by selecting Cards->Suggested Decks. 
+    - This table lists a 40 card deck that the application has built from your taken cards. You might see multiple decks if the application is able to build them.
     - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
         - The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
-	
+
+- Card Compare: Get to the Card Compare window by selecting Cards->Compare Cards. This window will allow you to compare cards that you've entered in.
+    - This feature can be used to quickly compare cards for P1P1 of the Premier draft.
 	
 ## Additional Features
 

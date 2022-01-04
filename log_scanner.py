@@ -647,21 +647,23 @@ class LogScanner:
             
     def RetrieveSet(self):
         file_location = ''
-        self.deck_colors = {"All Decks" : "","Auto" : "", "AI" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
+        self.deck_colors = {"All Decks" : "","Auto" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
 
-        draft_string = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
-        draft_string.extend(list(draft_types_dict.keys()))
+        draft_list = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
+        draft_list.extend(list(draft_types_dict.keys()))
         self.set_data = None
         try:
             
-            for type in draft_string:
+            for type in draft_list:
                 root = os.getcwd()
                 for files in os.listdir(root):
-                    filename = self.draft_set + "_" + type + "_Data.json"
-                    if filename == files:
-                        file_location = os.path.join(root, filename)
-                        print("File Found: %s" % file_location)
-                        break                    
+                    set_case = [self.draft_set.upper(), self.draft_set.lower()]
+                    for case in set_case:
+                        filename = case + "_" + type + "_Data.json"
+                        if filename == files:
+                            file_location = os.path.join(root, filename)
+                            print("File Found: %s" % file_location)
+                            break                           
                 if len(file_location):
                     break
                     

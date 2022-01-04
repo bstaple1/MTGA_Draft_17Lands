@@ -80,29 +80,11 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-
-
-
 # Functions
 ##
 def OnPress(key, ui):
     if key == KeyCode.from_char('\x06'): #CTRL+F
         ui.WindowLift(ui.root)
-
-def AutoComplete(event, entry_box, card_list):
-    try:
-        if event.keysym == "Tab":
-            text = entry_box.get()
-            
-            tab_count = text.count("\t")
-            if text: 
-                matches = [card_list[s]["name"] for s in card_list if card_list[s]["name"].lower().startswith(text.lower())]
-                entry_box.delete(0,END)
-                entry_box.insert(0,matches[tab_count - 1])
-        elif event.keysym == "Return":
-            entry_box.delete(0,END)
-    except Exception as error:
-        print("AutoComplete  Error: %s" % error)
 
 def KeyListener(window_ui):
     Listener(on_press=lambda event: OnPress(event, ui=window_ui)).start()
@@ -182,7 +164,7 @@ def ResetConfig():
         config["card_logic"]["deck_types"]["Mid"] = {}
         config["card_logic"]["deck_types"]["Mid"] = {"distribution" : [0,0,4,3,2,1,0], "maximum_card_count" : 23, "recommended_creature_count" : 15, "cmc_average" : 3.04}
         config["card_logic"]["deck_types"]["Aggro"] = {}
-        config["card_logic"]["deck_types"]["Aggro"] = {"distribution" : [0,1,4,5,2,1,0], "maximum_card_count" : 24, "recommended_creature_count" : 17, "cmc_average" : 2.40}
+        config["card_logic"]["deck_types"]["Aggro"] = {"distribution" : [0,1,4,4,1,0,0], "maximum_card_count" : 24, "recommended_creature_count" : 17, "cmc_average" : 2.40}
         config["card_logic"]["deck_types"]["Control"] = {}
         config["card_logic"]["deck_types"]["Control"] = {"distribution" : [0,0,3,3,3,1,1], "maximum_card_count" : 22, "recommended_creature_count" : 14, "cmc_average" : 3.68}
     
@@ -274,13 +256,13 @@ class WindowUI:
                 foreground=FixedMap(style, "foreground"),
                 background=FixedMap(style, "background"))
                 
-        self.current_draft_frame = Frame(self.root)
-        self.current_draft_label = Label(self.current_draft_frame, text="Current Draft:", font='Helvetica 9 bold', anchor="e", width = 15)
+        #self.current_draft_frame = Frame(self.root)
+        self.current_draft_label = Label(self.root, text="Current Draft:", font='Helvetica 9 bold', anchor="e", width = 15)
         
-        self.current_draft_value_label = Label(self.current_draft_frame, text="", font='Helvetica 9', anchor="w", width=15)
+        self.current_draft_value_label = Label(self.root, text="", font='Helvetica 9', anchor="w", width=17)
         
-        self.deck_colors_frame = Frame(self.root)
-        self.deck_colors_label = Label(self.deck_colors_frame, text="Deck Filter:", font='Helvetica 9 bold', anchor="e", width = 15)
+        #self.deck_colors_frame = Frame(self.root)
+        self.deck_colors_label = Label(self.root, text="Deck Filter:", font='Helvetica 9 bold', anchor="e", width = 15)
         
         self.deck_colors_options_selection = StringVar(self.root)
         self.deck_colors_options_list = []
@@ -288,8 +270,8 @@ class WindowUI:
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
-        self.deck_colors_options = OptionMenu(self.deck_colors_frame, self.deck_colors_options_selection, *self.deck_colors_options_list, style="my.TMenubutton")
-        self.deck_colors_options.config(width=11)
+        self.deck_colors_options = OptionMenu(self.root, self.deck_colors_options_selection, *self.deck_colors_options_list, style="my.TMenubutton")
+        self.deck_colors_options.config(width=14)
         
         self.refresh_button_frame = Frame(self.root)
         self.refresh_button = Button(self.refresh_button_frame, command=self.UpdateCallback, text="Refresh");
@@ -331,21 +313,21 @@ class WindowUI:
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection, self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
         self.stat_options.config(width=11) 
         
-        self.current_draft_frame.grid(row = 0, column = 0, columnspan = 1)
-        self.deck_colors_frame.grid(row = 1, column = 0, columnspan = 1)
-        self.refresh_button_frame.grid(row = 2, column = 0, columnspan = 1, stick = 'nsew')
-        self.status_frame.grid(row = 3, column = 0, columnspan = 1, sticky = 'nsew')
-        self.pack_table_frame.grid(row = 4, column = 0, columnspan = 1, sticky = 'nsew')
-        self.missing_frame.grid(row = 5, column = 0, columnspan = 1, sticky = 'nsew')
-        self.missing_table_frame.grid(row = 6, column = 0, columnspan = 1, sticky = 'nsew')
-        self.stat_frame.grid(row=7, column = 0, columnspan = 1, sticky = 'nsew') 
-        self.stat_table.grid(row=8, column = 0, columnspan = 1, sticky = 'nsew')
-        
-        self.current_draft_label.pack(side=LEFT, expand = True, fill = None)
-        self.current_draft_value_label.pack(side=RIGHT,expand = True, fill = None)
-        self.deck_colors_label.pack(side=LEFT,expand = True, fill = None)
-        self.deck_colors_options.pack(side=RIGHT,expand = True, fill = None)
+        #self.current_draft_frame.grid(row = 0, column = 0, columnspan = 2)
+        #self.deck_colors_frame.grid(row = 1, column = 0, columnspan = 2)
+        self.refresh_button_frame.grid(row = 2, column = 0, columnspan = 2, stick = 'nsew')
+        self.status_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
+        self.pack_table_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
+        self.missing_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
+        self.missing_table_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
+        self.stat_frame.grid(row=7, column = 0, columnspan = 2, sticky = 'nsew') 
+        self.stat_table.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
+        self.current_draft_label.grid(row = 0, column = 0, columnspan = 1, sticky = 'nsew')
+        self.current_draft_value_label.grid(row = 0, column = 1, columnspan = 1, sticky = 'nsew')
+        self.deck_colors_label.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
+        self.deck_colors_options.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
         self.refresh_button.pack(expand = True, fill = "both")
+
         self.pack_pick_label.pack(expand = False, fill = None)
         self.pack_table.pack(expand = True, fill = 'both')
         self.missing_cards_label.pack(expand = False, fill = None)
@@ -859,13 +841,6 @@ class WindowUI:
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
-            add_button = Button(card_frame, text="+", width=5, command = lambda: self.UpdateCompareTable(compare_table,
-                                                               matching_cards,
-                                                               card_entry,
-                                                               self.draft.set_data["card_ratings"],
-                                                               filtered_color,
-                                                               self.draft.deck_colors,
-                                                               self.draft.deck_limits))
             clear_button = Button(popup, text="Clear", command=lambda:self.ClearCompareTable(compare_table, matching_cards))
 
             card_frame.grid(row=0, column=0, sticky="nsew")
@@ -874,7 +849,6 @@ class WindowUI:
             
             compare_table.pack(expand = True, fill = "both")
             card_entry.pack(side = LEFT, expand = True, fill = "both")
-            add_button.pack(side = RIGHT, expand = False, fill = "both")
 
             card_entry.bind("<Return>", lambda event: self.UpdateCompareTable(compare_table,
                                                                matching_cards,
@@ -883,10 +857,6 @@ class WindowUI:
                                                                filtered_color,
                                                                self.draft.deck_colors,
                                                                self.draft.deck_limits))
-            
-            #card_entry.bind("<Key>", lambda event: AutoComplete(event, 
-            #                                                    card_entry, 
-            #                                                    self.draft.set_data["card_ratings"]))
             
             popup.attributes("-topmost", True)
         except Exception as error:
