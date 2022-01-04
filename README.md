@@ -71,6 +71,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Menu Features
 
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Draft_Menus.png?raw=true)
+
 - Read Draft Logs: Read the log file from a draft by selecting File->Open. Select a .log file to read the file.
 
 - Download Set Data: Get to the Add Sets window by selecting Data->View Sets. Enter the set information and click on the ADD SET button to begin downloading the set data.
@@ -90,6 +92,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - Card Compare: Get to the Card Compare window by selecting Cards->Compare Cards. This window will allow you to compare cards that you've entered in.
     - This feature can be used to quickly compare cards for P1P1 of the Premier draft.
 	
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Card_Compare.png?raw=true)
+    
 ## Additional Features
 
 - Hotkey: The user can use the hotkey ctrl+f to toggle between minimizing and maximizing the main application window.

@@ -370,16 +370,6 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         return list_box
-    def UpdateP1P1(self, pack, pick, card_list, taken_cards, filtered_color, color_options, limits):
-        #This function will update P1P1 for the following edge cases:
-        #   - Pack 3 was reached and P1P1 was received after P1P2
-        # The result will be that the CardFilter logic receives the P1P1 data twice if P1P1 was sent before P1P2
-        if (pack == 1) and (pick == 3):
-            CL.CardFilter(card_list[0],
-                          taken_cards,
-                          filtered_color,
-                          color_options,
-                          limits)  
 
     def UpdatePackTable(self, card_list, taken_cards, filtered_color, color_options, limits):
         try:
@@ -643,8 +633,6 @@ class WindowUI:
                 selected_option = "Auto"
                 
                 self.deck_colors_options_selection.set(options_list[selected_option])
-                print("deck_colors_options_list: %s" % str(self.deck_colors_options_list))
-                print("selected color %s,%s" % (options_list[selected_option], self.deck_colors_options_selection.get()))
         except Exception as error:
             error_string = "UpdateOptions Error: %s" % error
             print(error_string)
@@ -661,15 +649,6 @@ class WindowUI:
         self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
-
-        #Addressing P1P1 edge case
-        self.UpdateP1P1(self.draft.current_pack,
-                        self.draft.current_pick,
-                        self.draft.pack_cards, 
-                        self.draft.taken_cards,
-                        filtered_color,
-                        self.draft.deck_colors,
-                        self.draft.deck_limits)
 
         self.UpdatePackTable(self.draft.pack_cards[pack_index], 
                              self.draft.taken_cards,
@@ -1170,7 +1149,7 @@ class CreateCardToolTip(object):
             tw.destroy()
             
 def Startup(argv):
-    version = 2.52
+    version = 2.53
     file_location = ""
     step_through = False
     diag_log_enabled = True
