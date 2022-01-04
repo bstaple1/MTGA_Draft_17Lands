@@ -46,7 +46,7 @@ def ExtractTypes(type_line):
        
 class DataPlatform:
     def __init__(self, version, set, draft, start_date, end_date, id):
-        self.set = set
+        self.set = set.upper()
         self.draft = draft
         self.session = ''
         self.start_date = start_date
@@ -382,6 +382,7 @@ class DataPlatform:
         return
         
     def ExportData(self):
+        print(self.set)
         try:
             output_file = self.set + "_" + self.draft + "_Data.json"
 

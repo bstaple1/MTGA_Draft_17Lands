@@ -144,7 +144,7 @@ class LogScanner:
                             event_set = event_string[count - 1]
                 
                         self.draft_type = draft_types_dict[event_type]
-                        self.draft_set = event_set
+                        self.draft_set = event_set.upper()
                         directory = "Logs\\"
                         if self.os == "MAC":
                             directory = "Logs/"
@@ -168,7 +168,7 @@ class LogScanner:
                 
                 if event_type in draft_types_dict.keys():
                     self.draft_type = draft_types_dict[event_type]
-                    self.draft_set = event_set
+                    self.draft_set = event_set.upper()
                     directory = "Logs\\"
                     if self.os == "MAC":
                         directory = "Logs/"
