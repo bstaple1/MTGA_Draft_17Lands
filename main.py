@@ -129,7 +129,7 @@ def NavigateFileLocation(os_type):
     return file_location
     
 def ReadConfig():
-    hotkey_enabled = False
+    hotkey_enabled = True
     themes_enabled = False
     images_enabled = False
     table_width = 270
