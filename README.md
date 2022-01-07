@@ -32,9 +32,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 9: Decrease the table width by setting the table_width field to 220 in the config.json file.
 
-- Step 10: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
+- Step 10: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
 
-- Step 11: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
+- Step 11: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
 
 - Step 12: Set Arena to window mode.
 
