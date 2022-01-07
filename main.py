@@ -714,25 +714,32 @@ class WindowUI:
         popup.wm_title("Set Data")
         
         try:
-            column_headers = ('SET', 'DRAFT', 'START DATE', 'END DATE')
+            DP = FE.DataPlatform(2.00)
+            sets = DP.SessionSets()
+        
+            column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
             list_box = Treeview(popup, columns = column_headers, show = 'headings')
             list_box.tag_configure('gray', background='#cccccc')
             list_box.tag_configure('bold', font=('Arial Bold', 10))
             
-            set_label = Label(popup, text="SET:")
-            draft_label = Label(popup, text="DRAFT:")
-            start_label = Label(popup, text="START DATE:")
-            end_label = Label(popup, text="END DATE:")
-            color_label = Label(popup, text="COLOR RATING:")
-            id_label = Label(popup, text="ID:")
-            choices = ["QuickDraft", "PremierDraft", "TraditionalDraft"]
+            set_label = Label(popup, text="Set:")
+            draft_label = Label(popup, text="Draft:")
+            start_label = Label(popup, text="Start Date:")
+            end_label = Label(popup, text="End Date:")
+            color_label = Label(popup, text="Color Rating:")
+            id_label = Label(popup, text="Id:")
+            draft_choices = ["QuickDraft", "PremierDraft", "TraditionalDraft"]
             
             draft_value = StringVar(self.root)
             draft_value.set('QuickDraft')
-            draft_entry = OptionMenu(popup, draft_value, choices[0], *choices)
+            draft_entry = OptionMenu(popup, draft_value, draft_choices[0], *draft_choices)
             
-            set_entry = Entry(popup)
-            set_entry.insert(END, 'MID')
+            set_choices = [k for k, v in sets.items()]
+            
+            set_value = StringVar(self.root)
+            set_value.set('QuickDraft')
+            set_entry = OptionMenu(popup, set_value, set_choices[0], *set_choices)
+            
             start_entry = Entry(popup)
             start_entry.insert(END, '2019-1-1')
             end_entry = Entry(popup)
@@ -748,7 +755,8 @@ class WindowUI:
                                          onvalue=1,
                                          offvalue=0)
             
-            add_button = Button(popup, command=lambda: self.AddSet(set_entry,
+            add_button = Button(popup, command=lambda: self.AddSet(DP,
+                                                                   sets[set_value.get()],
                                                                    draft_value,
                                                                    start_entry,
                                                                    end_entry,
@@ -756,7 +764,8 @@ class WindowUI:
                                                                    progress,
                                                                    list_box,
                                                                    id_entry,
-                                                                   color_checkbox_value), text="ADD SET")
+                                                                   color_checkbox_value,
+                                                                   sets), text="ADD SET")
             
             
             for count, column in enumerate(column_headers):
@@ -783,7 +792,7 @@ class WindowUI:
         add_button.grid(row=3, column=0, columnspan=8, stick = 'nsew')
         progress.grid(row=4, column=0, columnspan=8, stick = 'nsew')
 
-        self.DataViewUpdate(list_box)
+        self.DataViewUpdate(list_box, sets)
         
         popup.attributes("-topmost", True)
         
@@ -952,26 +961,30 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
-    def AddSet(self, set, draft, start, end, button, progress, list_box, id, color_rating):
+    def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets):
         button['state'] = 'disabled'
-        progress['value']=0
+        progress['value'] = 0
         self.root.update()
-        DP = FE.DataPlatform(2.00, set.get(), draft.get(), start.get(), end.get(), id.get())
+        platform.Set(set)
+        platform.DraftType(draft.get())
+        platform.StartDate(start.get())
+        platform.EndDate(end.get())
+        platform.ID(id.get())
         if color_rating.get():
-            DP.SessionColorRatings()
-        DP.SessionCardData()
+            platform.SessionColorRatings()
+        platform.SessionCardData()
         progress['value']=10
         self.root.update()
-        if(DP.SessionCardRating(self.root, progress, progress['value'])):
-            DP.ExportData()
+        if(platform.SessionCardRating(self.root, progress, progress['value'])):
+            platform.ExportData()
             progress['value']=100
         else:
             progress['value']=0
         button['state'] = 'normal'
         self.root.update()
-        self.DataViewUpdate(list_box)
+        self.DataViewUpdate(list_box, sets)
         
-    def DataViewUpdate(self, list_box):
+    def DataViewUpdate(self, list_box, sets):
         #Delete the content of the list box
         for row in list_box.get_children():
                 list_box.delete(row)
@@ -983,6 +996,7 @@ class WindowUI:
                     if name_segments[1] in LS.draft_types_dict.keys():
                         #Retrieve the start and end dates
                         try:
+                            set_name = list(sets.keys())[list(sets.values()).index(name_segments[0].lower())]
                             json_data = {}
                             with open(filename, 'r') as json_file:
                                 json_data = json_file.read()
@@ -990,11 +1004,11 @@ class WindowUI:
                             if json_data["meta"]["version"] == 1:
                                 print(json_data["meta"]["date_range"])
                                 start_date, end_date = json_data["meta"]["date_range"].split("->")
-                                list_box.insert("", index = 0, values = (name_segments[0], name_segments[1], start_date, end_date))
+                                list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
                             elif json_data["meta"]["version"] == 2:
                                 start_date = json_data["meta"]["start_date"] 
                                 end_date = json_data["meta"]["end_date"] 
-                                list_box.insert("", index = 0, values = (name_segments[0], name_segments[1], start_date, end_date))
+                                list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
                         except Exception as error:
                             error_string = "DataViewUpdate Error: %s" % error
                             print(error_string)
@@ -1149,7 +1163,7 @@ class CreateCardToolTip(object):
             tw.destroy()
             
 def Startup(argv):
-    version = 2.53
+    version = 2.54
     file_location = ""
     step_through = False
     diag_log_enabled = True

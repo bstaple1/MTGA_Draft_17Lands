@@ -45,12 +45,12 @@ def ExtractTypes(type_line):
     return types
        
 class DataPlatform:
-    def __init__(self, version, set, draft, start_date, end_date, id):
-        self.set = set.upper()
-        self.draft = draft
-        self.session = ''
-        self.start_date = start_date
-        self.end_date = end_date
+    def __init__(self, version):
+        self.set = ""
+        self.draft = ""
+        self.session = ""
+        self.start_date = ""
+        self.end_date = ""
         self.id = id
         self.card_ratings = {}
         self.combined_data = {}
@@ -59,12 +59,26 @@ class DataPlatform:
         #self.driver = webdriver.Firefox(executable_path = self.driver_path)
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
         self.combined_data["meta"]["version"] = version
-        self.combined_data["meta"]["start_date"] = self.start_date
-        self.combined_data["meta"]["end_date"] = self.end_date
         self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
         
     #def __del__(self):
     #    self.driver.quit() # clean up driver when we are cleaned up
+    def Set(self, set):
+        self.set = set.upper()
+        
+    def DraftType(self, draft_type):
+        self.draft = draft_type
+        
+    def StartDate(self, start_date):
+        self.start_date = start_date
+        self.combined_data["meta"]["start_date"] = self.start_date
+        
+    def EndDate(self, end_date):
+        self.end_date = end_date
+        self.combined_data["meta"]["end_date"] = self.end_date
+        
+    def ID(self, id):
+        self.id = id
 
     def SessionCardData(self):
         try:
@@ -134,7 +148,25 @@ class DataPlatform:
             self.ProcessCardRatings(card)
             
         return result 
-
+        
+    def SessionSets(self):
+        sets = {}
+        try:
+            url = "https://api.scryfall.com/sets"
+            url_data = urllib.request.urlopen(url).read()
+            
+            set_json_data = json.loads(url_data)
+            sets = self.ProcessSetData(sets, set_json_data["data"])
+            while set_json_data["has_more"] == True:
+                url = set_json_data["next_page"]
+                url_data = urllib.request.urlopen(url).read()
+                set_json_data = json.loads(url_data)
+                sets = self.ProcessSetData(sets, set_json_data["data"])
+                
+                
+        except Exception as error:
+            print("SessionCardData Error: %s" % error)
+        return sets   
     def SessionColorRatings(self):
         try:
             import selenium
@@ -381,6 +413,24 @@ class DataPlatform:
         #print("combined_data: %s" % str(combined_data))
         return
         
+    def ProcessSetData (self, sets, data):
+        counter = 0
+        for set in data:
+            try:
+                set_name = set["name"]
+                set_code = set["code"]
+                
+                if (len(set_code) == 3) and (set["set_type"] == "expansion"):
+                    sets[set_name] = set_code
+                    counter += 1
+                    
+                    # Only retrieve the last 10 sets
+                    if counter >= 10:
+                        break
+            except Exception as error:
+                print("ProcessSetData Error: %s" % error)
+        
+        return sets
     def ExportData(self):
         print(self.set)
         try:

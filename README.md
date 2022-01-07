@@ -11,7 +11,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 3: Double-click the Draft Tool executable (.exe) to start the application.
 
-- Step 4: Start the draft in Arena.
+- Step 4: Download the sets that you plan on using (Data->View Sets).
+
+- Step 5: Start the draft in Arena.
 
 ## Steps for Mac
 - Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file or clone the repository.
@@ -30,15 +32,17 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 8: Open the config.json file in a text editor and change the "hotkey_enabled" field from "true" to "false".
 
-- Step 9: Decrease the table width by setting the table_width field to 220 in the config.json file.
+- Step 9: Decrease the table width by setting the "table_width" field to 220 in the config.json file.
 
 - Step 10: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
 
-- Step 11: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC" without quotes.
+- Step 11: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC".
 
 - Step 12: Set Arena to window mode.
 
-- Step 13: Start the draft in Arena.
+- Step 13: Download the sets that you plan on using (Data->View Sets).
+
+- Step 14: Start the draft in Arena.
 
 ## UI Features
 
