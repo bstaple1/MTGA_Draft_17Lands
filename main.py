@@ -68,6 +68,7 @@ from tkinter.ttk import *
 from tkinter import filedialog
 from pynput.keyboard import Key, Listener, KeyCode
 from datetime import date
+import tkinter.messagebox as MessageBox
 import urllib
 import json
 import os
@@ -75,13 +76,26 @@ import time
 import getopt
 import sys
 import io
+import win32api
 import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-# Functions
-##
+__version__= 2.54
+
+def CheckVersion(platform, version):
+    return_value = False
+    repository_version = platform.SessionRepositoryVersion()
+    repository_version = int(repository_version)
+    client_version = round(float(version) * 100)
+    if repository_version > client_version:
+        return_value = True
+        
+        
+    repository_version = round(float(repository_version) / 100.0, 2)
+    return return_value, repository_version
+        
 def OnPress(key, ui):
     if key == KeyCode.from_char('\x06'): #CTRL+F
         ui.WindowLift(ui.root)
@@ -213,11 +227,7 @@ def CopyClipboard(copy):
 class WindowUI:
     def __init__(self, root, filename, step_through, diag_log_enabled, os, themes, images, table_width):
         self.root = root
-        
         self.images_enabled = images
-        if themes:
-            self.root.tk.call("source", "sun-valley.tcl")
-            self.root.tk.call("set_theme", "dark")
             
         self.filename = filename
         self.step_through = step_through
@@ -271,7 +281,7 @@ class WindowUI:
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
         self.deck_colors_options = OptionMenu(self.root, self.deck_colors_options_selection, *self.deck_colors_options_list, style="my.TMenubutton")
-        self.deck_colors_options.config(width=14)
+        self.deck_colors_options.config(width=10)
         
         self.refresh_button_frame = Frame(self.root)
         self.refresh_button = Button(self.refresh_button_frame, command=self.UpdateCallback, text="Refresh");
@@ -315,7 +325,7 @@ class WindowUI:
         
         #self.current_draft_frame.grid(row = 0, column = 0, columnspan = 2)
         #self.deck_colors_frame.grid(row = 1, column = 0, columnspan = 2)
-        self.refresh_button_frame.grid(row = 2, column = 0, columnspan = 2, stick = 'nsew')
+        self.refresh_button_frame.grid(row = 2, column = 0, columnspan = 2, sticky = 'nsew')
         self.status_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
         self.pack_table_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
         self.missing_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
@@ -325,7 +335,7 @@ class WindowUI:
         self.current_draft_label.grid(row = 0, column = 0, columnspan = 1, sticky = 'nsew')
         self.current_draft_value_label.grid(row = 0, column = 1, columnspan = 1, sticky = 'nsew')
         self.deck_colors_label.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
-        self.deck_colors_options.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
+        self.deck_colors_options.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsw')
         self.refresh_button.pack(expand = True, fill = "both")
 
         self.pack_pick_label.pack(expand = False, fill = None)
@@ -339,10 +349,35 @@ class WindowUI:
         self.check_timestamp = 0
         self.previous_timestamp = 0
         
-        self.UpdateUI()
-        
-        self.deck_colors_options_selection.trace("w", self.UpdateCallback)
         self.root.attributes("-topmost", True)
+        
+        #Version Check
+        if self.os == "PC":
+            try:
+                DP = FE.DataPlatform()
+                
+                new_version_found, new_version = CheckVersion(DP, __version__)
+                if new_version_found:
+                    message_string = "Update client %.2f to version %.2f" % (__version__, new_version)
+                    message_box = MessageBox.askyesno(title="Update", message=message_string)
+                    if message_box == True:
+                        DP.SessionRepositoryDownload("MTGA_Draft_Tool_V0254.exe")
+                        self.root.destroy()
+                        win32api.ShellExecute(0, "open", "MTGA_Draft_Tool_V0254.exe", None, None, 10)
+    
+                    else:
+                        self.UpdateUI()
+                        self.deck_colors_options_selection.trace("w", self.UpdateCallback)
+                else:
+                    self.UpdateUI()
+                    self.deck_colors_options_selection.trace("w", self.UpdateCallback)
+    
+            except Exception as error:
+                print(error)
+        else:
+            self.UpdateUI()
+            self.deck_colors_options_selection.trace("w", self.UpdateCallback)   
+
 
         
     def CreateHeader(self, frame, height, headers, total_width):
@@ -714,7 +749,7 @@ class WindowUI:
         popup.wm_title("Set Data")
         
         try:
-            DP = FE.DataPlatform(2.00)
+            DP = FE.DataPlatform()
             sets = DP.SessionSets()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
@@ -765,7 +800,8 @@ class WindowUI:
                                                                    list_box,
                                                                    id_entry,
                                                                    color_checkbox_value,
-                                                                   sets), text="ADD SET")
+                                                                   sets,
+                                                                   2.00), text="ADD SET")
             
             
             for count, column in enumerate(column_headers):
@@ -961,7 +997,7 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
-    def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets):
+    def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets, version):
         button['state'] = 'disabled'
         progress['value'] = 0
         self.root.update()
@@ -970,6 +1006,7 @@ class WindowUI:
         platform.StartDate(start.get())
         platform.EndDate(end.get())
         platform.ID(id.get())
+        platform.Version(version)
         if color_rating.get():
             platform.SessionColorRatings()
         platform.SessionCardData()
@@ -1163,7 +1200,6 @@ class CreateCardToolTip(object):
             tw.destroy()
             
 def Startup(argv):
-    version = 2.54
     file_location = ""
     step_through = False
     diag_log_enabled = True
@@ -1189,7 +1225,7 @@ def Startup(argv):
     print(os)
     
     window = Tk()
-    window.title("Magic Draft %.2f" % version)
+    window.title("Magic Draft %.2f" % __version__)
     window.resizable(width = True, height = True)
     
     if file_location == "":

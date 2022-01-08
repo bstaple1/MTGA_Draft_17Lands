@@ -45,7 +45,7 @@ def ExtractTypes(type_line):
     return types
        
 class DataPlatform:
-    def __init__(self, version):
+    def __init__(self):
         self.set = ""
         self.draft = ""
         self.session = ""
@@ -58,7 +58,6 @@ class DataPlatform:
         #self.driver_path = os.getcwd() + '\geckodriver.exe'
         #self.driver = webdriver.Firefox(executable_path = self.driver_path)
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
-        self.combined_data["meta"]["version"] = version
         self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
         
     #def __del__(self):
@@ -79,6 +78,35 @@ class DataPlatform:
         
     def ID(self, id):
         self.id = id
+        
+    def Version(self, version):
+        self.combined_data["meta"]["version"] = version
+        
+    def SessionRepositoryVersion(self):
+        version = ""
+        try:
+            url = "https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/version.txt"
+            url_data = urllib.request.urlopen(url).read()
+            
+            version = self.ProcessRepositoryVersionData(url_data)
+                
+        except Exception as error:
+            print("SessionRepositoryVersion Error: %s" % error)
+        return version
+
+    def SessionRepositoryDownload(self, filename):
+        version = ""
+        try:
+            url = "https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/%s" % filename
+            print(url)
+            url_data = urllib.request.urlopen(url).read()
+            
+            with open(filename,'wb') as file:
+                file.write(url_data)   
+        except Exception as error:
+            print("SessionRepositoryDownload Error: %s" % error)
+        return version  
+
 
     def SessionCardData(self):
         try:
@@ -367,8 +395,7 @@ class DataPlatform:
             except Exception as error:
                 print("ProcessCardData Error: %s" % error)
         #print("combined_data: %s" % str(combined_data))
-        return arena_id
-
+        return arena_id   
         
     def ProcessCardRatings (self, card):
         try:
@@ -431,6 +458,11 @@ class DataPlatform:
                 print("ProcessSetData Error: %s" % error)
         
         return sets
+        
+    def ProcessRepositoryVersionData(self, data):
+        version = round(float(data.decode("ascii")) * 100)
+        
+        return version
     def ExportData(self):
         print(self.set)
         try:

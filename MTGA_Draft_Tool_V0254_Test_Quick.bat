@@ -1,1 +1,0 @@
-MTGA_Draft_Tool_V0254.exe --disablediag -f "Logs\\DraftLog_VOW_QuickDraft_1640794866.log"

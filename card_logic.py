@@ -336,22 +336,21 @@ def CardRating(card_data, limits):
         
         if (winrate != 0) and (upper_limit != lower_limit):
             #Calculate the ALSA bonus
-            alsa_bonus = ((9 - card_data["alsa"]) / 8) * 0.5
+            alsa_bonus = ((15 - card_data["alsa"]) / 10) * .25
             
             #Calculate IWD penalty
             iwd_penalty = 0
             
             if card_data["iwd"] < 0:
-                iwd_penalty = (max(card_data["iwd"], -10) / 10) * 3
-        
-            winrate = winrate + iwd_penalty + alsa_bonus
+                iwd_penalty = (max(card_data["iwd"], -10) / 10) * .25      
             
-            if winrate > limits["upper"]:
-                winrate = limits["upper"]
-            elif winrate < limits["lower"]:
-                winrate = limits["lower"]
+            winrate = min(winrate, limits["upper"])
+            winrate = max(winrate, limits["lower"])
             
             rating = ((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0
+            
+            #Make adjustments
+            rating += alsa_bonus + iwd_penalty
             
             rating = round(rating, 1)
             
