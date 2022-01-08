@@ -361,9 +361,9 @@ class WindowUI:
                     message_string = "Update client %.2f to version %.2f" % (__version__, new_version)
                     message_box = MessageBox.askyesno(title="Update", message=message_string)
                     if message_box == True:
-                        DP.SessionRepositoryDownload("MTGA_Draft_Tool_V0254.exe")
+                        DP.SessionRepositoryDownload("setup.exe")
                         self.root.destroy()
-                        win32api.ShellExecute(0, "open", "MTGA_Draft_Tool_V0254.exe", None, None, 10)
+                        win32api.ShellExecute(0, "open", "setup.exe", None, None, 10)
     
                     else:
                         self.UpdateUI()
