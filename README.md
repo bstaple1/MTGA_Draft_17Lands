@@ -9,11 +9,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box
 
-- Step 3: Double-click the executable (.exe) to start the program.
+- Step 3: Double-click setup.exe to start the install. 
 
-- Step 4: Download the sets that you plan on using (Data->View Sets).
+    - Note: The application will not work if it's placed in the Program Files folders.
 
-- Step 5: Start the draft in Arena.
+- Step 4: Go to the installed folder and double-click the executable (.exe) to start the program.
+
+- Step 5: Download the sets that you plan on using (Data->View Sets).
+
+- Step 6: Start the draft in Arena.
 
 ## Steps for Mac
 - Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file or clone the repository.
