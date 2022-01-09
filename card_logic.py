@@ -251,26 +251,36 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold):
     return colors 
 
 def CardFilter(cards, deck, color, color_options, limits):
+    alsa_weight = .25
+    iwd_weight = .25
+    try:
+        with open("config.json", "r") as config:
+                config_json = config.read()
+                config_data = json.loads(config_json)
+                alsa_weight = config_data["card_logic"]["alsa_weight"]
+                iwd_weight = config_data["card_logic"]["iwd_weight"]
+    except Exception as error:
+        print("CardFilter Error: %s" % error)
     if color == "AI":
-        filtered_cards = CardAIFilter(cards, deck, color_options, limits)
+        filtered_cards = CardAIFilter(cards, deck, color_options, limits, alsa_weight, iwd_weight)
     else:
-        filtered_cards = CardColorFilter(cards, color, limits)
+        filtered_cards = CardColorFilter(cards, color, limits, alsa_weight, iwd_weight)
     return filtered_cards
-def CardColorFilter(card_list, color, limits):
+def CardColorFilter(card_list, color, limits, alsa_weight, iwd_weight):
     try:
         filtered_list = []
         for card in card_list:
             for deck_color in card["deck_colors"].keys():
                 if deck_color == color:
                     selected_card = card
-                    selected_card["rating_filter"] = CardRating(card["deck_colors"][color], limits[color])
-                    selected_card["rating_all"] = CardRating(card["deck_colors"]["All Decks"], limits["All Decks"])
+                    selected_card["rating_filter"] = CardRating(card["deck_colors"][color], limits[color], alsa_weight, iwd_weight)
+                    selected_card["rating_all"] = CardRating(card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight)
                     filtered_list.append(selected_card)
     except Exception as error:
         print("CardColorFilter Error: %s" % error)
     return filtered_list
  
-def CardAIFilter(pack, deck, color_options, limits):
+def CardAIFilter(pack, deck, color_options, limits, alsa_weight, iwd_weight):
     try:
         filtered_list = []
         color_limit_start = 15
@@ -283,7 +293,7 @@ def CardAIFilter(pack, deck, color_options, limits):
         
         for card in pack:
             selected_card = card
-            selected_card["rating_all"] = CardRating(selected_card["deck_colors"]["All Decks"], limits["All Decks"])
+            selected_card["rating_all"] = CardRating(selected_card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight)
             
             selected_card["rating_filter"] = CardAIRating(selected_card,
                                                           deck,
@@ -327,7 +337,7 @@ def DeckColorLimits(cards, color):
         print("DeckColorLimits Error: %s" % error)
     return upper_limit, lower_limit
 
-def CardRating(card_data, limits):
+def CardRating(card_data, limits, alsa_weight, iwd_weight):
     rating = 0
     winrate = card_data["gihwr"]
     try:
@@ -336,13 +346,13 @@ def CardRating(card_data, limits):
         
         if (winrate != 0) and (upper_limit != lower_limit):
             #Calculate the ALSA bonus
-            alsa_bonus = ((15 - card_data["alsa"]) / 10) * .25
+            alsa_bonus = ((15 - card_data["alsa"]) / 10) * alsa_weight
             
             #Calculate IWD penalty
             iwd_penalty = 0
             
             if card_data["iwd"] < 0:
-                iwd_penalty = (max(card_data["iwd"], -10) / 10) * .25      
+                iwd_penalty = (max(card_data["iwd"], -10) / 10) * iwd_weight     
             
             winrate = min(winrate, limits["upper"])
             winrate = max(winrate, limits["lower"])
@@ -353,6 +363,9 @@ def CardRating(card_data, limits):
             rating += alsa_bonus + iwd_penalty
             
             rating = round(rating, 1)
+            
+            rating = min(rating, 5.0)
+            rating = max(rating, 0)
             
     except Exception as error:
         print("CardRating Error: %s" % error)
@@ -657,15 +670,22 @@ def ManaBase(deck):
         mana_types = dict(sorted(mana_types.items(), key=lambda t: t[1]['count']))
         #Add x lands with a distribution set by the mana types
         for index, land in enumerate(mana_types):
-            land_count = round((mana_types[land]["count"] / total_count) * number_of_lands, 0)
-            #Minimum of 2 lands for a  splash
-            if (land_count == 1) and (number_of_lands > 1):
-                land_count = 2
+            if (mana_types[land]["count"] == 1) and (number_of_lands > 1):
+                land_count = 1
                 number_of_lands -= 1
+            else:
+                land_count = round((mana_types[land]["count"] / total_count) * number_of_lands, 0)
+                print((mana_types[land]["count"] / total_count) * number_of_lands)
+                print("Land Count: %d, %s" % (land_count, land))
+                #Minimum of 2 lands for a  splash
+                if (land_count == 1) and (number_of_lands > 1):
+                    land_count = 2
+                    number_of_lands -= 1
             
             if mana_types[land]["count"] != 0:
                 card = {"colors" : mana_types[land]["color"], "types" : "Land", "cmc" : 0.0, "name" : land, "count" : land_count}
                 combined_deck.append(card) 
+            input("continue")
             
     except Exception as error:
         print("ManaBase Error: %s" % error)
@@ -680,18 +700,21 @@ def SuggestDeck(taken_cards, color_options, limits):
     colors_max = 3
     used_list = []
     sorted_decks = {}
-   
+    iwd_weight = 0.25
+    alsa_weight = 0.25
     try:
         #Retrieve configuration
         with open("config.json", "r") as config:
             config_json = config.read()
             config_data = json.loads(config_json)
+            alsa_weight = config_data["card_logic"]["alsa_weight"]
+            iwd_weight = config_data["card_logic"]["iwd_weight"]
             minimum_creature_count = config_data["card_logic"]["minimum_creatures"]
             minimum_noncreature_count = config_data["card_logic"]["minimum_noncreatures"]
             ratings_threshold = config_data["card_logic"]["ratings_threshold"]
             deck_builder_type = config_data["card_logic"]["deck_types"]
         #Calculate the base ratings
-        filtered_cards = CardColorFilter(taken_cards, "All Decks", limits)
+        filtered_cards = CardColorFilter(taken_cards, "All Decks", limits, alsa_weight, iwd_weight)
         
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
@@ -713,7 +736,7 @@ def SuggestDeck(taken_cards, color_options, limits):
         decks = {}
         for color in filtered_colors:
             for type in deck_builder_type.keys():
-                deck, sideboard_cards = BuildDeck(deck_builder_type[type], taken_cards, color, limits, minimum_noncreature_count)
+                deck, sideboard_cards = BuildDeck(deck_builder_type[type], taken_cards, color, limits, minimum_noncreature_count, alsa_weight, iwd_weight)
                 rating = DeckRating(deck, deck_builder_type[type], color)
                 if rating >= ratings_threshold:
                     
@@ -736,7 +759,7 @@ def SuggestDeck(taken_cards, color_options, limits):
 
     return sorted_decks
     
-def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count):
+def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_weight, iwd_weight):
     minimum_distribution = deck_type["distribution"]
     maximum_card_count = deck_type["maximum_card_count"]
     maximum_deck_size = 40
@@ -746,7 +769,7 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count):
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardColorFilter(cards, color, limits)
+        filtered_cards = CardColorFilter(cards, color, limits, alsa_weight, iwd_weight)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color))

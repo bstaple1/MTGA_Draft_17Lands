@@ -7,6 +7,8 @@
         "table_width": 270
     },
     "card_logic": {
+        "alsa_weight" : 0.25,
+        "iwd_weight" : 0.25,
         "minimum_creatures": 13,
         "minimum_noncreatures": 6,
         "ratings_threshold": 500,

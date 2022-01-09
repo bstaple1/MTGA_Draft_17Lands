@@ -1020,6 +1020,8 @@ class WindowUI:
         button['state'] = 'normal'
         self.root.update()
         self.DataViewUpdate(list_box, sets)
+        self.DraftReset(True)
+        self.UpdateCallback()
         
     def DataViewUpdate(self, list_box, sets):
         #Delete the content of the list box
