@@ -82,7 +82,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.55
+__version__= 2.56
 
 def CheckVersion(platform, version):
     return_value = False
@@ -352,6 +352,7 @@ class WindowUI:
         self.root.attributes("-topmost", True)
         
         #Version Check
+        update_flag = False
         if self.os == "PC":
             try:
                 DP = FE.DataPlatform()
@@ -366,18 +367,19 @@ class WindowUI:
                         win32api.ShellExecute(0, "open", "setup.exe", None, None, 10)
     
                     else:
-                        self.UpdateUI()
-                        self.deck_colors_options_selection.trace("w", self.UpdateCallback)
+                        update_flag = True
                 else:
-                    self.UpdateUI()
-                    self.deck_colors_options_selection.trace("w", self.UpdateCallback)
+                    update_flag = True
     
             except Exception as error:
                 print(error)
+                update_flag = True
         else:
-            self.UpdateUI()
-            self.deck_colors_options_selection.trace("w", self.UpdateCallback)   
+            update_flag = True
 
+        if update_flag:
+           self.UpdateUI()
+           self.deck_colors_options_selection.trace("w", self.UpdateCallback)  
 
         
     def CreateHeader(self, frame, height, headers, total_width):
@@ -1001,7 +1003,7 @@ class WindowUI:
         button['state'] = 'disabled'
         progress['value'] = 0
         self.root.update()
-        platform.Set(set)
+        platform.Sets(set)
         platform.DraftType(draft.get())
         platform.StartDate(start.get())
         platform.EndDate(end.get())
@@ -1035,7 +1037,10 @@ class WindowUI:
                     if name_segments[1] in LS.draft_types_dict.keys():
                         #Retrieve the start and end dates
                         try:
-                            set_name = list(sets.keys())[list(sets.values()).index(name_segments[0].lower())]
+                            print(sets.values())
+                            main_sets = [v[0] for k, v in sets.items()]
+                            print(main_sets)
+                            set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
                             json_data = {}
                             with open(filename, 'r') as json_file:
                                 json_data = json_file.read()

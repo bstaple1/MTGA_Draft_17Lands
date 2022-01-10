@@ -8,15 +8,15 @@ DefaultGroupName=MtgaDraftTool
 LicenseFile=LICENSE
 UninstallDisplayIcon={app}\MtgaDraftTool.exe
 Compression=lzma2
-UsePreviousAppDir=no
+UsePreviousAppDir=yes
 SolidCompression=yes
 OutputDir={app}
 
 [Files]
-Source: "MTGA_Draft_Tool_V0255.exe"; DestDir: "{app}"
+Source: "MTGA_Draft_Tool.exe"; DestDir: "{app}"
 Source: "VOW_PremierDraft_Data.json"; DestDir: "{app}"
 Source: "config.json"; DestDir: "{app}"
-Source: "README.md"; DestDir: "{app}"; Flags: isreadme
+Source: "README.md"; DestDir: "{app}"
 
 [Icons]
 Name: "{group}\MtgaDraftTool"; Filename: "{app}\MTGA_Draft_Tool_V0254.exe"

@@ -46,7 +46,7 @@ def ExtractTypes(type_line):
        
 class DataPlatform:
     def __init__(self):
-        self.set = ""
+        self.sets = []
         self.draft = ""
         self.session = ""
         self.start_date = ""
@@ -62,8 +62,8 @@ class DataPlatform:
         
     #def __del__(self):
     #    self.driver.quit() # clean up driver when we are cleaned up
-    def Set(self, set):
-        self.set = set.upper()
+    def Sets(self, sets):
+        self.sets = sets
         
     def DraftType(self, draft_type):
         self.draft = draft_type
@@ -109,27 +109,27 @@ class DataPlatform:
 
 
     def SessionCardData(self):
-        try:
             arena_id = int(self.id)
-            #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
-            url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (self.set)
-            print(url)
-            url_data = urllib.request.urlopen(url).read()
-            
-            set_json_data = json.loads(url_data)
-            #print(set_json_data)
-            arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
-            
-            while set_json_data["has_more"] == True:
-                url = set_json_data["next_page"]
-                url_data = urllib.request.urlopen(url).read()
-                set_json_data = json.loads(url_data)
-                arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
+            for set in self.sets:
+                try:
+                    #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
+                    url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (set)
+                    print(url)
+                    url_data = urllib.request.urlopen(url).read()
+                    
+                    set_json_data = json.loads(url_data)
+                    #print(set_json_data)
+                    arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
+                    
+                    while set_json_data["has_more"] == True:
+                        url = set_json_data["next_page"]
+                        url_data = urllib.request.urlopen(url).read()
+                        set_json_data = json.loads(url_data)
+                        arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
+                        
                 
-            print(len(self.card_list))
-                
-        except Exception as error:
-            print("SessionCardData Error: %s" % error)
+                except Exception as error:
+                    print("SessionCardData Error: %s" % error)
         
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
@@ -140,7 +140,7 @@ class DataPlatform:
             while retry:
                 
                 try:
-                    url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (self.set, self.draft, self.start_date, self.end_date)
+                    url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (self.sets[0], self.draft, self.start_date, self.end_date)
                     
                     if color != "All Decks":
                         url += "&colors=" + color
@@ -216,9 +216,10 @@ class DataPlatform:
                 EC.presence_of_element_located((By.ID, "expansion"))
             )
             
-            if len(self.set):
-                Select(element).select_by_value(self.set)
-                print("Set: %s" % self.set)
+            if len(self.sets):
+                selected_set = self.sets[0]
+                Select(element).select_by_value(selected_set)
+                print("Set: %s" % self.sets)
             
             #Set the start date
             #start_date_attribute = self.driver.find_element_by_id("start_date_1")
@@ -448,7 +449,11 @@ class DataPlatform:
                 set_code = set["code"]
                 
                 if (len(set_code) == 3) and (set["set_type"] == "expansion"):
-                    sets[set_name] = set_code
+                    sets[set_name] = []
+                    sets[set_name].append(set_code)
+                    #Add mystic archives to strixhaven
+                    if set_code == "stx":
+                        sets[set_name].append("sta")
                     counter += 1
                     
                     # Only retrieve the last 10 sets
@@ -464,9 +469,8 @@ class DataPlatform:
         
         return version
     def ExportData(self):
-        print(self.set)
         try:
-            output_file = self.set + "_" + self.draft + "_Data.json"
+            output_file = self.sets[0] + "_" + self.draft + "_Data.json"
 
             with open(output_file, 'w') as f:
                 json.dump(self.combined_data, f)
