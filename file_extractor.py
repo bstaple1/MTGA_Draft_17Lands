@@ -6,6 +6,7 @@ import re
 import json
 import urllib.request
 import datetime
+import log_scanner as LS
 from datetime import date
 from urllib.parse import quote as urlencode
 #TYPE_CARD_RATING  = "0"
@@ -45,8 +46,10 @@ def ExtractTypes(type_line):
     return types
        
 class DataPlatform:
-    def __init__(self):
+    def __init__(self, diag_log_file, diag_log_enabled):
         self.sets = []
+        self.diag_log_file = diag_log_file
+        self.diag_log_enabled = diag_log_enabled
         self.draft = ""
         self.session = ""
         self.start_date = ""
@@ -60,8 +63,6 @@ class DataPlatform:
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
         self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
         
-    #def __del__(self):
-    #    self.driver.quit() # clean up driver when we are cleaned up
     def Sets(self, sets):
         self.sets = sets
         
@@ -98,7 +99,6 @@ class DataPlatform:
         version = ""
         try:
             url = "https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/%s" % filename
-            print(url)
             url_data = urllib.request.urlopen(url).read()
             
             with open(filename,'wb') as file:
@@ -114,11 +114,10 @@ class DataPlatform:
                 try:
                     #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
                     url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (set)
-                    print(url)
                     url_data = urllib.request.urlopen(url).read()
                     
                     set_json_data = json.loads(url_data)
-                    #print(set_json_data)
+
                     arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
                     
                     while set_json_data["has_more"] == True:
@@ -129,7 +128,9 @@ class DataPlatform:
                         
                 
                 except Exception as error:
-                    print("SessionCardData Error: %s" % error)
+                    error_string = "SessionCardData Error: %s" % error
+                    print(error_string)     
+                    LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
@@ -145,7 +146,6 @@ class DataPlatform:
                     if color != "All Decks":
                         url += "&colors=" + color
                         
-                    print(url)
                     url_data = urllib.request.urlopen(url).read()
                     
                     set_json_data = json.loads(url_data)
@@ -159,7 +159,9 @@ class DataPlatform:
                     time.sleep(5)
                 
                 except Exception as error:
-                    print("SessionCardRating Error: %s" % error)
+                    error_string = "SessionCardRating Error: %s" % error
+                    print(error_string)     
+                    LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
                     time.sleep(15)
                     
             if result:
@@ -171,7 +173,6 @@ class DataPlatform:
             time.sleep(2)
             
         self.combined_data["card_ratings"] = {}
-        print("List Length %d" % len(self.card_list))
         for card in self.card_list:
             self.ProcessCardRatings(card)
             
@@ -193,7 +194,9 @@ class DataPlatform:
                 
                 
         except Exception as error:
-            print("SessionCardData Error: %s" % error)
+            error_string = "SessionSets Error: %s" % error
+            print(error_string)     
+            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         return sets   
     def SessionColorRatings(self):
         try:
@@ -216,35 +219,46 @@ class DataPlatform:
                 EC.presence_of_element_located((By.ID, "expansion"))
             )
             
+            #Change the set
             if len(self.sets):
-                selected_set = self.sets[0]
+                selected_set = self.sets[0].upper()
                 Select(element).select_by_value(selected_set)
-                print("Set: %s" % self.sets)
+                
+            #Change the draft type
+            element = driver.find_element_by_xpath("//*[@id='format']")
+            selected_set = self.draft
+            Select(element).select_by_value(selected_set)
             
             #Set the start date
-            #start_date_attribute = self.driver.find_element_by_id("start_date_1")
-            #if len(start_date):
-            #    start_date_attribute.clear()
-            #    start_date_attribute.send_keys(start_date)
-            #
-            #print("Start Date: %s" % start_date_attribute.get_attribute("value"))
-            #
-            ##Set the end date
-            #end_date_attribute = self.driver.find_element_by_id("end_date_1")
-            #if len(end_date):
-            #    end_date_attribute.clear()
-            #    end_date_attribute.send_keys(end_date)
-            #    
+            start_date_attribute = driver.find_element_by_id("start_date_1")
+            if len(self.start_date):
+                date_segments = self.start_date.split("-")
+                formatted_date = "%s/%s/%s" % (date_segments[2], date_segments[1], date_segments[0])
+                start_date_attribute.clear()
+                start_date_attribute.send_keys(formatted_date)
+            
+            print("Start Date: %s" % start_date_attribute.get_attribute("value"))
+            
+            #Set the end date
+            end_date_attribute = driver.find_element_by_id("end_date_1")
+            if len(self.end_date):
+                date_segments = self.end_date.split("-")
+                formatted_date = "%s/%s/%s" % (date_segments[2], date_segments[1], date_segments[0])
+                end_date_attribute.clear()
+                end_date_attribute.send_keys(formatted_date)
+                
             #print("End Date: %s" % end_date_attribute.get_attribute("value")) 
                 
             #self.combined_data["meta"]["date_range"] = "%s -> %s" % (start_date_attribute.get_attribute("value"), end_date_attribute.get_attribute("value"))   
-                
             time.sleep(5)
             
             self.RetrieveColorRatings(driver)
-                
+            
+            driver.quit()    
         except Exception as error:
-            print(error)        
+            error_string = "SessionColorRatings Error: %s" % error
+            print(error_string)     
+            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
             
     def RetrieveCardRatingsUrl(self, colors, cards):  
         result = True
@@ -320,11 +334,8 @@ class DataPlatform:
             from selenium.webdriver.common.by import By
         
             table_class = driver.find_element_by_xpath("//*[@class='ui celled inverted selectable unstackable compact table color-performance']")
-            print(table_class)
             tbody = table_class.find_element_by_tag_name('tbody')
             table_rows = tbody.find_elements(By.TAG_NAME, "tr")
-            
-            print("table_rows: %u" % len(table_rows))
             
             self.combined_data["color_ratings"] = {}
 
@@ -333,10 +344,7 @@ class DataPlatform:
                     table_columns = row.find_elements(By.TAG_NAME, "td")
                     #print("table_columns: %u" % len(table_columns))
                     colors = table_columns[0].text
-                    print("colors: %s" % colors)
-                    print(table_columns[3].text)
                     winrate = re.sub("[^0-9^.]", "", table_columns[3].text)
-                    print("winrate: %s" % str(winrate))
                     games = int(table_columns[2].text)
                     
                     color_label = [x for x in color_ratings_dict.keys() if x in colors]
@@ -346,9 +354,6 @@ class DataPlatform:
                         if processed_colors not in self.combined_data["color_ratings"].keys():
                             self.combined_data["color_ratings"][processed_colors] = winrate
             
-            driver.quit()
-                            #print("Colors: %s, winrate: %f" % (processed_colors, winrate))
-            #print(self.card_ratings)    
             
             
             
@@ -389,7 +394,6 @@ class DataPlatform:
                     print(error)
                     card["mana_cost"] = "0"
                     card["image"] = []
-                print("%s, %s" % (card["name"], card["mana_cost"]))
                 self.card_list.append(card)
                 
                 
@@ -410,7 +414,6 @@ class DataPlatform:
             #Add logic for retrieving dual faced card info from the ratings  file
             card_sides = card_name.split(" // ") 
             matching_cards = [x for x in self.card_ratings.keys() if x in card_sides]
-            print("Card Sides: %s" % str(card_sides))
             #print("Ratings Keys: %s" % str(self.card_ratings.keys()))
             if(matching_cards):
                 ratings_card_name = matching_cards[0]
@@ -431,12 +434,9 @@ class DataPlatform:
                         self.combined_data["card_ratings"][card_id]["deck_colors"][key] = {"gihwr" :  value["gihwr"], 
                                                                                            "alsa" : value["alsa"],
                                                                                            "iwd" : value["iwd"]}
-            else:
-                print("No match for %s" % card['name']) 
             
         except Exception as error:
             print(error)
-            print("skipping %s" % card['name'])
             
         #print("combined_data: %s" % str(combined_data))
         return

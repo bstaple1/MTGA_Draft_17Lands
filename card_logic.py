@@ -42,7 +42,6 @@ def ColorAffinity(colors, card):
     return colors 
   
 def ColorBonus (deck, deck_colors, card):
-    print("deck_colors: %s" % str(deck_colors))
     color_bonus_levels = [0.0, 0.2, 0.4, 0.6, 0.8,
                           1.0, 1.0, 2.0, 2.0, 2.0, 
                           2.0, 3.0, 3.0, 3.0, 3.0, 
@@ -52,7 +51,6 @@ def ColorBonus (deck, deck_colors, card):
     color_bonus_factor = 0.0
     
     color_bonus_level = 0.0
-    #print("ColorBonus Start")
     try:                        
         card_colors = card["colors"]
         if(len(card_colors) == 0):
@@ -60,7 +58,6 @@ def ColorBonus (deck, deck_colors, card):
         else:
             matching_colors = list(filter((lambda x : x in deck_colors[-1]), card_colors))
             color_bonus_factor = len(matching_colors) / len(card_colors)
-            print("card_colors: %s, matching_colors: %s, color_bonus: %s" % (str(card_colors), str(matching_colors), str(color_bonus_factor)))
         color_bonus_level = color_bonus_levels[min(len(deck), len(color_bonus_levels) - 1)]
         
     except Exception as error:
@@ -145,7 +142,6 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
             
     except Exception as error:
         print("DeckColorSearch Error: %s" % error)
-        print(card)
     return combined_cards
     
 def ColorCmc(deck):
@@ -197,8 +193,6 @@ def DeckColors(deck, color_options, colors_max):
         # Return colors 
         sorted_colors = list(map((lambda x : x["color"]), colors))
         
-        print(sorted_colors)
-        
         #Create color permutation
         color_combination = []
         
@@ -206,12 +200,8 @@ def DeckColors(deck, color_options, colors_max):
             if count > 1:
                 color_combination.extend(combinations(sorted_colors, count))
         
-        print(color_combination)
-        
         #Convert tuples to list of strings
         color_strings = [''.join(tups) for tups in color_combination]
-        
-        print(color_strings)
         
         for color_option in color_options.keys():
             for color_string in color_strings:
@@ -391,8 +381,6 @@ def CardAIRating(card, deck, deck_colors, limits, pick_number):
     
         winrate = card["deck_colors"][color_type]["gihwr"]
 
-        print("Curve Bonus %.1f" % curve_bonus)
-        
         #Calculate card rating
         upper_limit = limits[color_type]["upper"]
         lower_limit = limits[color_type]["lower"]
@@ -500,8 +488,6 @@ def DeckRating(deck, deck_type, color):
         
         if cmc > cmc_average:
             rating -= 500
-            print("Failed CMC")
-        
         
         #Cards fit distribution
         minimum_distribution = deck_type["distribution"]
@@ -513,7 +499,6 @@ def DeckRating(deck, deck_type, color):
         for index, value in enumerate(distribution):
             if value < minimum_distribution[index]:
                 rating -= 250
-                print("Failed Distribution")
                 break
     except Exception as error:
         print("DeckRating Error: %s" % error)
@@ -626,7 +611,6 @@ def ColorSplash(cards, colors):
         
         # Modify the dictionary to include ratings
         color_affinity = list(map((lambda x : {"color" : x, "rating" : color_affinity[x]}), color_affinity.keys()))
-        print(color_affinity)
         #Remove the current colors
         filtered_colors = color_affinity[:]
         for color in color_affinity:
@@ -675,8 +659,6 @@ def ManaBase(deck):
                 number_of_lands -= 1
             else:
                 land_count = round((mana_types[land]["count"] / total_count) * number_of_lands, 0)
-                print((mana_types[land]["count"] / total_count) * number_of_lands)
-                print("Land Count: %d, %s" % (land_count, land))
                 #Minimum of 2 lands for a  splash
                 if (land_count == 1) and (number_of_lands > 1):
                     land_count = 2
@@ -685,7 +667,6 @@ def ManaBase(deck):
             if mana_types[land]["count"] != 0:
                 card = {"colors" : mana_types[land]["color"], "types" : "Land", "cmc" : 0.0, "name" : land, "count" : land_count}
                 combined_deck.append(card) 
-            input("continue")
             
     except Exception as error:
         print("ManaBase Error: %s" % error)
@@ -719,8 +700,6 @@ def SuggestDeck(taken_cards, color_options, limits):
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
         
-        print(colors)
-        
         filtered_colors = []
         
         #Collect color stats and remove colors that don't meet the minimum requirements
@@ -731,8 +710,6 @@ def SuggestDeck(taken_cards, color_options, limits):
                (creature_count + noncreature_count >= maximum_card_count)):
                 filtered_colors.append(color)
             
-        print(filtered_colors)
-        
         decks = {}
         for color in filtered_colors:
             for type in deck_builder_type.keys():
@@ -751,7 +728,6 @@ def SuggestDeck(taken_cards, color_options, limits):
                         decks[color]["deck_cards"].extend(ManaBase(deck))
         
         sorted_colors  = sorted(decks, key=lambda x: decks[x]["rating"], reverse=True)
-        print(sorted_colors)
         for color in sorted_colors:
             sorted_decks[color] = decks[color]
     except Exception as error:
@@ -776,7 +752,6 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
         
         card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Creature", "Planeswalker"], True, True, False)
         card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter"], reverse = True)
-        print(color)
         
         #Identify creatures that fit distribution
         distribution = [0,0,0,0,0,0,0]

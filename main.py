@@ -76,13 +76,12 @@ import time
 import getopt
 import sys
 import io
-import win32api
 import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.56
+__version__= 2.55
 
 def CheckVersion(platform, version):
     return_value = False
@@ -355,7 +354,8 @@ class WindowUI:
         update_flag = False
         if self.os == "PC":
             try:
-                DP = FE.DataPlatform()
+                import win32api
+                DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
                 
                 new_version_found, new_version = CheckVersion(DP, __version__)
                 if new_version_found:
@@ -751,7 +751,7 @@ class WindowUI:
         popup.wm_title("Set Data")
         
         try:
-            DP = FE.DataPlatform()
+            DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
             sets = DP.SessionSets()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')

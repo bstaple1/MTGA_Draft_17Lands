@@ -42,7 +42,8 @@ class LogScanner:
         self.os = os
         self.log_file = log_file
         self.step_through = step_through
-        self.diag_log_file = "DraftLog_%s.log" % (str(time.time()))
+        directory = "Logs\\" if self.os == "PC" else "Logs/"
+        self.diag_log_file = directory + "DraftLog_%s.log" % (str(time.time()))
         self.diag_log_enabled = diag_log_enabled
         self.set_data = None
         self.deck_colors = {}
