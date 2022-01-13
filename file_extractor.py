@@ -200,68 +200,15 @@ class DataPlatform:
         return sets   
     def SessionColorRatings(self):
         try:
-            import selenium
-            from selenium import webdriver
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.support.ui import WebDriverWait
-            from selenium.webdriver.support import expected_conditions as EC
-            from selenium.webdriver.support.ui import Select
-        
-            url = "https://www.17lands.com/color_ratings"
-            driver_path = os.getcwd() + '\geckodriver.exe'
-            driver = webdriver.Firefox(executable_path = driver_path)
-            driver.get(url)
+            #https://www.17lands.com/color_ratings/data?expansion=VOW&event_type=QuickDraft&start_date=2019-1-1&end_date=2022-01-13&combine_splash=true
+            url = "https://www.17lands.com/color_ratings/data?expansion=%s&event_type=%s&start_date=%s&end_date=%s&combine_splash=true" % (self.sets[0], self.draft, self.start_date, self.end_date)
+            print(url)
+            url_data = urllib.request.urlopen(url).read()
             
-            #Set the draft set
-            element = WebDriverWait(driver, 900).until(
-                EC.presence_of_element_located((By.ID, "expansion"))
-            )
+            color_json_data = json.loads(url_data)
+            print(color_json_data)
+            self.RetrieveColorRatings(color_json_data)
             
-            
-            #Change the set
-            if len(self.sets):
-                selected_set = self.sets[0].upper()
-                Select(element).select_by_value(selected_set)
-                
-            checkbox_attribute = driver.find_element_by_xpath("//*[@class='ui checked checkbox card-performance-checkbox']")
-            checkbox_attribute.click()
-                
-            #Change the draft type
-            element = WebDriverWait(driver, 900).until(
-                EC.presence_of_element_located((By.ID, "format"))
-            )
-            selected_set = self.draft
-            Select(element).select_by_value(selected_set)
-            
-            #Set the start date
-            start_date_attribute = driver.find_element_by_id("start_date_1")
-            if len(self.start_date):
-                date_segments = self.start_date.split("-")
-                formatted_date = "%s/%s/%s" % (date_segments[1], date_segments[2], date_segments[0])
-                start_date_attribute.clear()
-                start_date_attribute.send_keys(formatted_date)
-            
-            
-            #Set the end date
-            end_date_attribute = driver.find_element_by_id("end_date_1")
-            if len(self.end_date):
-                date_segments = self.end_date.split("-")
-                formatted_date = "%s/%s/%s" % (date_segments[1], date_segments[2], date_segments[0])
-                end_date_attribute.clear()
-                end_date_attribute.send_keys(formatted_date)
-                
-            #print("End Date: %s" % end_date_attribute.get_attribute("value")) 
-                
-            #self.combined_data["meta"]["date_range"] = "%s -> %s" % (start_date_attribute.get_attribute("value"), end_date_attribute.get_attribute("value"))   
-            element = WebDriverWait(driver, 900).until(
-                EC.presence_of_element_located((By.XPATH, "//*[@class='ui celled inverted selectable unstackable compact table color-performance']"))
-            )
-            
-            time.sleep(5)
-            
-            self.RetrieveColorRatings(driver)
-            
-            driver.quit()    
         except Exception as error:
             error_string = "SessionColorRatings Error: %s" % error
             print(error_string)     
@@ -305,7 +252,7 @@ class DataPlatform:
             self.card_ratings[land].append({colors : {"gihwr" : 0, "iwd" : 0, "alsa" : 0}})
         return result
         
-    def RetrieveColorRatings(self, driver):
+    def RetrieveColorRatings(self, colors):
         color_ratings_dict = {
             "Mono-White"     : "W",
             "Mono-Blue"      : "U",
@@ -335,37 +282,28 @@ class DataPlatform:
         }
         
         try:
-            import selenium
-            from selenium import webdriver
-            from selenium.webdriver.common.by import By
-        
-            table_class = driver.find_element_by_xpath("//*[@class='ui celled inverted selectable unstackable compact table color-performance']")
-            tbody = table_class.find_element_by_tag_name('tbody')
-            table_rows = tbody.find_elements(By.TAG_NAME, "tr")
-            
             self.combined_data["color_ratings"] = {}
-
-            for row in table_rows:
-                if row.get_attribute("class") == "color-individual":
-                    table_columns = row.find_elements(By.TAG_NAME, "td")
-                    #print("table_columns: %u" % len(table_columns))
-                    colors = table_columns[0].text
-                    winrate = re.sub("[^0-9^.]", "", table_columns[3].text)
-                    games = int(table_columns[2].text)
+            for color in colors:
+                games = color["games"]
+                if (color["is_summary"] == False) and (games > 5000):
+                    color_name = color["color_name"]
+                    winrate = round((float(color["wins"])/color["games"]) * 100, 1)
                     
-                    color_label = [x for x in color_ratings_dict.keys() if x in colors]
-                    if len(color_label) and games > 5000:   
+                    color_label = [x for x in color_ratings_dict.keys() if x in color_name]
+                    
+                    print(color_name)
+                    print(winrate)
+                    
+                    
+                    if len(color_label):
+                        
                         processed_colors = color_ratings_dict[color_label[0]]
                         
                         if processed_colors not in self.combined_data["color_ratings"].keys():
                             self.combined_data["color_ratings"][processed_colors] = winrate
             
-            
-            
-            
         except Exception as error:
             print("RetrieveColorRatings Error: %s" % error)
-            driver.quit()
           
     def ProcessCardData (self, data, arena_id):
 

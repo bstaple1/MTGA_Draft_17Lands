@@ -786,7 +786,7 @@ class WindowUI:
             
             progress = Progressbar(popup,orient=HORIZONTAL,length=100,mode='determinate')
             
-            color_checkbox_value = IntVar()
+            color_checkbox_value = IntVar(value=1)
             color_checkbox = Checkbutton(popup,
                                          variable=color_checkbox_value,
                                          onvalue=1,
