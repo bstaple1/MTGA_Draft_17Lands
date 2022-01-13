@@ -211,21 +211,25 @@ class DataPlatform:
             driver_path = os.getcwd() + '\geckodriver.exe'
             driver = webdriver.Firefox(executable_path = driver_path)
             driver.get(url)
-            checkbox_attribute = driver.find_element_by_xpath("//*[@class='ui checked checkbox card-performance-checkbox']")
-            checkbox_attribute.click()
             
             #Set the draft set
             element = WebDriverWait(driver, 900).until(
                 EC.presence_of_element_located((By.ID, "expansion"))
             )
             
+            
             #Change the set
             if len(self.sets):
                 selected_set = self.sets[0].upper()
                 Select(element).select_by_value(selected_set)
                 
+            checkbox_attribute = driver.find_element_by_xpath("//*[@class='ui checked checkbox card-performance-checkbox']")
+            checkbox_attribute.click()
+                
             #Change the draft type
-            element = driver.find_element_by_xpath("//*[@id='format']")
+            element = WebDriverWait(driver, 900).until(
+                EC.presence_of_element_located((By.ID, "format"))
+            )
             selected_set = self.draft
             Select(element).select_by_value(selected_set)
             
@@ -233,23 +237,26 @@ class DataPlatform:
             start_date_attribute = driver.find_element_by_id("start_date_1")
             if len(self.start_date):
                 date_segments = self.start_date.split("-")
-                formatted_date = "%s/%s/%s" % (date_segments[2], date_segments[1], date_segments[0])
+                formatted_date = "%s/%s/%s" % (date_segments[1], date_segments[2], date_segments[0])
                 start_date_attribute.clear()
                 start_date_attribute.send_keys(formatted_date)
             
-            print("Start Date: %s" % start_date_attribute.get_attribute("value"))
             
             #Set the end date
             end_date_attribute = driver.find_element_by_id("end_date_1")
             if len(self.end_date):
                 date_segments = self.end_date.split("-")
-                formatted_date = "%s/%s/%s" % (date_segments[2], date_segments[1], date_segments[0])
+                formatted_date = "%s/%s/%s" % (date_segments[1], date_segments[2], date_segments[0])
                 end_date_attribute.clear()
                 end_date_attribute.send_keys(formatted_date)
                 
             #print("End Date: %s" % end_date_attribute.get_attribute("value")) 
                 
             #self.combined_data["meta"]["date_range"] = "%s -> %s" % (start_date_attribute.get_attribute("value"), end_date_attribute.get_attribute("value"))   
+            element = WebDriverWait(driver, 900).until(
+                EC.presence_of_element_located((By.XPATH, "//*[@class='ui celled inverted selectable unstackable compact table color-performance']"))
+            )
+            
             time.sleep(5)
             
             self.RetrieveColorRatings(driver)
@@ -258,8 +265,7 @@ class DataPlatform:
         except Exception as error:
             error_string = "SessionColorRatings Error: %s" % error
             print(error_string)     
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-            
+            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
     def RetrieveCardRatingsUrl(self, colors, cards):  
         result = True
         for card in cards:
@@ -470,7 +476,7 @@ class DataPlatform:
         return version
     def ExportData(self):
         try:
-            output_file = self.sets[0] + "_" + self.draft + "_Data.json"
+            output_file = self.sets[0].upper() + "_" + self.draft + "_Data.json"
 
             with open(output_file, 'w') as f:
                 json.dump(self.combined_data, f)

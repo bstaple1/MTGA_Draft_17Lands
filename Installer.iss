@@ -14,7 +14,6 @@ OutputDir={app}
 
 [Files]
 Source: "MTGA_Draft_Tool.exe"; DestDir: "{app}"
-Source: "VOW_PremierDraft_Data.json"; DestDir: "{app}"
 Source: "config.json"; DestDir: "{app}"
 Source: "README.md"; DestDir: "{app}"
 source: "geckodriver.exe"; DestDir: "{app}" 
