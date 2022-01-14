@@ -19,7 +19,7 @@ LOG_LOCATION_MAC = "/Library/Logs/Wizards of the Coast/MTGA/Player.log"
 draft_types_dict = {
     "PremierDraft"     : DRAFT_TYPE_PREMIER_V1,
     "QuickDraft"       : DRAFT_TYPE_QUICK,
-    "TraditionalDraft" : DRAFT_TYPE_TRADITIONAL,
+    "TradDraft"        : DRAFT_TYPE_TRADITIONAL,
 }
 
 ## Used to identify OS type based on CLI string
@@ -198,6 +198,11 @@ class LogScanner:
         elif self.draft_type == DRAFT_TYPE_QUICK:
             self.DraftPackSearchQuick()
             self.DraftPickedSearchQuick()
+        elif self.draft_type == DRAFT_TYPE_TRADITIONAL:
+            if self.initial_pack[0] == None:
+                self.DraftPackSearchTraditionalP1P1()
+            self.DraftPackSearchTraditional()
+            self.DraftPickedSearchTraditional()
             
         return
         
@@ -645,6 +650,200 @@ class LogScanner:
             error_string = "DraftPickedSearchQuick Error: %s" % error
             print(error_string)
             LogEntry(self.diag_log_file, error_string)
+            
+    def DraftPackSearchTraditionalP1P1(self):
+        offset = self.pack_offset
+        draft_data = object()
+        draft_string = "CardsInPack"
+        pack_cards = []
+        pack = 0
+        pick = 0
+        #Identify and print out the log lines that contain the draft packs
+        try:
+            with open(self.log_file, 'r') as log:
+                log.seek(offset)
+
+                for line in log:
+                    offset += len(line)
+                    
+                    string_offset = line.find(draft_string)
+                    
+                    if string_offset != -1:
+                        #Remove any prefix (e.g. log timestamp)
+                        start_offset = line.find("{\"id\":")                       
+                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        draft_data = json.loads(line[start_offset:])
+                        request_data = draft_data["request"]
+                        payload_data = json.loads(request_data)["Payload"]
+                        
+                        pack_cards = []
+                        parsed_cards = []
+                        try:
+
+                            card_data = json.loads(payload_data)
+                            cards = card_data["CardsInPack"]
+
+                            for card in cards:
+                                card_string = str(card)
+                                if card_string in self.set_data["card_ratings"].keys():
+                                    if len(self.set_data["card_ratings"][card_string]):
+                                        parsed_cards.append(self.set_data["card_ratings"][card_string]["name"])
+                                        pack_cards.append(self.set_data["card_ratings"][card_string])
+                            
+                            pack = card_data["PackNumber"]
+                            pick = card_data["PickNumber"]
+                            
+                            pack_index = (pick - 1) % 8
+                            
+                            if self.current_pack != pack:
+                                self.initial_pack = [None] * 8
+                        
+                            if self.initial_pack[pack_index] == None:
+                                self.initial_pack[pack_index] = pack_cards
+                                
+                            self.pack_cards[pack_index] = pack_cards
+                                
+                            if (self.current_pack == 0) and (self.current_pick == 0):
+                                self.current_pack = pack
+                                self.current_pick = pick
+                            
+                            if(self.step_through):
+                                break
+        
+                        except Exception as error:
+                            error_string = "DraftPackSearchTraditionalP1P1 Sub Error: %s" % error
+                            print(error_string)
+                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                        print("Pack: %u, Pick: %u, Cards: %s" % (pack, pick, parsed_cards))
+            if log.closed == False:
+                log.close() 
+        except Exception as error:
+            error_string = "DraftPackSearchTraditionalP1P1 Error: %s" % error
+            print(error_string)
+            LogEntry(self.diag_log_file, error_string,  self.diag_log_enabled)
+        
+        return pack_cards
+        
+    def DraftPickedSearchTraditional(self):
+        offset = self.pick_offset
+        draft_data = object()
+        draft_string = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
+        pack = 0
+        pick = 0
+        #Identify and print out the log lines that contain the draft packs
+        try:
+            with open(self.log_file, 'r') as log:
+                log.seek(offset)
+
+                for line in log:
+                    offset += len(line)
+                    
+                    string_offset = line.find(draft_string)
+                    
+                    if string_offset != -1:
+                        self.pick_offset = offset
+                        start_offset = line.find("{\"id\"")
+                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+
+                        try:
+                            #Identify the pack
+                            draft_data = json.loads(line[start_offset:])
+                            
+                            request_data = json.loads(draft_data["request"])
+                            param_data = json.loads(request_data["Payload"])
+                            
+                            pack = int(param_data["Pack"])
+                            pick = int(param_data["Pick"])
+                            card = str(param_data["GrpId"])
+                            
+                            pack_index = (pick - 1) % 8
+                            
+                            if self.previous_picked_pack != pack:
+                                self.picked_cards = [[] for i in range(8)]
+                            
+                            self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
+                            self.taken_cards.append(self.set_data["card_ratings"][card])
+                            
+                            self.previous_picked_pack = pack
+                            self.current_picked_pick = pick
+                            
+                            if self.step_through:
+                                break; 
+                            
+                        except Exception as error:
+                            error_string = "DraftPickedSearchPremierV1 Error: %s" % error
+                            print(error_string)
+                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)         
+        except Exception as error:
+            error_string = "DraftPickedSearchTraditional Error: %s" % error
+            print(error_string)
+            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+
+        
+    def DraftPackSearchTraditional(self):
+        offset = self.pack_offset
+        draft_data = object()
+        draft_string = "[UnityCrossThreadLogger]Draft.Notify "
+        pack_cards = []
+        pack = 0
+        pick = 0
+        #Identify and print out the log lines that contain the draft packs
+        try:
+            with open(self.log_file, 'r') as log:
+                log.seek(offset)
+
+                for line in log:
+                    offset += len(line)
+                    
+                    string_offset = line.find(draft_string)
+                    
+                    if string_offset != -1:
+                        self.pack_offset = offset
+                        start_offset = line.find("{\"draftId\"")
+                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        pack_cards = []
+                        #Identify the pack
+                        draft_data = json.loads(line[start_offset:])
+                        parsed_cards = []
+                        try:
+                                
+                            cards = draft_data["PackCards"].split(',') 
+                                
+                            for count, card in enumerate(cards):
+                                if card in self.set_data["card_ratings"].keys():
+                                    if len(self.set_data["card_ratings"][card]):
+                                        parsed_cards.append(self.set_data["card_ratings"][card]["name"])
+                                        pack_cards.append(self.set_data["card_ratings"][card])
+                                        pack = draft_data["SelfPack"]
+                                        pick = draft_data["SelfPick"]
+                                
+                            pack_index = (pick - 1) % 8
+                            
+                            if self.current_pack != pack:
+                                self.initial_pack = [None] * 8
+                        
+                            if self.initial_pack[pack_index] == None:
+                                self.initial_pack[pack_index] = pack_cards
+                                
+                            self.pack_cards[pack_index] = pack_cards
+                            
+                            self.current_pack = pack
+                            self.current_pick = pick
+                            
+                            if(self.step_through):
+                                break
+    
+                        except Exception as error:
+                            error_string = "DraftPackSearchTraditional Sub Error: %s" % error
+                            print(error_string)
+                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                        print("Pack: %u, Pick: %u, Cards: %s" % (draft_data["SelfPack"], draft_data["SelfPick"], parsed_cards))
+             
+        except Exception as error:
+            error_string = "DraftPackSearchTraditional Error: %s" % error
+            print(error_string)
+            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+        return pack_cards
             
     def RetrieveSet(self):
         file_location = ''
