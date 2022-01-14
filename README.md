@@ -54,8 +54,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Current Draft: Lists the current draft type (Premier, Quick, or Traditional) that the application has identified
 
-    - The application has only ever been tested on Premier and Quick drafts. 
-    - The Arena logs don't contain the pack data for pack 1, pick 1 for Premier drafts
+    - The application has been tested with Premier, Quick, and Traditional drafts.
+    - In the Arena logs, P1P1 doesn't appear for Premier and Traditional drafts until after P1P2
   
 - Deck Filter: A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
 
@@ -68,12 +68,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The "All" column lists the card rating for the "All Decks" filter. This is visible regardless of the Deck Filter option chosen.
         - The last column will list the card rating for the chosen Deck Filter option.
         - The card rating is derived from the Games in Hand Win Rate, Average Last Seen At, and Improvement When Drawn fields from 17 Lands. The individual values can be seen by clicking on the card in the table.
-        - For Premier drafts, the pack 1, pick 1 card isn't available in the logs.
+        - For Premier and Traditional drafts, P1P1 doesn't appear in the logs until after P1P2. Use the Card Compare feature to perform the card analysis.
 	
 - Missing Cards Table: This table will list the cards missing from a pack that's already been seen. 
 
     - The user's chosen card will have an asterisk next to the name.
-    - For premier drafts, the missing cards from pack 1, pick 1 will not be available.
 	
 - Deck Stats Table: This table lists the card distribution and total for creatures, noncreatures, and all cards.
 
@@ -89,8 +88,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
     - For the ID field, keep the value at 0.
     - The download can take several minutes.
-    - The firefox browser is required if the Color Ratings option is checked; you will see the application briefly open the "https://www.17lands.com/color_ratings" page while it collects the color ratings data.
- 
+
 - List Taken Cards: Get to the Taken Cards window by selecting Cards->Taken Cards. 
     - This table lists the cards that were taken by the user over the course of the draft.
 
@@ -100,7 +98,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 
 - Card Compare: Get to the Card Compare window by selecting Cards->Compare Cards. This window will allow you to compare cards that you've entered in.
-    - This feature can be used to quickly compare cards for P1P1 of the Premier draft.
+    - This feature can be used to quickly compare cards for P1P1 of the Premier and Traditional drafts.
 	
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Card_Compare.png?raw=true)
     

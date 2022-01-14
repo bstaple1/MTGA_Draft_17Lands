@@ -1,7 +1,7 @@
 ; -- MtgaDraft.iss --
 [Setup]
 AppName=MTGA Draft Tool
-AppVersion=2.57
+AppVersion=2.58
 WizardStyle=modern
 DefaultDirName={sd}\MtgaDraftTool
 DefaultGroupName=MtgaDraftTool
@@ -16,7 +16,6 @@ OutputDir={app}
 Source: "MTGA_Draft_Tool.exe"; DestDir: "{app}"
 Source: "config.json"; DestDir: "{app}"
 Source: "README.md"; DestDir: "{app}"
-source: "geckodriver.exe"; DestDir: "{app}" 
 [Icons]
 Name: "{group}\MtgaDraftTool"; Filename: "{app}\MTGA_Draft_Tool.exe"
 

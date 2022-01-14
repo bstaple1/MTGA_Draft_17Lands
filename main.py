@@ -81,7 +81,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.57
+__version__= 2.58
 
 def CheckVersion(platform, version):
     return_value = False
@@ -765,7 +765,7 @@ class WindowUI:
             end_label = Label(popup, text="End Date:")
             color_label = Label(popup, text="Color Rating:")
             id_label = Label(popup, text="Id:")
-            draft_choices = ["QuickDraft", "PremierDraft", "TraditionalDraft"]
+            draft_choices = ["QuickDraft", "PremierDraft", "TradDraft"]
             
             draft_value = StringVar(self.root)
             draft_value.set('QuickDraft')
