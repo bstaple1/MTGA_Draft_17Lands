@@ -164,11 +164,14 @@ def ColorCmc(deck):
 def ColorFilter(deck, color_selection, color_list):
     color_data = color_selection
     filtered_color = color_data
+    non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     try:
         if color_data == "Auto":
             filtered_color = AutoColors(deck, color_list, 2)
         elif color_data == "AI":
             filtered_color = "AI"
+        elif color_data in non_color_options:
+            filtered_color = color_data
         else:
             filtered_color = [key for key, value in color_list.items() if value == color_data][0]
     except Exception as error:
@@ -240,7 +243,7 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold):
         print("CalculateColorAffinity Error: %s" % error)
     return colors 
 
-def CardFilter(cards, deck, color, color_options, limits):
+def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits):
     alsa_weight = .25
     iwd_weight = .25
     try:
@@ -251,21 +254,35 @@ def CardFilter(cards, deck, color, color_options, limits):
                 iwd_weight = config_data["card_logic"]["iwd_weight"]
     except Exception as error:
         print("CardFilter Error: %s" % error)
-    if color == "AI":
-        filtered_cards = CardAIFilter(cards, deck, color_options, limits, alsa_weight, iwd_weight)
-    else:
-        filtered_cards = CardColorFilter(cards, color, limits, alsa_weight, iwd_weight)
+    #if color == "AI":
+    #    filtered_cards = CardAIFilter(cards, deck, color_options, limits, alsa_weight, iwd_weight)
+    #else:
+    filtered_cards = CardColorFilter(cards, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight)
     return filtered_cards
-def CardColorFilter(card_list, color, limits, alsa_weight, iwd_weight):
+    
+def CardColorFilter(card_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight):
     try:
         filtered_list = []
+        non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
         for card in card_list:
+            selected_card = card
+            if filter_a in non_color_options:
+                color, type = filter_a.split(" ")
+                selected_card["rating_filter_a"] = card["deck_colors"]["All Decks"][type.lower()]
+            if filter_b in non_color_options:
+                color, type = filter_b.split(" ")
+                selected_card["rating_filter_b"] = card["deck_colors"]["All Decks"][type.lower()]
+            if filter_c in non_color_options:
+                color, type = filter_c.split(" ")
+                selected_card["rating_filter_c"] = card["deck_colors"]["All Decks"][type.lower()]
             for deck_color in card["deck_colors"].keys():
-                if deck_color == color:
-                    selected_card = card
-                    selected_card["rating_filter"] = CardRating(card["deck_colors"][color], limits[color], alsa_weight, iwd_weight)
-                    selected_card["rating_all"] = CardRating(card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight)
-                    filtered_list.append(selected_card)
+                if deck_color == filter_a:
+                    selected_card["rating_filter_a"] = CardRating(card["deck_colors"][filter_a], limits[filter_a], alsa_weight, iwd_weight)
+                if deck_color == filter_b:
+                    selected_card["rating_filter_b"] = CardRating(card["deck_colors"][filter_b], limits[filter_b], alsa_weight, iwd_weight)
+                if deck_color == filter_c:
+                    selected_card["rating_filter_c"] = CardRating(card["deck_colors"][filter_c], limits[filter_c], alsa_weight, iwd_weight)
+            filtered_list.append(selected_card)
     except Exception as error:
         print("CardColorFilter Error: %s" % error)
     return filtered_list
@@ -285,7 +302,7 @@ def CardAIFilter(pack, deck, color_options, limits, alsa_weight, iwd_weight):
             selected_card = card
             selected_card["rating_all"] = CardRating(selected_card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight)
             
-            selected_card["rating_filter"] = CardAIRating(selected_card,
+            selected_card["rating_filter_c"] = CardAIRating(selected_card,
                                                           deck,
                                                           deck_colors,
                                                           limits,
@@ -695,7 +712,7 @@ def SuggestDeck(taken_cards, color_options, limits):
             ratings_threshold = config_data["card_logic"]["ratings_threshold"]
             deck_builder_type = config_data["card_logic"]["deck_types"]
         #Calculate the base ratings
-        filtered_cards = CardColorFilter(taken_cards, "All Decks", limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(taken_cards, "All Decks","All Decks","All Decks", limits, alsa_weight, iwd_weight)
         
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
@@ -745,13 +762,13 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardColorFilter(cards, color, limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(cards, color, color, color, limits, alsa_weight, iwd_weight)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color))
         
         card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Creature", "Planeswalker"], True, True, False)
-        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter"], reverse = True)
+        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter_c"], reverse = True)
         
         #Identify creatures that fit distribution
         distribution = [0,0,0,0,0,0,0]
@@ -773,7 +790,7 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
         #Go back and identify remaining creatures that have the highest base rating but don't push average above the threshold
         unused_cmc_combined = cmc_average * recommended_creature_count - used_cmc_combined
         
-        unused_list.sort(key=lambda x : x["rating_filter"], reverse = True)
+        unused_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
         
         #Identify remaining cards that won't exceed recommeneded CMC average
         cmc_cards, unused_list = CardCmcSearch(unused_list, 0, 0, unused_cmc_combined, recommended_creature_count - used_count)
@@ -793,7 +810,7 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
         unused_list = temp_unused_list[:]
             
         card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Instant", "Sorcery","Enchantment","Artifact"], True, True, False)
-        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter"], reverse = True)
+        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter_c"], reverse = True)
         #Add non-creature cards
         for count, card in enumerate(card_colors_sorted):
             if total_card_count >= maximum_card_count:
@@ -814,12 +831,12 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
 
         #Add in special lands if they are on-color, off-color, and they have a card rating above 2.0
         card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Land"], True, True, False)
-        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter"], reverse = True)
+        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter_c"], reverse = True)
         for count, card in enumerate(card_colors_sorted):
             if total_card_count >= maximum_deck_size:
                 break
                 
-            if card["rating_filter"] >= 2.0:    
+            if card["rating_filter_c"] >= 2.0:    
                 used_list.append(card)
                 total_card_count += 1
             

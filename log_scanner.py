@@ -847,7 +847,7 @@ class LogScanner:
             
     def RetrieveSet(self):
         file_location = ''
-        self.deck_colors = {"All Decks" : "","Auto" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
+        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
 
         draft_list = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
         draft_list.extend(list(draft_types_dict.keys()))
