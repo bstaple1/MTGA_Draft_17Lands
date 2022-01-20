@@ -88,7 +88,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
     - For the ID field, keep the value at 0.
     - The download can take several minutes.
-
+    
+- Settings: Get to the Settings window by selecting Data->Settings. 
+    - Use the drop-downs to configure the second, third, and fourth columns for each of the tables (Pick, Missing, and Taken tables).
+    
 - List Taken Cards: Get to the Taken Cards window by selecting Cards->Taken Cards. 
     - This table lists the cards that were taken by the user over the course of the draft.
 

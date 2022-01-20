@@ -76,12 +76,13 @@ import time
 import getopt
 import sys
 import io
+import functools
 import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.58
+__version__= 2.60
 
 def CheckVersion(platform, version):
     return_value = False
@@ -448,7 +449,8 @@ class WindowUI:
                                           color_options,
                                           limits)
                                           
-            filtered_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
+            #filtered_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
+            filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             # clear the previous rows
             for row in self.pack_table.get_children():
                 self.pack_table.delete(row)
@@ -1076,9 +1078,9 @@ class WindowUI:
             column_4_options = OptionMenu(popup, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
             column_4_options.config(width=10)
             
-            column_2_label.grid(row=0, column=0, columnspan=1, sticky="nsew")
-            column_3_label.grid(row=1, column=0, columnspan=1, sticky="nsew")
-            column_4_label.grid(row=2, column=0, columnspan=1, sticky="nsew")
+            column_2_label.grid(row=0, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            column_3_label.grid(row=1, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            column_4_label.grid(row=2, column=0, columnspan=1, sticky="nsew", padx=(10,))
             column_2_options.grid(row=0, column=1, columnspan=1, sticky="nsew")
             column_3_options.grid(row=1, column=1, columnspan=1, sticky="nsew")
             column_4_options.grid(row=2, column=1, columnspan=1, sticky="nsew")

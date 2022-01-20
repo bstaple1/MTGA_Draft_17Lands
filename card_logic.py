@@ -4,29 +4,18 @@ from itertools import combinations
 
 def CompareRatings(a, b):
     try:
-        creature_types = ["Creature", "Planeswalker"]
-        a_creature = any(x in a["card"]["types"] for x in creature_types)
-        b_creature = any(x in b["card"]["types"] for x in creature_types)
+        #creature_types = ["Creature", "Planeswalker"]
+        #a_creature = any(x in a["types"] for x in creature_types)
+        #b_creature = any(x in b["types"] for x in creature_types)
         
-        #Always pick the bombs
-        if((a["base_rating"] >= 4.5) or (b["base_rating"] >= 4.5)):
-            return b["base_rating"] - a["base_rating"]
-        elif(a["rating"] == b["rating"]):
-            # Breaking ties with good any color > bad on-color > creature > lower cmc
-            if((a["base_rating"] >= 4.0) and (b["base_rating"] <= 1.5)):
-                return -1
-            elif((b["base_rating"] >= 4.0) and (a["base_rating"] <= 1.5)):
-                return 1
+        if(a["rating_filter_c"] == b["rating_filter_c"]):
+            # Breaking ties with lower ALSA > Higher "All Decks"
+            if(a["deck_colors"]["All Decks"]["alsa"] == b["deck_colors"]["All Decks"]["alsa"]):
+                return b["deck_colors"]["All Decks"]["gihwr"] - a["deck_colors"]["All Decks"]["gihwr"]
             else:
-                if(a["color_bonus"] == b["color_bonus"]):
-                    if(a_creature == b_creature):
-                        return a["card"]["cmc"] - b["card"]["cmc"]
-                    else:
-                        return b_creature - a_creature
-                else:
-                    return b["color_bonus"] - a["color_bonus"]
+                return a["deck_colors"]["All Decks"]["alsa"] - b["deck_colors"]["All Decks"]["alsa"]
         else:
-            return b["rating"] - a["rating"]
+            return b["rating_filter_c"] - a["rating_filter_c"]
     except Exception as error:
         print("CompareRatings Error: %s" % error)
     return 0
