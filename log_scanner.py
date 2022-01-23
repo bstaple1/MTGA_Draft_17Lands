@@ -46,7 +46,7 @@ class LogScanner:
         self.diag_log_file = directory + "DraftLog_%s.log" % (str(time.time()))
         self.diag_log_enabled = diag_log_enabled
         self.set_data = None
-        self.deck_colors = {}
+        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
         self.deck_limits = {}
         self.draft_type = DRAFT_TYPE_UNKNOWN
         self.pick_offset = 0
@@ -68,7 +68,7 @@ class LogScanner:
             self.search_offset = 0
             
         self.set_data = None
-        self.deck_colors = {}
+        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
         self.deck_limits = {}
         self.draft_type = DRAFT_TYPE_UNKNOWN
         self.pick_offset = 0
@@ -847,7 +847,7 @@ class LogScanner:
             
     def RetrieveSet(self):
         file_location = ''
-        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
+        #self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
 
         draft_list = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
         draft_list.extend(list(draft_types_dict.keys()))

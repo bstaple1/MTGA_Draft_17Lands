@@ -62,7 +62,6 @@ class DataPlatform:
         #self.driver = webdriver.Firefox(executable_path = self.driver_path)
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
         self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
-        
     def Sets(self, sets):
         self.sets = sets
         
@@ -111,6 +110,9 @@ class DataPlatform:
     def SessionCardData(self):
             arena_id = int(self.id)
             for set in self.sets:
+                print(set)
+                if set == "dbl":
+                    continue
                 try:
                     #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
                     url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (set)
@@ -135,43 +137,50 @@ class DataPlatform:
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
         result = False
-        for color in self.deck_colors:
-            retry = 5
-            result = False
-            while retry:
-                
-                try:
-                    url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (self.sets[0], self.draft, self.start_date, self.end_date)
+        for set in self.sets:
+            for color in self.deck_colors:
+                retry = 5
+                result = False
+                while retry:
                     
-                    if color != "All Decks":
-                        url += "&colors=" + color
+                    try:
+                        url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (set, self.draft, self.start_date, self.end_date)
                         
-                    url_data = urllib.request.urlopen(url).read()
+                        if color != "All Decks":
+                            url += "&colors=" + color
+                            
+                        url_data = urllib.request.urlopen(url).read()
+                        
+                        set_json_data = json.loads(url_data)
+                        if self.RetrieveCardRatingsUrl(color, set_json_data):
+                            result = True
+                            break
+                        else:
+                            retry -= 1
+                            
+                            if set == "dbl":
+                                break
+                                
+                        time.sleep(5)
                     
-                    set_json_data = json.loads(url_data)
-                
-                    if self.RetrieveCardRatingsUrl(color, set_json_data):
-                        result = True
-                        break
-                    else:
-                        retry -= 1
-                    
-                    time.sleep(5)
-                
-                except Exception as error:
-                    error_string = "SessionCardRating Error: %s" % error
-                    print(error_string)     
-                    LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-                    time.sleep(15)
-                    
-            if result:
-                current_progress += 3
-                progress['value'] = current_progress + initial_progress
-                root.update()
-            else:
+                    except Exception as error:
+                        error_string = "SessionCardRating Error: %s" % error
+                        print(error_string)     
+                        LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                        time.sleep(15)
+                        
+                if result:
+                    current_progress += 3 / len(self.sets)
+                    progress['value'] = current_progress + initial_progress
+                    root.update()
+                else:
+                    break
+                time.sleep(2)
+         
+            if set == "stx":
                 break
-            time.sleep(2)
-            
+            if set == "dbl" and result:
+                break
         self.combined_data["card_ratings"] = {}
         for card in self.card_list:
             self.ProcessCardRatings(card)
@@ -215,6 +224,10 @@ class DataPlatform:
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
     def RetrieveCardRatingsUrl(self, colors, cards):  
         result = True
+        
+        if len(cards) == 0:
+            result = False
+        
         for card in cards:
             try:
                 print("Name: %s" % card["name"])
@@ -392,7 +405,11 @@ class DataPlatform:
                 set_name = set["name"]
                 set_code = set["code"]
                 
-                if (len(set_code) == 3) and (set["set_type"] == "expansion"):
+                if set_code == "dbl":
+                    sets[set_name] = []
+                    sets[set_name].append("vow")
+                    sets[set_name].append("mid")
+                elif (len(set_code) == 3) and (set["set_type"] == "expansion"):
                     sets[set_name] = []
                     sets[set_name].append(set_code)
                     #Add mystic archives to strixhaven
@@ -401,7 +418,7 @@ class DataPlatform:
                     counter += 1
                     
                     # Only retrieve the last 10 sets
-                    if counter >= 10:
+                    if counter >= 15:
                         break
             except Exception as error:
                 print("ProcessSetData Error: %s" % error)

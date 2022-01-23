@@ -82,7 +82,8 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.60
+__version__= 2.61
+
 
 def CheckVersion(platform, version):
     return_value = False
@@ -298,16 +299,18 @@ class WindowUI:
         #self.deck_colors_options_selection = StringVar(self.root)
         #self.deck_colors_options_list = []
         self.column_2_selection = StringVar(self.root)
-        self.column_2_list = []
+        self.column_2_list = self.draft.deck_colors
+        self.column_2_selection.set("All ALSA")
         self.column_3_selection = StringVar(self.root)
-        self.column_3_list = []
+        self.column_3_list = self.draft.deck_colors
+        self.column_3_selection.set("All Decks")
         self.column_4_selection = StringVar(self.root)
-        self.column_4_list = []
-        
+        self.column_4_list = self.draft.deck_colors
+        self.column_4_selection.set("Auto")
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
-        self.deck_colors_options = OptionMenu(self.root, self.column_4_selection, *self.column_4_list, style="my.TMenubutton")
+        self.deck_colors_options = OptionMenu(self.root, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
         self.deck_colors_options.config(width=10)
         
         self.refresh_button_frame = Frame(self.root)
@@ -482,6 +485,9 @@ class WindowUI:
                 self.missing_table.delete(row)
             self.root.update()
             
+            #Update the filtered column header with the filtered colors
+            TableFilterOptions(self.missing_table, filtered_a, filtered_b, filtered_c)
+
             if previous_pack != None:
                 missing_cards = [x for x in previous_pack if x not in current_pack]
                 
@@ -490,10 +496,7 @@ class WindowUI:
                 if list_length:
                     self.missing_table.config(height = list_length)
                 else:
-                    self.missing_table.config(height=1)
-                    
-                #Update the filtered column header with the filtered colors
-                TableFilterOptions(self.missing_table, filtered_a, filtered_b, filtered_c)
+                    self.missing_table.config(height=1) 
                 
                 if list_length:
                     filtered_list = CL.CardFilter(missing_cards,
@@ -684,8 +687,8 @@ class WindowUI:
     def UpdateOptions(self, options_list):
         try: 
             
-            menu = self.deck_colors_options["menu"]
-            menu.delete(0, "end")
+            #menu = self.deck_colors_options["menu"]
+            #menu.delete(0, "end")
             #self.deck_colors_options_list = []
             self.column_2_list = []
             self.column_3_list = []
@@ -693,8 +696,8 @@ class WindowUI:
 
             for key, data in options_list.items():
                 if len(data):
-                    menu.add_command(label=data, 
-                                    command=lambda value=data: self.column_4_selection.set(value))
+                    #menu.add_command(label=data, 
+                    #                command=lambda value=data: self.column_4_selection.set(value))
                     #self.deck_colors_options_list.append(data)
                     self.column_2_list.append(data)
                     self.column_3_list.append(data)
