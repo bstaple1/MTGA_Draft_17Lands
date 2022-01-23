@@ -138,6 +138,8 @@ class DataPlatform:
         current_progress = 0
         result = False
         for set in self.sets:
+            if set == "dbl":
+                continue
             for color in self.deck_colors:
                 retry = 5
                 result = False
@@ -158,8 +160,8 @@ class DataPlatform:
                         else:
                             retry -= 1
                             
-                            if set == "dbl":
-                                break
+                            #if set == "dbl":
+                            #    break
                                 
                         time.sleep(5)
                     
@@ -179,8 +181,8 @@ class DataPlatform:
          
             if set == "stx":
                 break
-            if set == "dbl" and result:
-                break
+            #if set == "dbl" and result:
+            #    break
         self.combined_data["card_ratings"] = {}
         for card in self.card_list:
             self.ProcessCardRatings(card)
@@ -407,6 +409,7 @@ class DataPlatform:
                 
                 if set_code == "dbl":
                     sets[set_name] = []
+                    sets[set_name].append(set_code)
                     sets[set_name].append("vow")
                     sets[set_name].append("mid")
                 elif (len(set_code) == 3) and (set["set_type"] == "expansion"):
