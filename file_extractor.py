@@ -6,6 +6,7 @@ import re
 import json
 import urllib.request
 import datetime
+import ssl
 import log_scanner as LS
 from datetime import date
 from urllib.parse import quote as urlencode
@@ -54,6 +55,7 @@ class DataPlatform:
         self.session = ""
         self.start_date = ""
         self.end_date = ""
+        self.context = ssl.SSLContext()
         self.id = id
         self.card_ratings = {}
         self.combined_data = {}
@@ -86,7 +88,7 @@ class DataPlatform:
         version = ""
         try:
             url = "https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/version.txt"
-            url_data = urllib.request.urlopen(url).read()
+            url_data = urllib.request.urlopen(url, context=self.context).read()
             
             version = self.ProcessRepositoryVersionData(url_data)
                 
@@ -98,7 +100,7 @@ class DataPlatform:
         version = ""
         try:
             url = "https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/%s" % filename
-            url_data = urllib.request.urlopen(url).read()
+            url_data = urllib.request.urlopen(url, context=self.context).read()
             
             with open(filename,'wb') as file:
                 file.write(url_data)   
@@ -116,7 +118,7 @@ class DataPlatform:
                 try:
                     #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
                     url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (set)
-                    url_data = urllib.request.urlopen(url).read()
+                    url_data = urllib.request.urlopen(url, context=self.context).read()
                     
                     set_json_data = json.loads(url_data)
 
@@ -124,7 +126,7 @@ class DataPlatform:
                     
                     while set_json_data["has_more"] == True:
                         url = set_json_data["next_page"]
-                        url_data = urllib.request.urlopen(url).read()
+                        url_data = urllib.request.urlopen(url, context=self.context).read()
                         set_json_data = json.loads(url_data)
                         arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
                         
@@ -151,7 +153,7 @@ class DataPlatform:
                         if color != "All Decks":
                             url += "&colors=" + color
                             
-                        url_data = urllib.request.urlopen(url).read()
+                        url_data = urllib.request.urlopen(url, context=self.context).read()
                         
                         set_json_data = json.loads(url_data)
                         if self.RetrieveCardRatingsUrl(color, set_json_data):
@@ -193,13 +195,13 @@ class DataPlatform:
         sets = {}
         try:
             url = "https://api.scryfall.com/sets"
-            url_data = urllib.request.urlopen(url).read()
+            url_data = urllib.request.urlopen(url, context=self.context).read()
             
             set_json_data = json.loads(url_data)
             sets = self.ProcessSetData(sets, set_json_data["data"])
             while set_json_data["has_more"] == True:
                 url = set_json_data["next_page"]
-                url_data = urllib.request.urlopen(url).read()
+                url_data = urllib.request.urlopen(url, context=self.context).read()
                 set_json_data = json.loads(url_data)
                 sets = self.ProcessSetData(sets, set_json_data["data"])
                 
@@ -214,7 +216,7 @@ class DataPlatform:
             #https://www.17lands.com/color_ratings/data?expansion=VOW&event_type=QuickDraft&start_date=2019-1-1&end_date=2022-01-13&combine_splash=true
             url = "https://www.17lands.com/color_ratings/data?expansion=%s&event_type=%s&start_date=%s&end_date=%s&combine_splash=true" % (self.sets[0], self.draft, self.start_date, self.end_date)
             print(url)
-            url_data = urllib.request.urlopen(url).read()
+            url_data = urllib.request.urlopen(url, context=self.context).read()
             
             color_json_data = json.loads(url_data)
             print(color_json_data)
