@@ -35,7 +35,7 @@ def ColorBonus (deck, deck_colors, card):
                           1.0, 1.0, 2.0, 2.0, 2.0, 
                           2.0, 3.0, 3.0, 3.0, 3.0, 
                           4.0, 4.0, 4.0, 4.0, 4.0,
-                          5.0, 5.0, 5.0, 6.0, 6.0];
+                          5.0, 5.0, 5.0, 6.0, 6.0]
 
     color_bonus_factor = 0.0
     
@@ -326,11 +326,10 @@ def DeckColorLimits(cards, color):
             gihwr = cards[card]["deck_colors"][color]["gihwr"]
             if gihwr > upper_limit:
                 upper_limit = gihwr
-            
             if gihwr < lower_limit and gihwr != 0:
                 lower_limit = gihwr
     except Exception as error:
-        print("DeckColorLimits Error: %s" % error)
+        error_string = "DeckColorLimits Error: %s" % error
     return upper_limit, lower_limit
 
 def CardRating(card_data, limits, alsa_weight, iwd_weight):

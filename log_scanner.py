@@ -47,6 +47,8 @@ class LogScanner:
         self.diag_log_enabled = diag_log_enabled
         self.set_data = None
         self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
+        for deck_color in self.deck_colors.keys():
+            self.deck_colors[deck_color] = deck_color
         self.deck_limits = {}
         self.draft_type = DRAFT_TYPE_UNKNOWN
         self.pick_offset = 0
@@ -878,13 +880,13 @@ class LogScanner:
                         upper_limit, lower_limit = CL.DeckColorLimits(self.set_data["card_ratings"], color)
                         self.deck_limits[color] = {"upper" : upper_limit, "lower" : lower_limit}
                     #Identify the win percentages for the deck colors
+                    for deck_color in self.deck_colors.keys():
+                        self.deck_colors[deck_color] = deck_color
                     for colors in self.set_data["color_ratings"].keys():
                         for deck_color in self.deck_colors.keys():
                             if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
                                 ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
                                 self.deck_colors[deck_color] = ratings_string
-                            elif self.deck_colors[deck_color] == "":
-                                self.deck_colors[deck_color] = deck_color
                     print("deck_colors: %s" % str(self.deck_colors))
                 except Exception as error:
                     print("RetrieveSet Sub Error: %s" % error)

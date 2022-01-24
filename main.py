@@ -452,7 +452,6 @@ class WindowUI:
                                           color_options,
                                           limits)
                                           
-            #filtered_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             # clear the previous rows
             for row in self.pack_table.get_children():
@@ -507,8 +506,7 @@ class WindowUI:
                                                   color_options,
                                                   limits)
                     
-                    filtered_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
-                    
+                    filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
                         row_tag = CL.RowColorTag(card["colors"])
                         card_name = "*" + card["name"] if card["name"] in picked_cards else card["name"]
@@ -540,8 +538,7 @@ class WindowUI:
                                           color_options,
                                           limits)
                     
-            filtered_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
-            
+            filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             compare_table.delete(*compare_table.get_children())
             
             #Update the filtered column header with the filtered colors
@@ -567,8 +564,7 @@ class WindowUI:
                                           color_options,
                                           limits)
                     
-            filtered_list.sort(key=lambda x : x["rating_filter_c"], reverse = True)
-            
+            filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             list_length = len(filtered_list)
             
             #Update the filtered column header with the filtered colors
@@ -687,35 +683,20 @@ class WindowUI:
     def UpdateOptions(self, options_list):
         try: 
             
-            #menu = self.deck_colors_options["menu"]
-            #menu.delete(0, "end")
-            #self.deck_colors_options_list = []
+            menu = self.deck_colors_options["menu"]
+            menu.delete(0, "end")
             self.column_2_list = []
             self.column_3_list = []
             self.column_4_list = []
 
             for key, data in options_list.items():
                 if len(data):
-                    #menu.add_command(label=data, 
-                    #                command=lambda value=data: self.column_4_selection.set(value))
+                    menu.add_command(label=data, 
+                                    command=lambda value=data: self.column_4_selection.set(value))
                     #self.deck_colors_options_list.append(data)
                     self.column_2_list.append(data)
                     self.column_3_list.append(data)
                     self.column_4_list.append(data)
-
-            #if len(self.deck_colors_options_list):        
-            #    selected_option = "Auto"
-            #    self.deck_colors_options_selection.set(options_list[selected_option])     
-            if len(self.column_2_list):        
-                selected_option = "All ALSA"
-                self.column_2_selection.set(options_list[selected_option])
-            if len(self.column_3_list):        
-                selected_option = "All Decks"
-                self.column_3_selection.set(options_list[selected_option])
-            if len(self.column_4_list):        
-                selected_option = "Auto"
-                self.column_4_selection.set(options_list[selected_option])
-
                 
         except Exception as error:
             error_string = "UpdateOptions Error: %s" % error
@@ -725,8 +706,7 @@ class WindowUI:
     def UpdateCallback(self, *args):
         self.draft.DraftSearch()
         
-        if len(self.column_4_list) == 0:
-            self.UpdateOptions(self.draft.deck_colors)
+        self.UpdateOptions(self.draft.deck_colors)
                 
         filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors)
         filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors)
