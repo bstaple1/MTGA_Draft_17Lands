@@ -326,6 +326,10 @@ class DataPlatform:
 
         for card_data in data:
             try:
+                #Skip Alchemy cards
+                if card_data["name"].startswith("A-"):
+                    continue
+            
                 card = {}
         
                 card["cmc"] = card_data["cmc"]
