@@ -232,7 +232,7 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold):
         print("CalculateColorAffinity Error: %s" % error)
     return colors 
 
-def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits):
+def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list):
     alsa_weight = .25
     iwd_weight = .25
     try:
@@ -246,10 +246,10 @@ def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits)
     #if color == "AI":
     #    filtered_cards = CardAIFilter(cards, deck, color_options, limits, alsa_weight, iwd_weight)
     #else:
-    filtered_cards = CardColorFilter(cards, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight)
+    filtered_cards = CardColorFilter(cards, tier_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight)
     return filtered_cards
     
-def CardColorFilter(card_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight):
+def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight):
     try:
         filtered_list = []
         non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
@@ -264,6 +264,13 @@ def CardColorFilter(card_list, filter_a, filter_b, filter_c, limits, alsa_weight
             if filter_c in non_color_options:
                 color, type = filter_c.split(" ")
                 selected_card["rating_filter_c"] = card["deck_colors"]["All Decks"][type.lower()]
+            card_name = card["name"].split(" // ")
+            if filter_a == "Tier":
+                selected_card["rating_filter_a"] = tier_list["ratings"][card_name[0]]
+            if filter_b == "Tier":
+                selected_card["rating_filter_b"] = tier_list["ratings"][card_name[0]]
+            if filter_c == "Tier":
+                selected_card["rating_filter_c"] = tier_list["ratings"][card_name[0]]
             for deck_color in card["deck_colors"].keys():
                 if deck_color == filter_a:
                     selected_card["rating_filter_a"] = CardRating(card["deck_colors"][filter_a], limits[filter_a], alsa_weight, iwd_weight)
@@ -700,7 +707,7 @@ def SuggestDeck(taken_cards, color_options, limits):
             ratings_threshold = config_data["card_logic"]["ratings_threshold"]
             deck_builder_type = config_data["card_logic"]["deck_types"]
         #Calculate the base ratings
-        filtered_cards = CardColorFilter(taken_cards, "All Decks","All Decks","All Decks", limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(taken_cards, None, "All Decks","All Decks","All Decks", limits, alsa_weight, iwd_weight)
         
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
@@ -750,7 +757,7 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardColorFilter(cards, color, color, color, limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(cards, None, color, color, color, limits, alsa_weight, iwd_weight)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color))

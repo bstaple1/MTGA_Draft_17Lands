@@ -450,7 +450,8 @@ class WindowUI:
                                           filtered_b,
                                           filtered_c,
                                           color_options,
-                                          limits)
+                                          limits,
+                                          self.draft.tier_data)
                                           
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             # clear the previous rows
@@ -504,7 +505,8 @@ class WindowUI:
                                                   filtered_b,
                                                   filtered_c,
                                                   color_options,
-                                                  limits)
+                                                  limits,
+                                                  self.draft.tier_data)
                     
                     filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
@@ -536,7 +538,8 @@ class WindowUI:
                                           filtered_b,
                                           filtered_c,
                                           color_options,
-                                          limits)
+                                          limits,
+                                          self.draft.tier_data)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             compare_table.delete(*compare_table.get_children())
@@ -562,7 +565,8 @@ class WindowUI:
                                           filtered_b,
                                           filtered_c,
                                           color_options,
-                                          limits)
+                                          limits,
+                                          self.draft.tier_data)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             list_length = len(filtered_list)
@@ -682,6 +686,12 @@ class WindowUI:
             
     def UpdateOptions(self, options_list):
         try: 
+            if self.column_2_selection.get() not in options_list.values():
+                self.column_2_selection.set("All ALSA")
+            if self.column_3_selection.get() not in options_list.values():
+                self.column_3_selection.set("All Decks")
+            if self.column_4_selection.get() not in options_list.values():
+                self.column_4_selection.set("Auto")
             
             menu = self.deck_colors_options["menu"]
             menu.delete(0, "end")
@@ -1143,7 +1153,7 @@ class WindowUI:
                 card_name = card_name if card_name[0] != '*' else card_name[1:]
                 if card_name == card["name"]:
                     try:
-                        non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
+                        non_color_options = ["All GIHWR", "All IWD", "All ALSA", "Tier"]
                         if selected_color in non_color_options:
                             color = "All Decks"
                         else:

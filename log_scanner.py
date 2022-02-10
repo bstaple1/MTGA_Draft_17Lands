@@ -46,7 +46,8 @@ class LogScanner:
         self.diag_log_file = directory + "DraftLog_%s.log" % (str(time.time()))
         self.diag_log_enabled = diag_log_enabled
         self.set_data = None
-        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
+        self.tier_data = None
+        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "",  "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
         for deck_color in self.deck_colors.keys():
             self.deck_colors[deck_color] = deck_color
         self.deck_limits = {}
@@ -70,7 +71,8 @@ class LogScanner:
             self.search_offset = 0
             
         self.set_data = None
-        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
+        self.tier_data = None
+        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "",  "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
         self.deck_limits = {}
         self.draft_type = DRAFT_TYPE_UNKNOWN
         self.pick_offset = 0
@@ -123,6 +125,7 @@ class LogScanner:
                 self.pick_offset = self.search_offset 
                 self.pack_offset = self.search_offset
                 self.RetrieveSet()
+                self.RetrieveTier()
 
         except Exception as error:
             print("DraftStartSearch Error: %s" % error)
@@ -539,6 +542,7 @@ class LogScanner:
                     string_offset = line.find(draft_string)
                     
                     if string_offset != -1:
+                        self.pack_offset = offset
                         #Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"CurrentModule\"")                       
                         LogEntry(self.diag_log_file, line, self.diag_log_enabled)
@@ -548,7 +552,6 @@ class LogScanner:
                         draft_status = payload_data["DraftStatus"]
                         
                         if draft_status == "PickNext":
-                            self.pack_offset = offset
                             pack_cards = []
                             parsed_cards = []
                             try:
@@ -848,14 +851,12 @@ class LogScanner:
         return pack_cards
             
     def RetrieveSet(self):
-        file_location = ''
-        #self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "", "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
-
+        ratings_location = ''
         draft_list = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
         draft_list.extend(list(draft_types_dict.keys()))
         self.set_data = None
         try:
-            
+            #Retrieve card ratings
             for type in draft_list:
                 root = os.getcwd()
                 for files in os.listdir(root):
@@ -863,14 +864,14 @@ class LogScanner:
                     for case in set_case:
                         filename = case + "_" + type + "_Data.json"
                         if filename == files:
-                            file_location = os.path.join(root, filename)
-                            print("File Found: %s" % file_location)
+                            ratings_location = os.path.join(root, filename)
+                            print("File Found: %s" % ratings_location)
                             break                           
-                if len(file_location):
+                if len(ratings_location):
                     break
                     
-            if len(file_location):
-                with open(file_location, 'r') as json_file:
+            if len(ratings_location):
+                with open(ratings_location, 'r') as json_file:
                     json_data = json_file.read()
                 json_file.close()
                 self.set_data = json.loads(json_data)
@@ -887,12 +888,35 @@ class LogScanner:
                             if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
                                 ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
                                 self.deck_colors[deck_color] = ratings_string
-                    print("deck_colors: %s" % str(self.deck_colors))
                 except Exception as error:
                     print("RetrieveSet Sub Error: %s" % error)
                     for deck_color in self.deck_colors.keys():
                         self.deck_colors[deck_color] = deck_color
-                    
+             
         except Exception as error:
             print("RetrieveSet Error: %s" % error)   
+        return
+        
+    def RetrieveTier(self):
+        tier_location = ''
+        self.tier_data = None
+        try:
+
+            #Retrieve tier list
+            root = os.getcwd()
+            for files in os.listdir(root):
+                filename = "Tier_"
+                if filename in files:
+                    tier_location = os.path.join(root, files)
+                    with open(tier_location, 'r') as json_file:
+                        json_data = json_file.read()
+                    tier_data = json.loads(json_data)
+                    if tier_data["meta"]["set"] == self.draft_set.upper():
+                        self.tier_data = tier_data
+                        self.deck_colors["Tier"] = "Tier (%s)" % tier_data["meta"]["label"]
+                        break
+
+             
+        except Exception as error:
+            print("RetrieveTier Error: %s" % error)   
         return
