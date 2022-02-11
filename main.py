@@ -779,16 +779,16 @@ class WindowUI:
             end_label = Label(popup, text="End Date:")
             color_label = Label(popup, text="Color Rating:")
             id_label = Label(popup, text="ID:")
-            draft_choices = ["QuickDraft", "PremierDraft", "TradDraft"]
+            draft_choices = ["PremierDraft", "QuickDraft", "TradDraft"]
             
             draft_value = StringVar(self.root)
-            draft_value.set('QuickDraft')
+            draft_value.set('PremierDraft')
             draft_entry = OptionMenu(popup, draft_value, draft_choices[0], *draft_choices)
             
             set_choices = [k for k, v in sets.items()]
             
             set_value = StringVar(self.root)
-            set_value.set('QuickDraft')
+            set_value.set('PremierDraft')
             set_entry = OptionMenu(popup, set_value, set_choices[0], *set_choices)
             
             start_entry = Entry(popup)
