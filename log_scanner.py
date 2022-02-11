@@ -373,8 +373,9 @@ class LogScanner:
                                     if len(self.set_data["card_ratings"][card]):
                                         parsed_cards.append(self.set_data["card_ratings"][card]["name"])
                                         pack_cards.append(self.set_data["card_ratings"][card])
-                                        pack = draft_data["SelfPack"]
-                                        pick = draft_data["SelfPick"]
+                                        
+                            pack = draft_data["SelfPack"]
+                            pick = draft_data["SelfPick"]
                                 
                             pack_index = (pick - 1) % 8
                             
@@ -437,8 +438,9 @@ class LogScanner:
                                     if len(self.set_data["card_ratings"][card]):
                                         parsed_cards.append(self.set_data["card_ratings"][card]["name"])
                                         pack_cards.append(self.set_data["card_ratings"][card])
-                                        pack = draft_data["SelfPack"]
-                                        pick = draft_data["SelfPick"]
+                                        
+                            pack = draft_data["SelfPack"]
+                            pick = draft_data["SelfPick"]
                                 
                             pack_index = (pick - 1) % 8
                             
@@ -563,9 +565,9 @@ class LogScanner:
                                         if len(self.set_data["card_ratings"][card]):
                                             parsed_cards.append(self.set_data["card_ratings"][card]["name"])
                                             pack_cards.append(self.set_data["card_ratings"][card])
-                                            pack = payload_data["PackNumber"] + 1
-                                            pick = payload_data["PickNumber"] + 1
-                                    
+                                            
+                                pack = payload_data["PackNumber"] + 1
+                                pick = payload_data["PickNumber"] + 1  
                                 pack_index = (pick - 1) % 8
                                 
                                 if self.current_pack != pack:
