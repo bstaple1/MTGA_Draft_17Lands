@@ -117,9 +117,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Top-Level Window: The main application window, and subsequent windows, will act as an overlay and remain above all other windows, including the Arena screen.
 
-- Tooltips: Clicking on any field that lists a card will display a tooltip the contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
+- Tier List: A tier list can be added to the drop-downs by following the instructions in /Tools/TierScraper17Lands/README.txt.
 
-- Tier Lists: A tier list can be added to the drop-downs by following the instructions in /Tools/TierScraper17Lands/README.txt
+- Tooltips: Clicking on any field that lists a card will display a tooltip the contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
 	
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tooltip.png?raw=true)	
 	
