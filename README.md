@@ -19,6 +19,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 6: Download the sets that you plan on using (Data->View Sets).
 
+    - Note: Use ID 79418 when downloading Kamigawa: Neon Dynasty
+
 - Step 7: Start the draft in Arena.
 
 ## Steps for Mac
@@ -47,6 +49,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - Step 12: Set Arena to window mode.
 
 - Step 13: Download the sets that you plan on using (Data->View Sets).
+
+    - Note: Use ID 79418 when downloading Kamigawa: Neon Dynasty
 
 - Step 14: Start the draft in Arena.
 

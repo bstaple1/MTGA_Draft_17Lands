@@ -82,7 +82,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.62
+__version__= 2.70
 
 
 def CheckVersion(platform, version):
@@ -381,40 +381,9 @@ class WindowUI:
         
         self.root.attributes("-topmost", True)
         
-        #Version Check
-        update_flag = False
-        if self.os == "PC":
-            try:
-                import win32api
-                DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
-                
-                new_version_found, new_version = CheckVersion(DP, __version__)
-                if new_version_found:
-                    message_string = "Update client %.2f to version %.2f" % (__version__, new_version)
-                    message_box = MessageBox.askyesno(title="Update", message=message_string)
-                    if message_box == True:
-                        DP.SessionRepositoryDownload("setup.exe")
-                        self.root.destroy()
-                        win32api.ShellExecute(0, "open", "setup.exe", None, None, 10)
-    
-                    else:
-                        update_flag = True
-                else:
-                    update_flag = True
-    
-            except Exception as error:
-                print(error)
-                update_flag = True
-        else:
-            update_flag = True
-
-        if update_flag:
-           self.UpdateUI()
-           #self.deck_colors_options_selection.trace("w", self.UpdateCallback)  
-           self.column_2_selection.trace("w", self.UpdateCallback) 
-           self.column_3_selection.trace("w", self.UpdateCallback) 
-           self.column_4_selection.trace("w", self.UpdateCallback) 
-
+        message_box = MessageBox.showwarning(title="Notice", message="This application utilizes 17Lands data, but it's not endorsed by 17Lands.")
+        
+        self.VersionCheck()
 
     def CreateHeader(self, frame, height, headers, total_width):
         header_labels = tuple(headers.keys())
@@ -803,12 +772,13 @@ class WindowUI:
             list_box.tag_configure('gray', background='#cccccc')
             list_box.tag_configure('bold', font=('Arial Bold', 10))
             
+            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Please view the set data at https://www.17lands.com.", font='Helvetica 9', anchor="c")
             set_label = Label(popup, text="Set:")
             draft_label = Label(popup, text="Draft:")
             start_label = Label(popup, text="Start Date:")
             end_label = Label(popup, text="End Date:")
             color_label = Label(popup, text="Color Rating:")
-            id_label = Label(popup, text="Id:")
+            id_label = Label(popup, text="ID:")
             draft_choices = ["QuickDraft", "PremierDraft", "TradDraft"]
             
             draft_value = StringVar(self.root)
@@ -858,21 +828,22 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
-        list_box.grid(row=0, column=0, columnspan=8, stick = 'nsew')
-        set_label.grid(row=1, column=0, stick = 'nsew')
-        set_entry.grid(row=1, column=1, stick = 'nsew')
-        start_label.grid(row=1, column=2, stick = 'nsew')
-        start_entry.grid(row=1, column=3, stick = 'nsew')
-        end_label.grid(row=1, column=4, stick = 'nsew')
-        end_entry.grid(row=1, column=5, stick = 'nsew')
-        draft_label.grid(row=1, column=6, stick = 'nsew')
-        draft_entry.grid(row=1, column=7, stick = 'nsew')
-        id_label.grid(row=2, column=0, stick = 'nsew')
-        id_entry.grid(row=2, column=1, stick = 'nsew')
-        color_label.grid(row=2, column=2, stick = 'nsew')
-        color_checkbox.grid(row=2, column=3, stick = 'nsew')
-        add_button.grid(row=3, column=0, columnspan=8, stick = 'nsew')
-        progress.grid(row=4, column=0, columnspan=8, stick = 'nsew')
+        notice_label.grid(row=0, column=0, columnspan=8, sticky = 'nsew')
+        list_box.grid(row=1, column=0, columnspan=8, sticky = 'nsew')
+        set_label.grid(row=2, column=0, sticky = 'nsew')
+        set_entry.grid(row=2, column=1, sticky = 'nsew')
+        start_label.grid(row=2, column=2, sticky = 'nsew')
+        start_entry.grid(row=2, column=3, sticky = 'nsew')
+        end_label.grid(row=2, column=4, sticky = 'nsew')
+        end_entry.grid(row=2, column=5, sticky = 'nsew')
+        draft_label.grid(row=2, column=6, sticky = 'nsew')
+        draft_entry.grid(row=2, column=7, sticky = 'nsew')
+        id_label.grid(row=3, column=0, sticky = 'nsew')
+        id_entry.grid(row=3, column=1, sticky = 'nsew')
+        color_label.grid(row=3, column=2, sticky = 'nsew')
+        color_checkbox.grid(row=3, column=3, sticky = 'nsew')
+        add_button.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
+        progress.grid(row=5, column=0, columnspan=8, sticky = 'nsew')
 
         self.DataViewUpdate(list_box, sets)
         
@@ -1199,6 +1170,42 @@ class WindowUI:
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
         #self.deck_colors_options_list = []
+        
+    def VersionCheck(self):
+        #Version Check
+        update_flag = False
+        if self.os == "PC":
+            try:
+                import win32api
+                DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
+                
+                new_version_found, new_version = CheckVersion(DP, __version__)
+                if new_version_found:
+                    message_string = "Update client %.2f to version %.2f" % (__version__, new_version)
+                    message_box = MessageBox.askyesno(title="Update", message=message_string)
+                    if message_box == True:
+                        DP.SessionRepositoryDownload("setup.exe")
+                        self.root.destroy()
+                        win32api.ShellExecute(0, "open", "setup.exe", None, None, 10)
+    
+                    else:
+                        update_flag = True
+                else:
+                    update_flag = True
+    
+            except Exception as error:
+                print(error)
+                update_flag = True
+        else:
+            update_flag = True
+
+        if update_flag:
+           self.UpdateUI()
+           #self.deck_colors_options_selection.trace("w", self.UpdateCallback)  
+           self.column_2_selection.trace("w", self.UpdateCallback) 
+           self.column_3_selection.trace("w", self.UpdateCallback) 
+           self.column_4_selection.trace("w", self.UpdateCallback) 
+
     
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, alsa, iwd, gihwr, image, images_enabled, os):
