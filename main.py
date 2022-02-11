@@ -772,7 +772,7 @@ class WindowUI:
             list_box.tag_configure('gray', background='#cccccc')
             list_box.tag_configure('bold', font=('Arial Bold', 10))
             
-            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Please view the set data at https://www.17lands.com.", font='Helvetica 9', anchor="c")
+            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.", font='Helvetica 9', anchor="c")
             set_label = Label(popup, text="Set:")
             draft_label = Label(popup, text="Draft:")
             start_label = Label(popup, text="Start Date:")
