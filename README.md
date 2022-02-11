@@ -66,7 +66,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color ratings page on 17 Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
     - The "All Decks" option lists the combined rating across all of the deck color combinations
         -The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards.
-	
 - Pack, Pick Table: This table lists the cards contained in the current pack. 
 
     - The "All" column lists the card rating for the "All Decks" filter. This is visible regardless of the Deck Filter option chosen.
@@ -120,6 +119,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Tooltips: Clicking on any field that lists a card will display a tooltip the contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
 
+- Tier Lists: A tier list can be added to the drop-downs by following the instructions in /Tools/TierScraper17Lands/README.txt
 	
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tooltip.png?raw=true)	
 	
