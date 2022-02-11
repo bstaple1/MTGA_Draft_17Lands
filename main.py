@@ -353,19 +353,21 @@ class WindowUI:
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection, self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
         self.stat_options.config(width=11) 
         
-        #self.current_draft_frame.grid(row = 0, column = 0, columnspan = 2)
-        #self.deck_colors_frame.grid(row = 1, column = 0, columnspan = 2)
-        self.refresh_button_frame.grid(row = 2, column = 0, columnspan = 2, sticky = 'nsew')
-        self.status_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
-        self.pack_table_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
-        self.missing_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
-        self.missing_table_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
-        self.stat_frame.grid(row=7, column = 0, columnspan = 2, sticky = 'nsew') 
-        self.stat_table.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
-        self.current_draft_label.grid(row = 0, column = 0, columnspan = 1, sticky = 'nsew')
-        self.current_draft_value_label.grid(row = 0, column = 1, columnspan = 1, sticky = 'nsew')
-        self.deck_colors_label.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
-        self.deck_colors_options.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsw')
+        citation_label = Label(self.root, text="Powered by 17Lands", font='Helvetica 9 ', anchor="e", borderwidth=2, relief="groove")
+        
+        citation_label.grid(row = 0, column = 0, columnspan = 2) 
+        self.current_draft_label.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
+        self.current_draft_value_label.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
+        self.deck_colors_label.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
+        self.deck_colors_options.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsw')
+        self.refresh_button_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
+        self.status_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
+        self.pack_table_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
+        self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
+        self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+        self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
+        self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew') 
+
         self.refresh_button.pack(expand = True, fill = "both")
 
         self.pack_pick_label.pack(expand = False, fill = None)
@@ -381,7 +383,7 @@ class WindowUI:
         
         self.root.attributes("-topmost", True)
         
-        message_box = MessageBox.showwarning(title="Notice", message="This application is not endorsed by 17Lands.")
+        message_box = MessageBox.showwarning(title="Notice", message="This application utilizes data from 17Lands (www.17lands.com). This application is not endorsed by 17Lands.")
         
         self.VersionCheck()
 

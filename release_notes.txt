@@ -1,0 +1,14 @@
+===================== RELEASE NOTES 2.70 =====================
+
+- New Feature: Tier List 
+  - Follow the instructions in Tools/TierScraper17Lands/README.txt
+  - Added a Tier drop-down option to the filters
+  - Downloading the set is still required
+
+- UI Change: Added 17Lands startup and embargo notices so that the application is compliant with the 17Lands usage guidelines (https://www.17lands.com/usage_guidelines)
+
+- Feature Note: Use ID 79418 when downloading the Kamigawa: Neon Dynasty set
+
+- Bug Fix: The application will no longer generate excessive log entries after a quick draft has ended
+
+- Bug Fix: The application will no longer get stuck if the draft includes basic lands
