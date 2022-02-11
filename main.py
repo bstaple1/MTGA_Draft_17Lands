@@ -381,7 +381,7 @@ class WindowUI:
         
         self.root.attributes("-topmost", True)
         
-        message_box = MessageBox.showwarning(title="Notice", message="This application utilizes 17Lands data, but it's not endorsed by 17Lands.")
+        message_box = MessageBox.showwarning(title="Notice", message="This application is not endorsed by 17Lands.")
         
         self.VersionCheck()
 
