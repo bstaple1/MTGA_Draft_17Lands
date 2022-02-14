@@ -735,7 +735,7 @@ class WindowUI:
                     self.UpdateCallback()
                     print("previous pick: %u, current pick: %u" % (previous_pick, self.draft.current_pick))
                     if self.draft.current_pack < previous_pack:
-                        self.DraftReset(False)
+                        self.DraftReset(True)
                         self.UpdateCallback()
                     if self.draft.step_through and (previous_pick != self.draft.current_pick):
                         input("Continue?")
