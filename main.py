@@ -262,7 +262,7 @@ class WindowUI:
         
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
-        
+        Grid.columnconfigure(self.root, 1, weight = 1)
         #Menu Bar
         self.menubar = Menu(self.root)
         self.filemenu = Menu(self.menubar, tearoff=0)
@@ -288,13 +288,14 @@ class WindowUI:
                 foreground=FixedMap(style, "foreground"),
                 background=FixedMap(style, "background"))
                 
-        #self.current_draft_frame = Frame(self.root)
-        self.current_draft_label = Label(self.root, text="Current Draft:", font='Helvetica 9 bold', anchor="e", width = 15)
+        current_draft_label_frame = Frame(self.root)
+        self.current_draft_label = Label(current_draft_label_frame, text="Current Draft:", font='Helvetica 9 bold', anchor="e")
         
-        self.current_draft_value_label = Label(self.root, text="", font='Helvetica 9', anchor="w", width=17)
+        current_draft_value_frame = Frame(self.root)
+        self.current_draft_value_label = Label(current_draft_value_frame, text="", font='Helvetica 9', anchor="w")
         
-        #self.deck_colors_frame = Frame(self.root)
-        self.deck_colors_label = Label(self.root, text="Deck Filter:", font='Helvetica 9 bold', anchor="e", width = 15)
+        deck_colors_label_frame = Frame(self.root)
+        self.deck_colors_label = Label(deck_colors_label_frame, text="Deck Filter:", font='Helvetica 9 bold', anchor="e")
         
         #self.deck_colors_options_selection = StringVar(self.root)
         #self.deck_colors_options_list = []
@@ -310,8 +311,9 @@ class WindowUI:
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
-        self.deck_colors_options = OptionMenu(self.root, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
-        self.deck_colors_options.config(width=10)
+        deck_colors_option_frame = Frame(self.root)
+        self.deck_colors_options = OptionMenu(deck_colors_option_frame, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
+        #self.deck_colors_options.config(width=10)
         
         self.refresh_button_frame = Frame(self.root)
         self.refresh_button = Button(self.refresh_button_frame, command=self.UpdateCallback, text="Refresh");
@@ -356,10 +358,10 @@ class WindowUI:
         citation_label = Label(self.root, text="Powered by 17Lands", font='Helvetica 9 ', anchor="e", borderwidth=2, relief="groove")
         
         citation_label.grid(row = 0, column = 0, columnspan = 2) 
-        self.current_draft_label.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
-        self.current_draft_value_label.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
-        self.deck_colors_label.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
-        self.deck_colors_options.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsw')
+        current_draft_label_frame.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
+        current_draft_value_frame.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
+        deck_colors_label_frame.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
+        deck_colors_option_frame.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsw')
         self.refresh_button_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
         self.status_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
         self.pack_table_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
@@ -376,7 +378,10 @@ class WindowUI:
         self.missing_table.pack(expand = True, fill = 'both')
         self.stat_label.pack(side=LEFT, expand = True, fill = None)
         self.stat_options.pack(side=RIGHT, expand = True, fill = None)
-        
+        self.current_draft_label.pack(expand = True, fill = None, anchor="e")
+        self.current_draft_value_label.pack(expand = True, fill = None, anchor="w")
+        self.deck_colors_label.pack(expand = False, fill = None, anchor="e")
+        self.deck_colors_options.pack(expand = False, fill = None, anchor="w")
         #self.draft.DraftSearch()
         self.check_timestamp = 0
         self.previous_timestamp = 0
