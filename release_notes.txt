@@ -1,3 +1,10 @@
+===================== RELEASE NOTES 2.71 =====================
+
+- New Feature: Added support for MWM bot draft
+
+- Bug Fix: Restarting is no longer required when playing consecutive drafts
+
+
 ===================== RELEASE NOTES 2.70 =====================
 
 - New Feature: Tier List 
