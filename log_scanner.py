@@ -20,6 +20,7 @@ draft_types_dict = {
     "PremierDraft"     : DRAFT_TYPE_PREMIER_V1,
     "QuickDraft"       : DRAFT_TYPE_QUICK,
     "TradDraft"        : DRAFT_TYPE_TRADITIONAL,
+    "BotDraft"         : DRAFT_TYPE_QUICK,
 }
 
 ## Used to identify OS type based on CLI string
