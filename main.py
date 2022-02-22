@@ -82,7 +82,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.71
+__version__= 2.72
 
 
 def CheckVersion(platform, version):
@@ -388,7 +388,7 @@ class WindowUI:
         
         self.root.attributes("-topmost", True)
         
-        message_box = MessageBox.showwarning(title="Notice", message="This application utilizes data from 17Lands (www.17lands.com). This application is not endorsed by 17Lands.")
+        message_box = MessageBox.showinfo(title="Notice", message="This application utilizes data from 17Lands (www.17lands.com). This application is not endorsed by 17Lands.")
         
         self.VersionCheck()
 
@@ -1064,30 +1064,58 @@ class WindowUI:
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
         
     def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets, version):
-        button['state'] = 'disabled'
-        progress['value'] = 0
-        self.root.update()
-        platform.Sets(set)
-        platform.DraftType(draft.get())
-        platform.StartDate(start.get())
-        platform.EndDate(end.get())
-        platform.ID(id.get())
-        platform.Version(version)
-        if color_rating.get():
-            platform.SessionColorRatings()
-        platform.SessionCardData()
-        progress['value']=10
-        self.root.update()
-        if(platform.SessionCardRating(self.root, progress, progress['value'])):
-            platform.ExportData()
-            progress['value']=100
-        else:
-            progress['value']=0
-        button['state'] = 'normal'
-        self.root.update()
-        self.DataViewUpdate(list_box, sets)
-        self.DraftReset(True)
-        self.UpdateCallback()
+        result = True
+        result_string = ""
+        while(1):
+            try:
+                button['state'] = 'disabled'
+                progress['value'] = 0
+                self.root.update()
+                platform.Sets(set)
+                platform.DraftType(draft.get())
+                if platform.StartDate(start.get()) == False:
+                    result = False
+                    result_string = "Invalid Start Date (YYYY-MM-DD)"
+                    break
+                if platform.EndDate(end.get()) == False:
+                    result = False
+                    result_string = "Invalid End Date (YYYY-MM-DD)"
+                    break
+                if platform.ID(id.get()) == False:
+                    result = False
+                    result_string = "Invalid ID"
+                    break
+                platform.Version(version)
+                if color_rating.get():
+                    platform.SessionColorRatings()
+                if platform.SessionCardData() == False:
+                    result = False
+                    result_string = "Couldn't Collect Card Data"
+                    break
+                progress['value']=10
+                self.root.update()
+                if platform.SessionCardRating(self.root, progress, progress['value']) == False:
+                    result = False
+                    result_string = "Couldn't Collect Ratings Data"
+                    break
+                platform.ExportData()
+                progress['value']=100
+                button['state'] = 'normal'
+                self.root.update()
+                self.DataViewUpdate(list_box, sets)
+                self.DraftReset(True)
+                self.UpdateCallback()
+
+            except Exception as error:
+                result = False
+                result_string = error
+                print(error)
+            break
+        
+        if result == False:
+            button['state'] = 'normal'
+            message_string = "Download Failed: %s" % result_string
+            message_box = MessageBox.showwarning(title="Error", message=message_string)
         
     def DataViewUpdate(self, list_box, sets):
         #Delete the content of the list box

@@ -45,6 +45,22 @@ def ExtractTypes(type_line):
         types.append("Artifact")
 
     return types
+    
+def DateCheck(date):
+    result = True
+    try:
+        parts = date.split("-")
+        year = int(parts[0])
+        month = int(parts[1])
+        day = int(parts[2])
+        hour = 0
+        
+        if datetime.datetime(year=year,month=month,day=day,hour=hour) > datetime.datetime.now():
+            result = False
+            
+    except Exception as error:
+        result = False
+    return result
        
 class DataPlatform:
     def __init__(self, diag_log_file, diag_log_enabled):
@@ -71,16 +87,26 @@ class DataPlatform:
         self.draft = draft_type
         
     def StartDate(self, start_date):
-        self.start_date = start_date
-        self.combined_data["meta"]["start_date"] = self.start_date
-        
+        result = False
+        if DateCheck(start_date):
+            result = True
+            self.start_date = start_date
+            self.combined_data["meta"]["start_date"] = self.start_date
+        return result
     def EndDate(self, end_date):
-        self.end_date = end_date
-        self.combined_data["meta"]["end_date"] = self.end_date
+        result = False
+        if DateCheck(end_date):
+            result = True
+            self.end_date = end_date
+            self.combined_data["meta"]["end_date"] = self.end_date
+        return result
         
     def ID(self, id):
-        self.id = id
-        
+        result = False
+        if id.isnumeric():
+            result = True
+            self.id = id
+        return result
     def Version(self, version):
         self.combined_data["meta"]["version"] = version
         
@@ -110,31 +136,41 @@ class DataPlatform:
 
 
     def SessionCardData(self):
-            arena_id = int(self.id)
-            for set in self.sets:
-                print(set)
-                if set == "dbl":
-                    continue
+        arena_id = int(self.id)
+        result = False
+        for set in self.sets:
+            print(set)
+            if set == "dbl":
+                continue
+            retry = 5
+            while retry:
                 try:
                     #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
                     url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (set)
                     url_data = urllib.request.urlopen(url, context=self.context).read()
                     
                     set_json_data = json.loads(url_data)
-
-                    arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
+        
+                    arena_id, result = self.ProcessCardData(set_json_data["data"], arena_id)
                     
-                    while set_json_data["has_more"] == True:
+                    while (set_json_data["has_more"] == True) and (result == True):
                         url = set_json_data["next_page"]
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         set_json_data = json.loads(url_data)
-                        arena_id = self.ProcessCardData(set_json_data["data"], arena_id)
+                        arena_id, result = self.ProcessCardData(set_json_data["data"], arena_id)
                         
-                
+                    if result == True:
+                        break
+                        
                 except Exception as error:
                     error_string = "SessionCardData Error: %s" % error
                     print(error_string)     
                     LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                
+                if result == False:
+                    retry -= 1
+                    time.sleep(5)
+        return result
         
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
@@ -323,7 +359,7 @@ class DataPlatform:
             print("RetrieveColorRatings Error: %s" % error)
           
     def ProcessCardData (self, data, arena_id):
-
+        result = False
         for card_data in data:
             try:
                 #Skip Alchemy cards
@@ -360,12 +396,12 @@ class DataPlatform:
                     card["mana_cost"] = "0"
                     card["image"] = []
                 self.card_list.append(card)
-                
+                result = True
                 
             except Exception as error:
                 print("ProcessCardData Error: %s" % error)
         #print("combined_data: %s" % str(combined_data))
-        return arena_id   
+        return arena_id, result   
         
     def ProcessCardRatings (self, card):
         try:
