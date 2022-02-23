@@ -1,7 +1,7 @@
 ; -- MtgaDraft.iss --
 [Setup]
 AppName=MTGA Draft Tool
-AppVersion=2.70
+AppVersion=2.72
 WizardStyle=modern
 DefaultDirName={sd}\MtgaDraftTool
 DefaultGroupName=MtgaDraftTool

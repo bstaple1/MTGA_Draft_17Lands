@@ -138,6 +138,7 @@ class DataPlatform:
     def SessionCardData(self):
         arena_id = int(self.id)
         result = False
+        result_string = "Couldn't Retrieve Card Data"
         for set in self.sets:
             print(set)
             if set == "dbl":
@@ -151,26 +152,27 @@ class DataPlatform:
                     
                     set_json_data = json.loads(url_data)
         
-                    arena_id, result = self.ProcessCardData(set_json_data["data"], arena_id)
+                    arena_id, result, result_string = self.ProcessCardData(set_json_data["data"], arena_id)
                     
                     while (set_json_data["has_more"] == True) and (result == True):
                         url = set_json_data["next_page"]
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         set_json_data = json.loads(url_data)
-                        arena_id, result = self.ProcessCardData(set_json_data["data"], arena_id)
+                        arena_id, result, result_string = self.ProcessCardData(set_json_data["data"], arena_id)
                         
                     if result == True:
                         break
                         
                 except Exception as error:
                     error_string = "SessionCardData Error: %s" % error
+                    result_string = error
                     print(error_string)     
                     LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
                 
                 if result == False:
                     retry -= 1
                     time.sleep(5)
-        return result
+        return result, result_string
         
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
@@ -360,6 +362,7 @@ class DataPlatform:
           
     def ProcessCardData (self, data, arena_id):
         result = False
+        result_string = ""
         for card_data in data:
             try:
                 #Skip Alchemy cards
@@ -400,8 +403,9 @@ class DataPlatform:
                 
             except Exception as error:
                 print("ProcessCardData Error: %s" % error)
+                result_string = error
         #print("combined_data: %s" % str(combined_data))
-        return arena_id, result   
+        return arena_id, result, result_string   
         
     def ProcessCardRatings (self, card):
         try:

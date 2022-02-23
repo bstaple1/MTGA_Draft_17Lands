@@ -1088,9 +1088,8 @@ class WindowUI:
                 platform.Version(version)
                 if color_rating.get():
                     platform.SessionColorRatings()
-                if platform.SessionCardData() == False:
-                    result = False
-                    result_string = "Couldn't Collect Card Data"
+                result, result_string = platform.SessionCardData()
+                if result == False:
                     break
                 progress['value']=10
                 self.root.update()

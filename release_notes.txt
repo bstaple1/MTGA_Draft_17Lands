@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 2.72 =====================
+
+- Modified Feature: Added input checks and retry logic to the download set process
+
+- Bug Fix: The application now supports the Kamigawa traditional draft
+
+- Note: When downloading the Kamigawa set, ID 79418 is no longer required (use the default 0)
+
 ===================== RELEASE NOTES 2.71 =====================
 
 - New Feature: Added support for MWM bot draft

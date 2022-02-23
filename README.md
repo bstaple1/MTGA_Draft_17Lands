@@ -7,19 +7,17 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file or clone the repository.
 
-- Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box
+- Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
 - Step 3: Double-click setup.exe to start the install. 
 
-    - Note: The application must be installed to the main drive (C drive)
+    - Note: The application must be installed to the main drive (C drive).
 
-- Step 4: Go to the installed folder and right-click the exectuable (.exe), click properties, compatibility tab, and check Run this program as an administrator
+- Step 4: Go to the installed folder and right-click the exectuable (.exe), click properties, compatibility tab, and check Run this program as an administrator.
 
 - Step 5: Double-click the MTGA_Draft_Tool.exe to start the program.
 
 - Step 6: Download the sets that you plan on using (Data->View Sets).
-
-    - Note: Use ID 79418 when downloading Kamigawa: Neon Dynasty
 
 - Step 7: Start the draft in Arena.
 
@@ -49,8 +47,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - Step 12: Set Arena to window mode.
 
 - Step 13: Download the sets that you plan on using (Data->View Sets).
-
-    - Note: Use ID 79418 when downloading Kamigawa: Neon Dynasty
 
 - Step 14: Start the draft in Arena.
 
