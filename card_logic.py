@@ -169,21 +169,21 @@ def ColorFilter(deck, color_selection, color_list):
     
 def DeckColors(deck, color_options, colors_max):
     try:
-        deck_colors = []
+        deck_colors = {}
         
-        colors = CalculateColorAffinity(deck,"All Decks",50)
+        colors = CalculateColorAffinity(deck,"All Decks",52)
         
         # Modify the dictionary to include ratings
-        colors = list(map((lambda x : {"color" : x, "rating" : colors[x]}), colors.keys()))
+        color_list = list(map((lambda x : {"color" : x, "rating" : colors[x]}), colors.keys()))
         
         # Sort the list by decreasing ratings
-        colors = sorted(colors, key = lambda k : k["rating"], reverse = True)
+        color_list = sorted(color_list, key = lambda k : k["rating"], reverse = True)
         
         # Remove extra colors beyond limit
-        colors = colors[0: colors_max]
+        color_list = color_list[0:3]
         
         # Return colors 
-        sorted_colors = list(map((lambda x : x["color"]), colors))
+        sorted_colors = list(map((lambda x : x["color"]), color_list))
         
         #Create color permutation
         color_combination = []
@@ -194,12 +194,21 @@ def DeckColors(deck, color_options, colors_max):
         
         #Convert tuples to list of strings
         color_strings = [''.join(tups) for tups in color_combination]
+        color_string = [x for x in color_strings if len(x) <= colors_max]
+
+        color_dict = {}
+        for color_string in color_strings:
+            for color in color_string:
+                if color_string not in color_dict.keys():
+                    color_dict[color_string] = 0
+                color_dict[color_string] += colors[color]
         
         for color_option in color_options.keys():
-            for color_string in color_strings:
+            for color_string in color_dict.keys():
                 if (len(color_string) == len(color_option)) and set(color_string).issubset(color_option):
-                    deck_colors.append(color_option)
-                    
+                    deck_colors[color_option] = color_dict[color_string]
+
+        deck_colors = dict(sorted(deck_colors.items(), key=lambda item: item[1], reverse=True))
         
     except Exception as error:
         print("DeckColors Error: %s" % error)
@@ -209,9 +218,16 @@ def DeckColors(deck, color_options, colors_max):
 def AutoColors(deck, color_options, colors_max):
     try:
         deck_colors = next(iter(color_options))
-        colors = {}
+        colors_dict = {}
         if len(deck) > 15:
-            deck_colors = DeckColors(deck, color_options, colors_max)[0]
+            colors_dict = DeckColors(deck, color_options, colors_max)
+            colors = list(colors_dict.keys())
+            print(colors_dict)
+            if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > 15):
+                deck_colors = colors[0]
+            elif len(colors) == 1:
+                deck_colors = colors[0]
+
     except Exception as error:
         print("AutoColors Error: %s" % error)
     
@@ -293,16 +309,16 @@ def CardAIFilter(pack, deck, color_options, limits, alsa_weight, iwd_weight):
         color_count = 3 if pick_number < color_limit_start else 2
         
         deck_colors = DeckColors(deck, color_options, color_count)
-        
+        deck_colors = deck_colors.keys()
         for card in pack:
             selected_card = card
             selected_card["rating_all"] = CardRating(selected_card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight)
             
             selected_card["rating_filter_c"] = CardAIRating(selected_card,
-                                                          deck,
-                                                          deck_colors,
-                                                          limits,
-                                                          pick_number)
+                                                            deck,
+                                                            deck_colors,
+                                                            limits,
+                                                            pick_number)
             filtered_list.append(selected_card)
     except Exception as error:
         print("CardAIFilter Error: %s" % error)
@@ -711,7 +727,7 @@ def SuggestDeck(taken_cards, color_options, limits):
         
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
-        
+        colors = colors.keys()
         filtered_colors = []
         
         #Collect color stats and remove colors that don't meet the minimum requirements

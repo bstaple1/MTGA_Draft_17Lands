@@ -299,6 +299,10 @@ class WindowUI:
         
         #self.deck_colors_options_selection = StringVar(self.root)
         #self.deck_colors_options_list = []
+        self.deck_stats_checkbox_value = IntVar(self.root)
+        self.deck_stats_checkbox_value.set(0)
+        self.missing_cards_checkbox_value = IntVar(self.root)
+        self.missing_cards_checkbox_value.set(0)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.draft.deck_colors
         self.column_2_selection.set("All ALSA")
@@ -693,6 +697,9 @@ class WindowUI:
         self.draft.DraftSearch()
         
         self.UpdateOptions(self.draft.deck_colors)
+        
+        self.HideDeckStates(self.deck_stats_checkbox_value.get())
+        self.HideMissingCards(self.missing_cards_checkbox_value.get())
                 
         filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors)
         filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors)
@@ -1028,7 +1035,7 @@ class WindowUI:
     def SettingsPopup(self):
         popup = Toplevel()
         popup.wm_title("Settings")
-        popup.geometry("210x75")
+        #popup.geometry("210x75")
         try:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
@@ -1036,7 +1043,16 @@ class WindowUI:
             column_2_label = Label(popup, text="Column 2:", font='Helvetica 9 bold', anchor="w")
             column_3_label = Label(popup, text="Column 3:", font='Helvetica 9 bold', anchor="w")
             column_4_label = Label(popup, text="Column 4:", font='Helvetica 9 bold', anchor="w")
-            
+            deck_stats_label = Label(popup, text="Hide Deck Stats:", font='Helvetica 9 bold', anchor="w")
+            deck_stats_checkbox = Checkbutton(popup,
+                                              variable=self.deck_stats_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0)
+            missing_cards_label = Label(popup, text="Hide Missing Cards:", font='Helvetica 9 bold', anchor="w")
+            missing_cards_checkbox = Checkbutton(popup,
+                                                 variable=self.missing_cards_checkbox_value,
+                                                 onvalue=1,
+                                                 offvalue=0)
             optionsStyle = Style()
             optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
             
@@ -1055,7 +1071,10 @@ class WindowUI:
             column_2_options.grid(row=0, column=1, columnspan=1, sticky="nsew")
             column_3_options.grid(row=1, column=1, columnspan=1, sticky="nsew")
             column_4_options.grid(row=2, column=1, columnspan=1, sticky="nsew")
-            
+            deck_stats_label.grid(row=3, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            deck_stats_checkbox.grid(row=3, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            missing_cards_label.grid(row=4, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            missing_cards_checkbox.grid(row=4, column=1, columnspan=1, sticky="nsew", padx=(5,))            
             
             popup.attributes("-topmost", True)
         except Exception as error:
@@ -1238,8 +1257,25 @@ class WindowUI:
            #self.deck_colors_options_selection.trace("w", self.UpdateCallback)  
            self.column_2_selection.trace("w", self.UpdateCallback) 
            self.column_3_selection.trace("w", self.UpdateCallback) 
-           self.column_4_selection.trace("w", self.UpdateCallback) 
-
+           self.column_4_selection.trace("w", self.UpdateCallback)
+           self.deck_stats_checkbox_value.trace("w", self.UpdateCallback)
+           self.missing_cards_checkbox_value.trace("w", self.UpdateCallback)
+    def HideDeckStates(self, hide):
+        if hide:
+            self.stat_frame.grid_remove()
+            self.stat_table.grid_remove()
+        else:
+            self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
+            self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew')
+            
+    def HideMissingCards(self, hide):
+        if hide:
+            self.missing_frame.grid_remove()
+            self.missing_table_frame.grid_remove()
+        else:
+            self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
+            self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+            
     
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, alsa, iwd, gihwr, image, images_enabled, os):
