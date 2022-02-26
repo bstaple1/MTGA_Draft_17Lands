@@ -297,6 +297,9 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
             filtered_list.append(selected_card)
     except Exception as error:
         print("CardColorFilter Error: %s" % error)
+        selected_card["rating_filter_a"] = 0.0
+        selected_card["rating_filter_b"] = 0.0
+        selected_card["rating_filter_c"] = 0.0
     return filtered_list
  
 def CardAIFilter(pack, deck, color_options, limits, alsa_weight, iwd_weight):
