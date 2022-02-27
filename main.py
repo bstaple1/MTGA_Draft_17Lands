@@ -68,6 +68,7 @@ from tkinter.ttk import *
 from tkinter import filedialog
 from pynput.keyboard import Key, Listener, KeyCode
 from datetime import date
+from dataclasses import dataclass
 import tkinter.messagebox as MessageBox
 import urllib
 import json
@@ -84,6 +85,16 @@ from ttkwidgets.autocomplete import AutocompleteEntry
 
 __version__= 2.72
 
+@dataclass
+class Config:
+    hotkey_enabled : bool=True
+    images_enabled : bool=False
+    table_width : int=270
+    column_2 : str="All ALSA"
+    column_3 : str="All Decks"
+    column_4 : str="Auto"
+    hide_missing : bool=False
+    hide_stats : bool=False
 
 def CheckVersion(platform, version):
     return_value = False
@@ -144,21 +155,41 @@ def NavigateFileLocation(os_type):
     return file_location
     
 def ReadConfig():
-    hotkey_enabled = True
-    themes_enabled = False
-    images_enabled = False
-    table_width = 270
+    config = Config()
     try:
-        with open("config.json", 'r') as config:
-            config_json = config.read()
+        with open("config.json", 'r') as data:
+            config_json = data.read()
             config_data = json.loads(config_json)
-        hotkey_enabled = config_data["features"]["hotkey_enabled"]
-        #themes_enabled = config_data["features"]["themes_enabled"]
-        images_enabled = config_data["features"]["images_enabled"]
-        table_width = int(config_data["settings"]["table_width"])
+        config.hotkey_enabled = config_data["features"]["hotkey_enabled"]
+        config.images_enabled = config_data["features"]["images_enabled"]
+        config.table_width = int(config_data["settings"]["table_width"])
+        config.column_2 = config_data["settings"]["column_2"]
+        config.column_3 = config_data["settings"]["column_3"]
+        config.column_4 = config_data["settings"]["column_4"]
+        config.hide_missing = config_data["settings"]["hide_missing"]
+        config.hide_stats = config_data["settings"]["hide_stats"]
+
     except Exception as error:
         print("ReadConfig Error: %s" % error)
-    return hotkey_enabled, themes_enabled, images_enabled, table_width
+    return config
+
+def WriteConfig(config):
+    try:
+        with open("config.json", 'r') as data:
+            config_json = data.read()
+            config_data = json.loads(config_json)
+        
+        config_data["settings"]["column_2"] = config.column_2
+        config_data["settings"]["column_3"] = config.column_3
+        config_data["settings"]["column_4"] = config.column_4
+        config_data["settings"]["hide_missing"] = config.hide_missing
+        config_data["settings"]["hide_stats"] = config.hide_stats
+        
+        with open('config.json', 'w', encoding='utf-8') as file:
+            json.dump(config_data, file, ensure_ascii=False, indent=4)
+    
+    except Exception as error:
+        print("WriteConfig Error: %s" % error)
 
 def ResetConfig():
     config = {}
@@ -247,18 +278,17 @@ def CopyClipboard(copy):
     return 
         
 class WindowUI:
-    def __init__(self, root, filename, step_through, diag_log_enabled, os, themes, images, table_width):
+    def __init__(self, root, filename, step_through, diag_log_enabled, operating_system, config):
         self.root = root
-        self.images_enabled = images
-            
+        self.images_enabled = config.images_enabled
         self.filename = filename
         self.step_through = step_through
         self.diag_log_enabled = diag_log_enabled
-        self.os = os
-        self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled, self.os)
+        self.operating_system = operating_system
+        self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled, self.operating_system)
         self.diag_log_file = self.draft.diag_log_file
         self.diag_log_enabled = self.draft.diag_log_enabled
-        self.table_width = table_width
+        self.table_width = config.table_width
         
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -300,18 +330,23 @@ class WindowUI:
         #self.deck_colors_options_selection = StringVar(self.root)
         #self.deck_colors_options_list = []
         self.deck_stats_checkbox_value = IntVar(self.root)
-        self.deck_stats_checkbox_value.set(0)
         self.missing_cards_checkbox_value = IntVar(self.root)
-        self.missing_cards_checkbox_value.set(0)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.draft.deck_colors
-        self.column_2_selection.set("All ALSA")
         self.column_3_selection = StringVar(self.root)
         self.column_3_list = self.draft.deck_colors
-        self.column_3_selection.set("All Decks")
         self.column_4_selection = StringVar(self.root)
         self.column_4_list = self.draft.deck_colors
-        self.column_4_selection.set("Auto")
+        try:
+           self.column_2_selection.set(config.column_2) 
+           self.column_3_selection.set(config.column_3)
+           self.column_4_selection.set(config.column_4)
+           self.deck_stats_checkbox_value.set(config.hide_stats)
+           self.missing_cards_checkbox_value.set(config.hide_missing)
+        except Exception as error:
+           self.column_2_selection.set("All ALSA") 
+           self.column_3_selection.set("All Decks")
+           self.column_4_selection.set("Auto")
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -369,10 +404,9 @@ class WindowUI:
         self.refresh_button_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
         self.status_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
         self.pack_table_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
-        self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
-        self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
-        self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
-        self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew') 
+        
+        self.HideDeckStates(self.deck_stats_checkbox_value.get())
+        self.HideMissingCards(self.missing_cards_checkbox_value.get())
 
         self.refresh_button.pack(expand = True, fill = "both")
 
@@ -692,7 +726,20 @@ class WindowUI:
             error_string = "UpdateOptions Error: %s" % error
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-            
+       
+    def UpdateSettingsCallback(self, *args):
+        config = Config()
+        
+        config.column_2 = self.column_2_selection.get()
+        config.column_3 = self.column_3_selection.get()
+        config.column_4 = self.column_4_selection.get()
+        
+        config.hide_missing = True if self.missing_cards_checkbox_value.get() else False
+        config.hide_stats = True if self.deck_stats_checkbox_value.get() else False
+        print(config)
+        WriteConfig(config)
+        self.UpdateCallback()
+        
     def UpdateCallback(self, *args):
         self.draft.DraftSearch()
         
@@ -1189,7 +1236,7 @@ class WindowUI:
                                                            card["deck_colors"][color]["gihwr"],
                                                            card["image"],
                                                            self.images_enabled,
-                                                           self.os)
+                                                           self.operating_system)
                     except Exception as error:
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
@@ -1198,7 +1245,7 @@ class WindowUI:
                                                            0,
                                                            card["image"],
                                                            self.images_enabled,
-                                                           self.os)
+                                                           self.operating_system)
                     break
     def FileOpen(self):
         filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),
@@ -1227,7 +1274,7 @@ class WindowUI:
     def VersionCheck(self):
         #Version Check
         update_flag = False
-        if self.os == "PC":
+        if self.operating_system == "PC":
             try:
                 import win32api
                 DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
@@ -1255,27 +1302,33 @@ class WindowUI:
         if update_flag:
            self.UpdateUI()
            #self.deck_colors_options_selection.trace("w", self.UpdateCallback)  
-           self.column_2_selection.trace("w", self.UpdateCallback) 
-           self.column_3_selection.trace("w", self.UpdateCallback) 
-           self.column_4_selection.trace("w", self.UpdateCallback)
-           self.deck_stats_checkbox_value.trace("w", self.UpdateCallback)
-           self.missing_cards_checkbox_value.trace("w", self.UpdateCallback)
+           self.column_2_selection.trace("w", self.UpdateSettingsCallback) 
+           self.column_3_selection.trace("w", self.UpdateSettingsCallback) 
+           self.column_4_selection.trace("w", self.UpdateSettingsCallback)
+           self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback)
+           self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback)
     def HideDeckStates(self, hide):
-        if hide:
-            self.stat_frame.grid_remove()
-            self.stat_table.grid_remove()
-        else:
+        try:
+            if hide:
+                self.stat_frame.grid_remove()
+                self.stat_table.grid_remove()
+            else:
+                self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
+                self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew')
+        except Exception as error:
             self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
             self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew')
-            
     def HideMissingCards(self, hide):
-        if hide:
-            self.missing_frame.grid_remove()
-            self.missing_table_frame.grid_remove()
-        else:
+        try:
+            if hide:
+                self.missing_frame.grid_remove()
+                self.missing_table_frame.grid_remove()
+            else:
+                self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
+                self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+        except Exception as error:
             self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
             self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
-            
     
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, alsa, iwd, gihwr, image, images_enabled, os):
@@ -1287,7 +1340,7 @@ class CreateCardToolTip(object):
         self.iwd = iwd
         self.gihwr = gihwr
         self.image = image
-        self.os = os
+        self.operating_system = os
         self.images_enabled = images_enabled
         self.widget.bind("<Leave>", self.Leave)
         self.widget.bind("<ButtonPress>", self.Leave)
@@ -1323,7 +1376,7 @@ class CreateCardToolTip(object):
             self.tw = Toplevel(self.widget)
             # Leaves only the label and removes the app window
             self.tw.wm_overrideredirect(True)
-            if self.os == "MAC":
+            if self.operating_system == "MAC":
                self.tw.wm_overrideredirect(False) 
             self.tw.wm_geometry("+%d+%d" % (x, y))
    
@@ -1379,7 +1432,7 @@ def Startup(argv):
     file_location = ""
     step_through = False
     diag_log_enabled = True
-    os = "PC"
+    operating_system = "PC"
     try:
         opts, args = getopt.getopt(argv, "f:",["step","disablediag","os="])
     except Exception as error:
@@ -1394,24 +1447,24 @@ def Startup(argv):
             elif opt in "--disablediag":
                 diag_log_enabled = False
             elif opt in "--os=":
-                os = arg                
+                operating_system = arg                
     except Exception as error:
         print(error)
     
-    print(os)
+    print(operating_system)
     
     window = Tk()
     window.title("Magic Draft %.2f" % __version__)
     window.resizable(width = True, height = True)
     
     if file_location == "":
-        file_location = NavigateFileLocation(os);
+        file_location = NavigateFileLocation(operating_system);
         
-    hotkey, themes, images, table_width = ReadConfig()
+    config = ReadConfig()
     
-    ui = WindowUI(window, file_location, step_through, diag_log_enabled, os, themes, images, table_width)
+    ui = WindowUI(window, file_location, step_through, diag_log_enabled, operating_system, config)
     
-    if hotkey:
+    if config.hotkey_enabled:
         KeyListener(ui)    
     
     window.mainloop()

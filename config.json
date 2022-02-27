@@ -4,11 +4,16 @@
         "images_enabled": true
     },
     "settings": {
-        "table_width": 270
+        "table_width": 270,
+        "column_2": "All IWD",
+        "column_3": "All Decks",
+        "column_4": "All GIHWR",
+        "hide_missing": false,
+        "hide_stats": true
     },
     "card_logic": {
-        "alsa_weight" : 0.25,
-        "iwd_weight" : 0.25,
+        "alsa_weight": 0.25,
+        "iwd_weight": 0.25,
         "minimum_creatures": 13,
         "minimum_noncreatures": 6,
         "ratings_threshold": 500,
