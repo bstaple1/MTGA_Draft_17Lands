@@ -268,11 +268,14 @@ def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits,
     return filtered_cards
     
 def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight):
-    try:
-        filtered_list = []
-        non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
-        for card in card_list:
+    filtered_list = []
+    non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
+    for card in card_list:
+        try:
             selected_card = card
+            selected_card["rating_filter_a"] = 0.0
+            selected_card["rating_filter_b"] = 0.0
+            selected_card["rating_filter_c"] = 0.0
             if filter_a in non_color_options:
                 color, type = filter_a.split(" ")
                 selected_card["rating_filter_a"] = card["deck_colors"]["All Decks"][type.lower()]
@@ -297,11 +300,9 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                 if deck_color == filter_c:
                     selected_card["rating_filter_c"] = CardRating(card["deck_colors"][filter_c], limits[filter_c], alsa_weight, iwd_weight)
             filtered_list.append(selected_card)
-    except Exception as error:
-        print("CardColorFilter Error: %s" % error)
-        selected_card["rating_filter_a"] = 0.0
-        selected_card["rating_filter_b"] = 0.0
-        selected_card["rating_filter_c"] = 0.0
+        except Exception as error:
+            print("CardColorFilter Error: %s" % error)
+
     return filtered_list
  
 def CardAIFilter(pack, deck, color_options, limits, alsa_weight, iwd_weight):
@@ -585,8 +586,8 @@ def CopyDeck(deck, sideboard, set_cards, set):
 def StackCards(cards, color):
     deck = {}
     deck_list = []
-    try:
-        for card in cards:
+    for card in cards:
+        try:
             name = card["name"]
             if name not in deck.keys(): 
                 deck[name] = {}
@@ -603,14 +604,12 @@ def StackCards(cards, color):
                 deck[name]["deck_colors"][color]["gihwr"]= card["deck_colors"][color]["gihwr"]
             else:
                 deck[name]["count"] += 1
-                
-        #Convert to list format
-        for card in deck:
-            deck_list.append(deck[card])
-        
-    except Exception as error:
-        print("StackCards Error: %s" % error)
-        
+        except Exception as error:
+            print("StackCards Error: %s" % error)    
+    #Convert to list format
+    for card in deck:
+        deck_list.append(deck[card])
+
     return deck_list
     
 def CardColors(mana_cost):
@@ -683,7 +682,7 @@ def ManaBase(deck):
         for land in mana_types:
             total_count += mana_types[land]["count"]
         
-        #Sort by lowest cound
+        #Sort by lowest count
         mana_types = dict(sorted(mana_types.items(), key=lambda t: t[1]['count']))
         #Add x lands with a distribution set by the mana types
         for index, land in enumerate(mana_types):

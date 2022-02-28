@@ -213,6 +213,7 @@ def ResetConfig():
     data = {}
     
     try:
+    
         data["features"] = {}
         data["features"]["hotkey_enabled"] = config.hotkey_enabled
         data["features"]["images_enabled"] = config.images_enabled
@@ -1506,6 +1507,9 @@ def Startup(argv):
         file_location = NavigateFileLocation(operating_system);
         
     config = ReadConfig()
+    
+    if operating_system == "MAC":
+        config.hotkey_enabled = False
     
     ui = WindowUI(window, file_location, step_through, diag_log_enabled, operating_system, config)
     
