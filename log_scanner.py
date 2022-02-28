@@ -61,8 +61,8 @@ class LogScanner:
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
         self.sideboard = []
-        self.pack_cards = [None] * 8
-        self.initial_pack = [None] * 8
+        self.pack_cards = [[]] * 8
+        self.initial_pack = [[]] * 8
         self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
@@ -83,8 +83,8 @@ class LogScanner:
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
         self.sideboard = []
-        self.pack_cards = [None] * 8
-        self.initial_pack = [None] * 8
+        self.pack_cards = [[]] * 8
+        self.initial_pack = [[]] * 8
         self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
@@ -192,12 +192,12 @@ class LogScanner:
         self.DraftStartSearch()
         
         if self.draft_type == DRAFT_TYPE_PREMIER_V1:
-            if self.initial_pack[0] == None:
+            if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV1()
             self.DraftPickedSearchPremierV1()
         elif self.draft_type == DRAFT_TYPE_PREMIER_V2:
-            if self.initial_pack[0] == None:
+            if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV2()
             self.DraftPickedSearchPremierV2() 
@@ -205,7 +205,7 @@ class LogScanner:
             self.DraftPackSearchQuick()
             self.DraftPickedSearchQuick()
         elif self.draft_type == DRAFT_TYPE_TRADITIONAL:
-            if self.initial_pack[0] == None:
+            if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchTraditionalP1P1()
             self.DraftPackSearchTraditional()
             self.DraftPickedSearchTraditional()
@@ -257,9 +257,9 @@ class LogScanner:
                             pack_index = (pick - 1) % 8
                             
                             if self.current_pack != pack:
-                                self.initial_pack = [None] * 8
+                                self.initial_pack = [[]] * 8
                         
-                            if self.initial_pack[pack_index] == None:
+                            if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
                                 
                             self.pack_cards[pack_index] = pack_cards
@@ -381,9 +381,9 @@ class LogScanner:
                             pack_index = (pick - 1) % 8
                             
                             if self.current_pack != pack:
-                                self.initial_pack = [None] * 8
+                                self.initial_pack = [[]] * 8
                         
-                            if self.initial_pack[pack_index] == None:
+                            if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
                                 
                             self.pack_cards[pack_index] = pack_cards
@@ -446,9 +446,9 @@ class LogScanner:
                             pack_index = (pick - 1) % 8
                             
                             if self.current_pack != pack:
-                                self.initial_pack = [None] * 8
+                                self.initial_pack = [[]] * 8
                         
-                            if self.initial_pack[pack_index] == None:
+                            if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
                                 
                             self.pack_cards[pack_index] = pack_cards
@@ -572,9 +572,9 @@ class LogScanner:
                                 pack_index = (pick - 1) % 8
                                 
                                 if self.current_pack != pack:
-                                    self.initial_pack = [None] * 8
+                                    self.initial_pack = [[]] * 8
                             
-                                if self.initial_pack[pack_index] == None:
+                                if len(self.initial_pack[pack_index]) == 0:
                                     self.initial_pack[pack_index] = pack_cards
                                     
                                 self.pack_cards[pack_index] = pack_cards
@@ -704,9 +704,9 @@ class LogScanner:
                             pack_index = (pick - 1) % 8
                             
                             if self.current_pack != pack:
-                                self.initial_pack = [None] * 8
+                                self.initial_pack = [[]] * 8
                         
-                            if self.initial_pack[pack_index] == None:
+                            if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
                                 
                             self.pack_cards[pack_index] = pack_cards
@@ -829,9 +829,9 @@ class LogScanner:
                             pack_index = (pick - 1) % 8
                             
                             if self.current_pack != pack:
-                                self.initial_pack = [None] * 8
+                                self.initial_pack = [[]] * 8
                         
-                            if self.initial_pack[pack_index] == None:
+                            if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
                                 
                             self.pack_cards[pack_index] = pack_cards

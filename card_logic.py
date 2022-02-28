@@ -219,11 +219,13 @@ def AutoColors(deck, color_options, colors_max):
     try:
         deck_colors = next(iter(color_options))
         colors_dict = {}
-        if len(deck) > 15:
+        deck_length = len(deck)
+        if deck_length > 15:
             colors_dict = DeckColors(deck, color_options, colors_max)
             colors = list(colors_dict.keys())
             print(colors_dict)
-            if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > 15):
+            auto_select_threshold = 45 - deck_length
+            if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
                 deck_colors = colors[0]
             elif len(colors) == 1:
                 deck_colors = colors[0]

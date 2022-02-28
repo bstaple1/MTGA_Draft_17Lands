@@ -68,7 +68,7 @@ from tkinter.ttk import *
 from tkinter import filedialog
 from pynput.keyboard import Key, Listener, KeyCode
 from datetime import date
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import tkinter.messagebox as MessageBox
 import urllib
 import json
@@ -85,6 +85,13 @@ from ttkwidgets.autocomplete import AutocompleteEntry
 
 __version__= 2.72
 
+@dataclass 
+class DeckType:
+    distribution: list
+    maximum_card_count: int
+    recommended_creature_count: int
+    cmc_average : float
+
 @dataclass
 class Config:
     hotkey_enabled : bool=True
@@ -95,7 +102,17 @@ class Config:
     column_4 : str="Auto"
     hide_missing : bool=False
     hide_stats : bool=False
-
+    hotkey_enabled : bool=True
+    images_enabled : bool=True
+    minimum_creatures : int=13
+    minimum_noncreatures : int=6
+    ratings_threshold : int=500
+    alsa_weight : float=0.25
+    iwd_weight :float=0.25
+    deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
+    deck_aggro : DeckType=DeckType([0,1,4,4,1,0,0], 24, 17, 2.40)
+    deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
+    
 def CheckVersion(platform, version):
     return_value = False
     repository_version = platform.SessionRepositoryVersion()
@@ -192,30 +209,38 @@ def WriteConfig(config):
         print("WriteConfig Error: %s" % error)
 
 def ResetConfig():
-    config = {}
+    config = Config()
+    data = {}
     
     try:
-        config["features"] = {}
-        config["features"]["hotkey_enabled"] = False
-        config["features"]["images_enabled"] = True
+        data["features"] = {}
+        data["features"]["hotkey_enabled"] = config.hotkey_enabled
+        data["features"]["images_enabled"] = config.images_enabled
         
-        config["settings"] = {}
-        config["settings"]["table_width"] = 270
+        data["settings"] = {}
+        data["settings"]["table_width"] = config.table_width
+        data["settings"]["column_2"] = config.column_2
+        data["settings"]["column_3"] = config.column_3
+        data["settings"]["column_4"] = config.column_4
+        data["settings"]["hide_missing"] = config.hide_missing
+        data["settings"]["hide_stats"] = config.hide_stats
         
-        config["card_logic"] = {}
-        config["card_logic"]["minimum_creatures"] = 13
-        config["card_logic"]["minimum_noncreatures"] = 6
-        config["card_logic"]["ratings_threshold"] = 500
-        config["card_logic"]["deck_types"] = {}
-        config["card_logic"]["deck_types"]["Mid"] = {}
-        config["card_logic"]["deck_types"]["Mid"] = {"distribution" : [0,0,4,3,2,1,0], "maximum_card_count" : 23, "recommended_creature_count" : 15, "cmc_average" : 3.04}
-        config["card_logic"]["deck_types"]["Aggro"] = {}
-        config["card_logic"]["deck_types"]["Aggro"] = {"distribution" : [0,1,4,4,1,0,0], "maximum_card_count" : 24, "recommended_creature_count" : 17, "cmc_average" : 2.40}
-        config["card_logic"]["deck_types"]["Control"] = {}
-        config["card_logic"]["deck_types"]["Control"] = {"distribution" : [0,0,3,3,3,1,1], "maximum_card_count" : 22, "recommended_creature_count" : 14, "cmc_average" : 3.68}
+        data["card_logic"] = {}
+        data["card_logic"]["alsa_weight"] = config.alsa_weight
+        data["card_logic"]["iwd_weight"] = config.iwd_weight
+        data["card_logic"]["minimum_creatures"] = config.minimum_creatures
+        data["card_logic"]["minimum_noncreatures"] = config.minimum_noncreatures
+        data["card_logic"]["ratings_threshold"] = config.ratings_threshold
+        data["card_logic"]["deck_types"] = {}
+        data["card_logic"]["deck_types"]["Mid"] = {}
+        data["card_logic"]["deck_types"]["Mid"] = asdict(config.deck_mid)
+        data["card_logic"]["deck_types"]["Aggro"] = {}
+        data["card_logic"]["deck_types"]["Aggro"] = asdict(config.deck_aggro)
+        data["card_logic"]["deck_types"]["Control"] = {}
+        data["card_logic"]["deck_types"]["Control"] = asdict(config.deck_control)
     
         with open('config.json', 'w', encoding='utf-8') as file:
-            json.dump(config, file, ensure_ascii=False, indent=4)
+            json.dump(data, file, ensure_ascii=False, indent=4)
     except Exception as error:
         print("ResetConfig Error: %s" % error)
 
@@ -303,7 +328,6 @@ class WindowUI:
         log_value_string = "Disable Log" if self.diag_log_enabled else "Enable Log"
 
         self.datamenu.add_command(label=log_value_string, command=self.ToggleLog)
-        self.datamenu.add_command(label="Reset Config", command=ResetConfig)
         self.cardmenu = Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(label="Taken Cards", command=self.TakenCardsPopup)
         self.cardmenu.add_command(label="Suggest Decks", command=self.SuggestDeckPopup)
@@ -347,6 +371,8 @@ class WindowUI:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
            self.column_4_selection.set("Auto")
+           self.deck_stats_checkbox_value.set(False)
+           self.missing_cards_checkbox_value.set(False)
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -502,7 +528,7 @@ class WindowUI:
             #Update the filtered column header with the filtered colors
             TableFilterOptions(self.missing_table, filtered_a, filtered_b, filtered_c)
 
-            if previous_pack != None:
+            if len(previous_pack) != 0:
                 missing_cards = [x for x in previous_pack if x not in current_pack]
                 
                 list_length = len(missing_cards)
@@ -726,7 +752,25 @@ class WindowUI:
             error_string = "UpdateOptions Error: %s" % error
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-       
+            
+    def DefaultSettingsCallback(self, *args):
+        ResetConfig()
+        
+        config = ReadConfig()
+        
+        try:
+           self.column_2_selection.set(config.column_2) 
+           self.column_3_selection.set(config.column_3)
+           self.column_4_selection.set(config.column_4)
+           self.deck_stats_checkbox_value.set(config.hide_stats)
+           self.missing_cards_checkbox_value.set(config.hide_missing)
+        except Exception as error:
+           self.column_2_selection.set("All ALSA") 
+           self.column_3_selection.set("All Decks")
+           self.column_4_selection.set("Auto")
+           self.deck_stats_checkbox_value.set(False)
+           self.missing_cards_checkbox_value.set(False)
+           
     def UpdateSettingsCallback(self, *args):
         config = Config()
         
@@ -1112,6 +1156,8 @@ class WindowUI:
             column_4_options = OptionMenu(popup, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
             column_4_options.config(width=10)
             
+            default_button = Button(popup, command=self.DefaultSettingsCallback, text="Default Settings");
+            
             column_2_label.grid(row=0, column=0, columnspan=1, sticky="nsew", padx=(10,))
             column_3_label.grid(row=1, column=0, columnspan=1, sticky="nsew", padx=(10,))
             column_4_label.grid(row=2, column=0, columnspan=1, sticky="nsew", padx=(10,))
@@ -1122,7 +1168,7 @@ class WindowUI:
             deck_stats_checkbox.grid(row=3, column=1, columnspan=1, sticky="nsew", padx=(5,))
             missing_cards_label.grid(row=4, column=0, columnspan=1, sticky="nsew", padx=(10,))
             missing_cards_checkbox.grid(row=4, column=1, columnspan=1, sticky="nsew", padx=(5,))            
-            
+            default_button.grid(row=5, column=0, columnspan=2, sticky="nsew")
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "ConfigPopup Error: %s" % error
@@ -1415,7 +1461,6 @@ class CreateCardToolTip(object):
 
             tt_frame.pack()
             
-
             
             self.tw.attributes("-topmost", True)
         except Exception as error:

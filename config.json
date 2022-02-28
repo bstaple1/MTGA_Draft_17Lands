@@ -5,11 +5,11 @@
     },
     "settings": {
         "table_width": 270,
-        "column_2": "All IWD",
+        "column_2": "All ALSA",
         "column_3": "All Decks",
-        "column_4": "All GIHWR",
+        "column_4": "Auto",
         "hide_missing": false,
-        "hide_stats": true
+        "hide_stats": false
     },
     "card_logic": {
         "alsa_weight": 0.25,
