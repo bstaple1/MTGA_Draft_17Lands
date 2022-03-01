@@ -1,3 +1,17 @@
+===================== RELEASE NOTES 2.73 =====================
+- New Feature: Added settings options for hiding the missing cards and deck stats tables
+
+- New Feature: Settings will be saved between restarts
+
+- Modified Feature: After pick 15, the auto filter will now remain at "All Decks" until there's a clear leading color pair
+
+- Bug Fixes:
+  - Clicking on the r drop-down option will no longer prevent the deck suggester from working
+    - Reset config has been replaced with a default settings button in the settings window
+  - Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
+  - Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards
+  - Incomplete 17Lands data will no longer result in inaccurate pick ratings (Issue #1) 
+
 ===================== RELEASE NOTES 2.72 =====================
 
 - Modified Feature: Added input checks and retry logic to the download set process

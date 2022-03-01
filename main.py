@@ -83,7 +83,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.72
+__version__= 2.73
 
 @dataclass 
 class DeckType:
