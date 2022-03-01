@@ -350,15 +350,15 @@ def RowColorTag(colors):
 def DeckColorLimits(cards, color):
     upper_limit = 0
     lower_limit = 100
-    try:
-        for card in cards:
+    for card in cards:
+        try:
             gihwr = cards[card]["deck_colors"][color]["gihwr"]
             if gihwr > upper_limit:
                 upper_limit = gihwr
             if gihwr < lower_limit and gihwr != 0:
                 lower_limit = gihwr
-    except Exception as error:
-        error_string = "DeckColorLimits Error: %s" % error
+        except Exception as error:
+            error_string = "DeckColorLimits Error: %s" % error
     return upper_limit, lower_limit
 
 def CardRating(card_data, limits, alsa_weight, iwd_weight):
