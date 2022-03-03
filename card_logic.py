@@ -117,16 +117,16 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
                     if main_color not in card_color_sorted.keys():
                         card_color_sorted[main_color] = []
                         
-                    if search_colors in card["deck_colors"].keys(): 
-                        card_color_sorted[main_color].append(card)
+                    #if search_colors in card["deck_colors"].keys(): 
+                    card_color_sorted[main_color].append(card)
 
             if (bool(card_colors) == False) and include_colorless:
             
                 if((include_types and any(x in card["types"][0] for x in card_types)) or
                 (not include_types and not any(x in card["types"][0] for x in card_types))):
 
-                    if search_colors in card["deck_colors"].keys(): 
-                        combined_cards.append(card)
+                    #if search_colors in card["deck_colors"].keys(): 
+                    combined_cards.append(card)
         except Exception as error:
             print("DeckColorSearch Error: %s" % error)
 
@@ -507,10 +507,12 @@ def DeckRating(deck, deck_type, color):
     try:
         #Combined GIHWR of the cards
         for count, card in enumerate(deck):
-            gihwr = card["deck_colors"][color]["gihwr"]
-            if gihwr > 50.0:
-                rating += gihwr
-        
+            try:
+                gihwr = card["deck_colors"][color]["gihwr"]
+                if gihwr > 50.0:
+                    rating += gihwr
+            except Exception as error:
+                rating += 0
         #Deck contains the recommended number of creatures
         recommended_creature_count = deck_type["recommended_creature_count"]
         filtered_cards = DeckColorSearch(deck, color, ["Creature", "Planeswalker"], True, True, False)
@@ -721,17 +723,20 @@ def SuggestDeck(taken_cards, color_options, limits):
     alsa_weight = 0.25
     try:
         #Retrieve configuration
-        with open("config.json", "r") as config:
-            config_json = config.read()
-            config_data = json.loads(config_json)
-            alsa_weight = config_data["card_logic"]["alsa_weight"]
-            iwd_weight = config_data["card_logic"]["iwd_weight"]
-            minimum_creature_count = config_data["card_logic"]["minimum_creatures"]
-            minimum_noncreature_count = config_data["card_logic"]["minimum_noncreatures"]
-            ratings_threshold = config_data["card_logic"]["ratings_threshold"]
-            deck_builder_type = config_data["card_logic"]["deck_types"]
+        try:
+            with open("config.json", "r") as config:
+                config_json = config.read()
+                config_data = json.loads(config_json)
+                alsa_weight = config_data["card_logic"]["alsa_weight"]
+                iwd_weight = config_data["card_logic"]["iwd_weight"]
+                minimum_creature_count = config_data["card_logic"]["minimum_creatures"]
+                minimum_noncreature_count = config_data["card_logic"]["minimum_noncreatures"]
+                ratings_threshold = config_data["card_logic"]["ratings_threshold"]
+                deck_builder_type = config_data["card_logic"]["deck_types"]
+        except Exception as error:
+            print(error)
         #Calculate the base ratings
-        filtered_cards = CardColorFilter(taken_cards, None, "All Decks","All Decks","All Decks", limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(taken_cards, None, ["All Decks"],["All Decks"],["All Decks"], limits, alsa_weight, iwd_weight)
         
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
@@ -781,7 +786,7 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardColorFilter(cards, None, color, color, color, limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(cards, None, [color], [color], [color], limits, alsa_weight, iwd_weight)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color))

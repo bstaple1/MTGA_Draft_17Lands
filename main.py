@@ -631,7 +631,7 @@ class WindowUI:
                                                                  card["colors"],
                                                                  card["cmc"],
                                                                  card["types"]), tag = (row_tag,))
-            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=color))
+            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
     
         except Exception as error:
             error_string = "UpdateSuggestTable Error: %s" % error
