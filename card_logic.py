@@ -226,7 +226,7 @@ def AutoColors(deck, color_options, colors_max):
             colors_dict = DeckColors(deck, color_options, colors_max)
             colors = list(colors_dict.keys())
             print(colors_dict)
-            auto_select_threshold = 45 - deck_length
+            auto_select_threshold = 30 - deck_length
             if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
                 deck_colors = colors[0]
             elif len(colors) == 1:
