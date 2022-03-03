@@ -6,7 +6,7 @@
 - Modified Feature: After pick 15, the auto filter will now remain at "All Decks" until there's a clear leading color pair
 
 - Bug Fixes:
-  - Clicking on the r drop-down option will no longer prevent the deck suggester from working
+  - Clicking on the reset config drop-down option will no longer prevent the deck suggester from working
     - Reset config has been replaced with a default settings button in the settings window
   - Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
   - Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards

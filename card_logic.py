@@ -98,39 +98,41 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
     card_color_sorted = {}
     main_color = ""
     combined_cards = []
-    try:
-        for card in deck:
+    for card in deck:
+        try:
             card_colors = CardColors(card["mana_cost"])
-            
+
             if not card_colors:
                 card_colors = card["colors"]
-            
+
             if include_partial and len(card_colors):
                 card_colors = card_colors[0] #Just use the first color
-            
+
             if bool(card_colors) and (set(card_colors) <= set(search_colors)):
                 main_color = card_colors[0]
-              
+
                 if((include_types and any(x in card["types"][0] for x in card_types)) or
                 (not include_types and not any(x in card["types"][0] for x in card_types))):
-                    
+
                     if main_color not in card_color_sorted.keys():
                         card_color_sorted[main_color] = []
                         
-                    card_color_sorted[main_color].append(card)
-                    
+                    if search_colors in card["deck_colors"].keys(): 
+                        card_color_sorted[main_color].append(card)
+
             if (bool(card_colors) == False) and include_colorless:
             
                 if((include_types and any(x in card["types"][0] for x in card_types)) or
                 (not include_types and not any(x in card["types"][0] for x in card_types))):
-                    
-                    combined_cards.append(card)
-        
-        for color in card_color_sorted:
-            combined_cards.extend(card_color_sorted[color])
+
+                    if search_colors in card["deck_colors"].keys(): 
+                        combined_cards.append(card)
+        except Exception as error:
+            print("DeckColorSearch Error: %s" % error)
+
+    for color in card_color_sorted:
+        combined_cards.extend(card_color_sorted[color])
             
-    except Exception as error:
-        print("DeckColorSearch Error: %s" % error)
     return combined_cards
     
 def ColorCmc(deck):
@@ -238,16 +240,17 @@ def AutoColors(deck, color_options, colors_max):
 def CalculateColorAffinity(deck_cards, color_filter, threshold):
     #Identify deck colors  based on the number of high win rate cards
     colors = {}
-    try:
-        for card in deck_cards:
+    
+    for card in deck_cards:
+        try:
             gihwr = card["deck_colors"][color_filter]["gihwr"]
             if gihwr > threshold:
                 for color in card["colors"]:
                     if color not in colors:
                         colors[color] = 0
                     colors[color] += (gihwr - threshold)
-    except Exception as error:
-        print("CalculateColorAffinity Error: %s" % error)
+        except Exception as error:
+            print("CalculateColorAffinity Error: %s" % error)
     return colors 
 
 def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list):
@@ -597,11 +600,7 @@ def StackCards(cards, color):
                 deck[name]["count"] = 1
                 deck[name]["name"] = name               
                 deck[name]["image"] = card["image"]
-                deck[name]["deck_colors"] = {}
-                deck[name]["deck_colors"][color] = {}
-                deck[name]["deck_colors"][color]["alsa"] = card["deck_colors"][color]["alsa"]
-                deck[name]["deck_colors"][color]["iwd"] = card["deck_colors"][color]["iwd"]
-                deck[name]["deck_colors"][color]["gihwr"]= card["deck_colors"][color]["gihwr"]
+                deck[name]["deck_colors"] = card["deck_colors"]
             else:
                 deck[name]["count"] += 1
         except Exception as error:
