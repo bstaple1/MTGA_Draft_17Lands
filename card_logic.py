@@ -297,12 +297,16 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                                 selected_card[key] = CardRating(card["deck_colors"][value[0]], limits[value[0]], alsa_weight, iwd_weight)
                 else:
                     rated_colors = []
+                    
                     for colors in value:
+                        rating = 0
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == colors:
-                                rated_colors.append(CardRating(card["deck_colors"][colors], limits[colors], alsa_weight, iwd_weight))
+                                rating = CardRating(card["deck_colors"][colors], limits[colors], alsa_weight, iwd_weight)
+                                break
+                        rated_colors.append(rating)
                     if len(rated_colors):
-                        selected_card[key] = sum(rated_colors)/float(len(rated_colors)) #Find the average of all of the ratings
+                        selected_card[key] = round(sum(rated_colors)/float(len(rated_colors)), 1) #Find the average of all of the ratings
             filtered_list.append(selected_card)
         except Exception as error:
             print("CardColorFilter Error: %s" % error)

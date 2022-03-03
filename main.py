@@ -1257,6 +1257,7 @@ class WindowUI:
             break
             
     def OnClickTable(self, event, table, card_list, selected_color):
+        color_dict = {}
         for item in table.selection():
             card_name = table.item(item, "value")[0]
             for card in card_list:
@@ -1264,24 +1265,29 @@ class WindowUI:
                 if card_name == card["name"]:
                     try:
                         non_color_options = ["All GIHWR", "All IWD", "All ALSA", "Tier"]
-                        if selected_color in non_color_options:
-                            color = "All Decks"
+                        if set(selected_color).issubset(non_color_options):
+                            color_list = ["All Decks"]
                         else:
-                            color = selected_color
+                            color_list = selected_color
+                        for color in color_list:
+                            try:
+                                color_dict[color] = {"alsa" : card["deck_colors"][color]["alsa"],
+                                                     "iwd" : card["deck_colors"][color]["iwd"],
+                                                     "gihwr" : card["deck_colors"][color]["gihwr"]}
+                            except Exception as error:
+                                color_dict[color] = {"alsa" : 0,
+                                                     "iwd" : 0,
+                                                     "gihwr" : 0}
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
-                                                           card["deck_colors"][color]["alsa"],
-                                                           card["deck_colors"][color]["iwd"],
-                                                           card["deck_colors"][color]["gihwr"],
+                                                           color_dict,
                                                            card["image"],
                                                            self.images_enabled,
                                                            self.operating_system)
                     except Exception as error:
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
-                                                           0,
-                                                           0,
-                                                           0,
+                                                           color_dict,
                                                            card["image"],
                                                            self.images_enabled,
                                                            self.operating_system)
@@ -1370,14 +1376,12 @@ class WindowUI:
             self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
-    def __init__(self, widget, event, card_name, alsa, iwd, gihwr, image, images_enabled, os):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, os):
         self.waittime = 1     #miliseconds
         self.wraplength = 180   #pixels
         self.widget = widget
         self.card_name = card_name
-        self.alsa = alsa
-        self.iwd = iwd
-        self.gihwr = gihwr
+        self.color_dict = color_dict
         self.image = image
         self.operating_system = os
         self.images_enabled = images_enabled
@@ -1434,23 +1438,36 @@ class CreateCardToolTip(object):
                     image = ImageTk.PhotoImage(im)
                     image_label = Label(tt_frame, image=image)
                     columnspan = 1 if len(self.image) == 2 else 2
-                    image_label.grid(column=count, row=4, columnspan=columnspan)
+                    image_label.grid(column=count, row=5, columnspan=columnspan)
                     self.images.append(image)
             
+
             card_label = Label(tt_frame, justify="left", text=self.card_name, font=("Consolas", 12, "bold"))
-            alsa_label = Label(tt_frame, justify="left", text="Average Last Seen At  :", font=("Consolas", 10, "bold"))
-            alsa_value = Label(tt_frame, text=self.alsa, font=("Consolas", 10))
+
+            filter_label = Label(tt_frame, justify="left", text="Filter:", font=("Consolas", 10, "bold"))
+            filter_value = Label(tt_frame, text="/".join(self.color_dict.keys()), font=("Consolas", 10))
+
+            alsa_values = [str(x['alsa']) for x in self.color_dict.values()]
+            alsa_label = Label(tt_frame, justify="left", text="Average Last Seen At:", font=("Consolas", 10, "bold"))
+            alsa_value = Label(tt_frame, text="/".join(alsa_values), font=("Consolas", 10))
+            
+            iwd_values = [str(x['iwd']) for x in self.color_dict.values()]
             iwd_label = Label(tt_frame, text="Improvement When Drawn:", font=("Consolas", 10, "bold"))
-            iwd_value = Label(tt_frame, text=str(self.iwd) + "pp", font=("Consolas", 10))
+            iwd_value = Label(tt_frame, text="/".join(iwd_values) + "pp", font=("Consolas", 10))
+
+            gihwr_values = [str(x['gihwr']) for x in self.color_dict.values()]
             gihwr_label = Label(tt_frame, text="Games In Hand Win Rate:", font=("Consolas", 10, "bold"))
-            gihwr_value = Label(tt_frame, text=str(self.gihwr) + "%", font=("Consolas", 10))
+            gihwr_value = Label(tt_frame, text="/".join(gihwr_values)+ "%", font=("Consolas", 10))
+
             card_label.grid(column=0, row=0, columnspan=2)
-            alsa_label.grid(column=0, row=1, columnspan=1)
-            alsa_value.grid(column=1, row=1, columnspan=1)
-            iwd_label.grid(column=0, row=2, columnspan=1)
-            iwd_value.grid(column=1, row=2, columnspan=1)
-            gihwr_label.grid(column=0, row=3, columnspan=1)
-            gihwr_value.grid(column=1, row=3, columnspan=1)
+            filter_label.grid(column=0, row=1, columnspan=1)
+            filter_value.grid(column=1, row=1, columnspan=1)
+            alsa_label.grid(column=0, row=2, columnspan=1)
+            alsa_value.grid(column=1, row=2, columnspan=1)
+            iwd_label.grid(column=0, row=3, columnspan=1)
+            iwd_value.grid(column=1, row=3, columnspan=1)
+            gihwr_label.grid(column=0, row=4, columnspan=1)
+            gihwr_value.grid(column=1, row=4, columnspan=1)
 
             tt_frame.pack()
             
