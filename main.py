@@ -247,27 +247,19 @@ def ResetConfig():
 
 def TableFilterOptions(table, filter_a, filter_b, filter_c):
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
-    if filter_a == "All Decks":
-        table.heading("FilterA", text = "All")
-    elif filter_a in non_color_options:
-        color, type = filter_a.split(" ")
-        table.heading("FilterA", text = type)
-    else:
-        table.heading("FilterA", text = filter_a)
-    if filter_b == "All Decks":
-        table.heading("FilterB", text = "All")
-    elif filter_b in non_color_options:
-        color, type = filter_b.split(" ")
-        table.heading("FilterB", text = type)
-    else:
-        table.heading("FilterB", text = filter_b)
-    if filter_c == "All Decks":
-        table.heading("FilterC", text = "All")
-    elif filter_c in non_color_options:
-        color, type = filter_c.split(" ")
-        table.heading("FilterC", text = type)
-    else:
-        table.heading("FilterC", text = filter_c)
+    filter_dict = {"FilterA" : filter_a, "FilterB" : filter_b, "FilterC" : filter_c}
+    
+    for key, value in filter_dict.items():
+        if len(value) == 1: #Single color filter
+            if value[0] == "All Decks":
+                table.heading(key, text = "All")
+            elif value[0] in non_color_options:
+                color, type = value[0].split(" ")
+                table.heading(key, text = type)
+            else:
+                table.heading(key, text = value)
+        else: #Multi-color filters
+            table.heading(key, text = "/".join(value))
 
 def CopySuggested(deck_colors, deck, set_data, color_options, set):
     colors = color_options[deck_colors.get()]

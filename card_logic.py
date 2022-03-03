@@ -154,20 +154,20 @@ def ColorCmc(deck):
     
 def ColorFilter(deck, color_selection, color_list):
     color_data = color_selection
-    filtered_color = color_data
+    filtered_color_list = [color_data]
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     try:
         if color_data == "Auto":
-            filtered_color = AutoColors(deck, color_list, 2)
+            filtered_color_list = AutoColors(deck, color_list, 2)
         elif color_data == "AI":
-            filtered_color = "AI"
+            filtered_color_list = ["AI"]
         elif color_data in non_color_options:
-            filtered_color = color_data
+            filtered_color_list = [color_data]
         else:
-            filtered_color = [key for key, value in color_list.items() if value == color_data][0]
+            filtered_color_list = [[key for key, value in color_list.items() if value == color_data][0]]
     except Exception as error:
         print("ColorFilter Error: %s" % error)
-    return filtered_color
+    return filtered_color_list
     
 def DeckColors(deck, color_options, colors_max):
     try:
@@ -219,7 +219,8 @@ def DeckColors(deck, color_options, colors_max):
     
 def AutoColors(deck, color_options, colors_max):
     try:
-        deck_colors = next(iter(color_options))
+        deck_colors_list = []
+        deck_colors_list.append(next(iter(color_options)))
         colors_dict = {}
         deck_length = len(deck)
         if deck_length > 15:
@@ -228,14 +229,16 @@ def AutoColors(deck, color_options, colors_max):
             print(colors_dict)
             auto_select_threshold = 30 - deck_length
             if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
-                deck_colors = colors[0]
+                deck_colors_list = colors[0:1]
             elif len(colors) == 1:
-                deck_colors = colors[0]
+                deck_colors_list = colors[0:1]
+            else:
+                deck_colors_list = colors[0:2]
 
     except Exception as error:
         print("AutoColors Error: %s" % error)
     
-    return deck_colors
+    return deck_colors_list
 
 def CalculateColorAffinity(deck_cards, color_filter, threshold):
     #Identify deck colors  based on the number of high win rate cards
@@ -273,35 +276,33 @@ def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits,
 def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight):
     filtered_list = []
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
+    ratings_filter_dict = {"rating_filter_a" : filter_a, "rating_filter_b" : filter_b, "rating_filter_c" : filter_c}
     for card in card_list:
         try:
             selected_card = card
             selected_card["rating_filter_a"] = 0.0
             selected_card["rating_filter_b"] = 0.0
             selected_card["rating_filter_c"] = 0.0
-            if filter_a in non_color_options:
-                color, type = filter_a.split(" ")
-                selected_card["rating_filter_a"] = card["deck_colors"]["All Decks"][type.lower()]
-            if filter_b in non_color_options:
-                color, type = filter_b.split(" ")
-                selected_card["rating_filter_b"] = card["deck_colors"]["All Decks"][type.lower()]
-            if filter_c in non_color_options:
-                color, type = filter_c.split(" ")
-                selected_card["rating_filter_c"] = card["deck_colors"]["All Decks"][type.lower()]
-            card_name = card["name"].split(" // ")
-            if filter_a == "Tier":
-                selected_card["rating_filter_a"] = tier_list["ratings"][card_name[0]]
-            if filter_b == "Tier":
-                selected_card["rating_filter_b"] = tier_list["ratings"][card_name[0]]
-            if filter_c == "Tier":
-                selected_card["rating_filter_c"] = tier_list["ratings"][card_name[0]]
-            for deck_color in card["deck_colors"].keys():
-                if deck_color == filter_a:
-                    selected_card["rating_filter_a"] = CardRating(card["deck_colors"][filter_a], limits[filter_a], alsa_weight, iwd_weight)
-                if deck_color == filter_b:
-                    selected_card["rating_filter_b"] = CardRating(card["deck_colors"][filter_b], limits[filter_b], alsa_weight, iwd_weight)
-                if deck_color == filter_c:
-                    selected_card["rating_filter_c"] = CardRating(card["deck_colors"][filter_c], limits[filter_c], alsa_weight, iwd_weight)
+            for key, value in ratings_filter_dict.items():
+                if len(value) == 1:
+                    if value[0] in non_color_options:
+                        color, type = value[0].split(" ")
+                        selected_card[key] = card["deck_colors"]["All Decks"][type.lower()]
+                    elif value[0] == "Tier":
+                        card_name = card["name"].split(" // ")
+                        selected_card[key] = tier_list["ratings"][card_name[0]]
+                    else:
+                        for deck_color in card["deck_colors"].keys():
+                            if deck_color == value[0]:
+                                selected_card[key] = CardRating(card["deck_colors"][value[0]], limits[value[0]], alsa_weight, iwd_weight)
+                else:
+                    rated_colors = []
+                    for colors in value:
+                        for deck_color in card["deck_colors"].keys():
+                            if deck_color == colors:
+                                rated_colors.append(CardRating(card["deck_colors"][colors], limits[colors], alsa_weight, iwd_weight))
+                    if len(rated_colors):
+                        selected_card[key] = sum(rated_colors)/float(len(rated_colors)) #Find the average of all of the ratings
             filtered_list.append(selected_card)
         except Exception as error:
             print("CardColorFilter Error: %s" % error)
