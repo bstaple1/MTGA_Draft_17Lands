@@ -126,7 +126,7 @@ def CheckVersion(platform, version):
     return return_value, repository_version
         
 def OnPress(key, ui):
-    if key == KeyCode.from_char('\x06'): #CTRL+F
+    if key == KeyCode.from_char('\x07'): #CTRL+G
         ui.WindowLift(ui.root)
 
 def KeyListener(window_ui):
@@ -413,17 +413,20 @@ class WindowUI:
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection, self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
         self.stat_options.config(width=11) 
         
-        citation_label = Label(self.root, text="Powered by 17Lands", font='Helvetica 9 ', anchor="e", borderwidth=2, relief="groove")
+        citation_label = Label(self.root, text="Powered by 17Lands*", font='Helvetica 9 ', anchor="e", borderwidth=2, relief="groove")
+        hotkey_label = Label(self.root, text="CTRL+G to Minimize", font='Helvetica 8 ', anchor="e")
+        footnote_label = Label(self.root, text="*This application is not endorsed by 17Lands", font='Helvetica 8 ', anchor="e")
         
         citation_label.grid(row = 0, column = 0, columnspan = 2) 
         current_draft_label_frame.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
         current_draft_value_frame.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
         deck_colors_label_frame.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
         deck_colors_option_frame.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsw')
-        self.refresh_button_frame.grid(row = 3, column = 0, columnspan = 2, sticky = 'nsew')
-        self.status_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
-        self.pack_table_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
-        
+        hotkey_label.grid(row = 3, column = 0, columnspan = 2) 
+        self.refresh_button_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
+        self.status_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
+        self.pack_table_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
+        footnote_label.grid(row = 11, column = 0, columnspan = 2)
         self.HideDeckStates(self.deck_stats_checkbox_value.get())
         self.HideMissingCards(self.missing_cards_checkbox_value.get())
 
@@ -444,9 +447,7 @@ class WindowUI:
         self.previous_timestamp = 0
         
         self.root.attributes("-topmost", True)
-        
-        message_box = MessageBox.showinfo(title="Notice", message="This application utilizes data from 17Lands (www.17lands.com). This application is not endorsed by 17Lands.")
-        
+
         self.VersionCheck()
 
     def CreateHeader(self, frame, height, headers, total_width):
@@ -1358,22 +1359,22 @@ class WindowUI:
                 self.stat_frame.grid_remove()
                 self.stat_table.grid_remove()
             else:
-                self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
-                self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew')
+                self.stat_frame.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew') 
+                self.stat_table.grid(row=10, column = 0, columnspan = 2, sticky = 'nsew')
         except Exception as error:
-            self.stat_frame.grid(row=8, column = 0, columnspan = 2, sticky = 'nsew') 
-            self.stat_table.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew')
+            self.stat_frame.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew') 
+            self.stat_table.grid(row=10, column = 0, columnspan = 2, sticky = 'nsew')
     def HideMissingCards(self, hide):
         try:
             if hide:
                 self.missing_frame.grid_remove()
                 self.missing_table_frame.grid_remove()
             else:
-                self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
-                self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+                self.missing_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+                self.missing_table_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
         except Exception as error:
-            self.missing_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
-            self.missing_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+            self.missing_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+            self.missing_table_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, color_dict, image, images_enabled, os):
