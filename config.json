@@ -9,7 +9,8 @@
         "column_3": "All Decks",
         "column_4": "Auto",
         "hide_missing": false,
-        "hide_stats": false
+        "hide_stats": false,
+        "disable_auto_average": false
     },
     "card_logic": {
         "alsa_weight": 0.25,

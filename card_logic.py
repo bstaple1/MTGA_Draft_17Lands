@@ -152,13 +152,13 @@ def ColorCmc(deck):
     
     return cmc_total, count, distribution
     
-def ColorFilter(deck, color_selection, color_list):
+def ColorFilter(deck, color_selection, color_list, disable_auto_average):
     color_data = color_selection
     filtered_color_list = [color_data]
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     try:
         if color_data == "Auto":
-            filtered_color_list = AutoColors(deck, color_list, 2)
+            filtered_color_list = AutoColors(deck, color_list, 2, disable_auto_average)
         elif color_data == "AI":
             filtered_color_list = ["AI"]
         elif color_data in non_color_options:
@@ -217,7 +217,7 @@ def DeckColors(deck, color_options, colors_max):
     
     return deck_colors
     
-def AutoColors(deck, color_options, colors_max):
+def AutoColors(deck, color_options, colors_max, disable_auto_average):
     try:
         deck_colors_list = []
         deck_colors_list.append(next(iter(color_options)))
@@ -232,7 +232,7 @@ def AutoColors(deck, color_options, colors_max):
                 deck_colors_list = colors[0:1]
             elif len(colors) == 1:
                 deck_colors_list = colors[0:1]
-            else:
+            elif disable_auto_average == False:
                 deck_colors_list = colors[0:2]
 
     except Exception as error:

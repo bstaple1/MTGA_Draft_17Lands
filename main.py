@@ -109,6 +109,7 @@ class Config:
     ratings_threshold : int=500
     alsa_weight : float=0.25
     iwd_weight :float=0.25
+    disable_auto_average : bool=False
     deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
     deck_aggro : DeckType=DeckType([0,1,4,4,1,0,0], 24, 17, 2.40)
     deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
@@ -185,6 +186,7 @@ def ReadConfig():
         config.column_4 = config_data["settings"]["column_4"]
         config.hide_missing = config_data["settings"]["hide_missing"]
         config.hide_stats = config_data["settings"]["hide_stats"]
+        config.disable_auto_average = config_data["settings"]["disable_auto_average"]
 
     except Exception as error:
         print("ReadConfig Error: %s" % error)
@@ -201,6 +203,7 @@ def WriteConfig(config):
         config_data["settings"]["column_4"] = config.column_4
         config_data["settings"]["hide_missing"] = config.hide_missing
         config_data["settings"]["hide_stats"] = config.hide_stats
+        config_data["settings"]["disable_auto_average"] = config.disable_auto_average
         
         with open('config.json', 'w', encoding='utf-8') as file:
             json.dump(config_data, file, ensure_ascii=False, indent=4)
@@ -225,6 +228,7 @@ def ResetConfig():
         data["settings"]["column_4"] = config.column_4
         data["settings"]["hide_missing"] = config.hide_missing
         data["settings"]["hide_stats"] = config.hide_stats
+        data["settings"]["disable_auto_average"] = config.disable_auto_average
         
         data["card_logic"] = {}
         data["card_logic"]["alsa_weight"] = config.alsa_weight
@@ -296,9 +300,9 @@ def CopyClipboard(copy):
     return 
         
 class WindowUI:
-    def __init__(self, root, filename, step_through, diag_log_enabled, operating_system, config):
+    def __init__(self, root, filename, step_through, diag_log_enabled, operating_system, configuration):
         self.root = root
-        self.images_enabled = config.images_enabled
+        self.images_enabled = configuration.images_enabled
         self.filename = filename
         self.step_through = step_through
         self.diag_log_enabled = diag_log_enabled
@@ -306,7 +310,7 @@ class WindowUI:
         self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled, self.operating_system)
         self.diag_log_file = self.draft.diag_log_file
         self.diag_log_enabled = self.draft.diag_log_enabled
-        self.table_width = config.table_width
+        self.table_width = configuration.table_width
         
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -348,6 +352,7 @@ class WindowUI:
         #self.deck_colors_options_list = []
         self.deck_stats_checkbox_value = IntVar(self.root)
         self.missing_cards_checkbox_value = IntVar(self.root)
+        self.auto_average_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.draft.deck_colors
         self.column_3_selection = StringVar(self.root)
@@ -355,17 +360,19 @@ class WindowUI:
         self.column_4_selection = StringVar(self.root)
         self.column_4_list = self.draft.deck_colors
         try:
-           self.column_2_selection.set(config.column_2) 
-           self.column_3_selection.set(config.column_3)
-           self.column_4_selection.set(config.column_4)
-           self.deck_stats_checkbox_value.set(config.hide_stats)
-           self.missing_cards_checkbox_value.set(config.hide_missing)
+           self.column_2_selection.set(configuration.column_2) 
+           self.column_3_selection.set(configuration.column_3)
+           self.column_4_selection.set(configuration.column_4)
+           self.deck_stats_checkbox_value.set(configuration.hide_stats)
+           self.missing_cards_checkbox_value.set(configuration.hide_missing)
+           self.auto_average_checkbox_value.set(configuration.disable_auto_average)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
            self.column_4_selection.set("Auto")
            self.deck_stats_checkbox_value.set(False)
            self.missing_cards_checkbox_value.set(False)
+           self.auto_average_checkbox_value.set(False)
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -758,13 +765,14 @@ class WindowUI:
            self.column_4_selection.set(config.column_4)
            self.deck_stats_checkbox_value.set(config.hide_stats)
            self.missing_cards_checkbox_value.set(config.hide_missing)
+           self.auto_average_checkbox_value.set(config.disable_auto_average)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
            self.column_4_selection.set("Auto")
            self.deck_stats_checkbox_value.set(False)
            self.missing_cards_checkbox_value.set(False)
-           
+           self.auto_average_checkbox_value.set(False)
     def UpdateSettingsCallback(self, *args):
         config = Config()
         
@@ -774,6 +782,7 @@ class WindowUI:
         
         config.hide_missing = True if self.missing_cards_checkbox_value.get() else False
         config.hide_stats = True if self.deck_stats_checkbox_value.get() else False
+        config.disable_auto_average = True if self.auto_average_checkbox_value.get() else False
         print(config)
         WriteConfig(config)
         self.UpdateCallback()
@@ -786,9 +795,9 @@ class WindowUI:
         self.HideDeckStates(self.deck_stats_checkbox_value.get())
         self.HideMissingCards(self.missing_cards_checkbox_value.get())
                 
-        filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors)
-        filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors)
-        filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors)
+        filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+        filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+        filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
 
         self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
@@ -956,9 +965,9 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
-            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors)
-            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors)
-            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors)
+            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
             
             matching_cards = []
             
@@ -1014,9 +1023,9 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
-            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors)
-            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors)
-            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors)
+            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
             
             copy_button = Button(popup, command=lambda:CopyTaken(self.draft.taken_cards,
                                                                  self.draft.set_data,
@@ -1138,6 +1147,12 @@ class WindowUI:
                                                  variable=self.missing_cards_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)
+                                                 
+            auto_average_label = Label(popup, text="Disable Auto Average:", font='Helvetica 9 bold', anchor="w")
+            auto_average_checkbox = Checkbutton(popup,
+                                                 variable=self.auto_average_checkbox_value,
+                                                 onvalue=1,
+                                                 offvalue=0)
             optionsStyle = Style()
             optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
             
@@ -1161,8 +1176,10 @@ class WindowUI:
             deck_stats_label.grid(row=3, column=0, columnspan=1, sticky="nsew", padx=(10,))
             deck_stats_checkbox.grid(row=3, column=1, columnspan=1, sticky="nsew", padx=(5,))
             missing_cards_label.grid(row=4, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            missing_cards_checkbox.grid(row=4, column=1, columnspan=1, sticky="nsew", padx=(5,))            
-            default_button.grid(row=5, column=0, columnspan=2, sticky="nsew")
+            missing_cards_checkbox.grid(row=4, column=1, columnspan=1, sticky="nsew", padx=(5,)) 
+            auto_average_label.grid(row=5, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            auto_average_checkbox.grid(row=5, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=6, column=0, columnspan=2, sticky="nsew")
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "ConfigPopup Error: %s" % error
@@ -1353,6 +1370,7 @@ class WindowUI:
            self.column_4_selection.trace("w", self.UpdateSettingsCallback)
            self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback)
            self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback)
+           self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback)
     def HideDeckStates(self, hide):
         try:
             if hide:
@@ -1377,14 +1395,14 @@ class WindowUI:
             self.missing_table_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, os):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, operating_system):
         self.waittime = 1     #miliseconds
         self.wraplength = 180   #pixels
         self.widget = widget
         self.card_name = card_name
         self.color_dict = color_dict
         self.image = image
-        self.operating_system = os
+        self.operating_system = operating_system
         self.images_enabled = images_enabled
         self.widget.bind("<Leave>", self.Leave)
         self.widget.bind("<ButtonPress>", self.Leave)
