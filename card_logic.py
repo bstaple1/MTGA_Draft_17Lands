@@ -518,8 +518,8 @@ def DeckRating(deck, deck_type, color):
         filtered_cards = DeckColorSearch(deck, color, ["Creature", "Planeswalker"], True, True, False)
         
         if len(filtered_cards) < recommended_creature_count:
-            rating -= 250
-        
+            rating -= (recommended_creature_count - len(filtered_cards)) * 100
+            
         #Average CMC of the creatures is below the ideal cmc average
         cmc_average = deck_type["cmc_average"]
         total_cards = len(filtered_cards)
@@ -542,8 +542,8 @@ def DeckRating(deck, deck_type, color):
             
         for index, value in enumerate(distribution):
             if value < minimum_distribution[index]:
-                rating -= 250
-                break
+                rating -= 100
+                
     except Exception as error:
         print("DeckRating Error: %s" % error)
     

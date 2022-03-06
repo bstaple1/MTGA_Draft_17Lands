@@ -105,11 +105,13 @@ class LogScanner:
             offset = self.search_offset
             previous_draft_type = self.draft_type
             previous_draft_set = self.draft_set
-            with open(self.log_file, 'r', errors="ignore") as log:
+            with open(self.log_file, 'r') as log:
                 log.seek(offset)
-                for line in log:
-                    offset += len(line)
-                    
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     for search_string in switcher.keys():
                         string_offset = line.find(search_string)
                         if string_offset != -1:
@@ -224,8 +226,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -295,8 +300,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -352,8 +360,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -418,8 +429,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -482,8 +496,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -539,8 +556,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -610,8 +630,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -671,8 +694,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -743,8 +769,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
@@ -800,8 +829,11 @@ class LogScanner:
             with open(self.log_file, 'r') as log:
                 log.seek(offset)
 
-                for line in log:
-                    offset += len(line)
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
                     
                     string_offset = line.find(draft_string)
                     
