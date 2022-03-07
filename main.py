@@ -249,6 +249,7 @@ class WindowUI:
         self.missing_cards_checkbox_value = IntVar(self.root)
         self.auto_average_checkbox_value = IntVar(self.root)
         self.curve_bonus_checkbox_value = IntVar(self.root)
+        self.color_bonus_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.draft.deck_colors
         self.column_3_selection = StringVar(self.root)
@@ -263,6 +264,7 @@ class WindowUI:
            self.missing_cards_checkbox_value.set(configuration.hide_missing)
            self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
            self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
+           self.color_bonus_checkbox_value.set(configuration.color_bonus_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -271,6 +273,7 @@ class WindowUI:
            self.missing_cards_checkbox_value.set(False)
            self.auto_average_checkbox_value.set(False)
            self.curve_bonus_checkbox_value.set(False)
+           self.color_bonus_checkbox_value.set(False)
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -391,6 +394,7 @@ class WindowUI:
                                           color_options,
                                           limits,
                                           self.draft.tier_data,
+                                          True,
                                           True)
                                           
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
@@ -447,6 +451,7 @@ class WindowUI:
                                                   color_options,
                                                   limits,
                                                   self.draft.tier_data,
+                                                  False,
                                                   False)
                     
                     filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
@@ -481,6 +486,7 @@ class WindowUI:
                                           color_options,
                                           limits,
                                           self.draft.tier_data,
+                                          True,
                                           True)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
@@ -509,6 +515,7 @@ class WindowUI:
                                           color_options,
                                           limits,
                                           self.draft.tier_data,
+                                          False,
                                           False)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
@@ -669,6 +676,7 @@ class WindowUI:
            self.missing_cards_checkbox_value.set(configuration.hide_missing)
            self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
            self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
+           self.color_bonus_checkbox_value.set(configuration.color_bonus_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -677,7 +685,7 @@ class WindowUI:
            self.missing_cards_checkbox_value.set(False)
            self.auto_average_checkbox_value.set(False)
            self.curve_bonus_checkbox_value.set(False)
-           
+           self.color_bonus_checkbox_value.set(False)
     def UpdateSettingsCallback(self, *args):
         configuration = CL.Config()
         
@@ -689,7 +697,7 @@ class WindowUI:
         configuration.hide_stats = True if self.deck_stats_checkbox_value.get() else False
         configuration.auto_average_disabled = True if self.auto_average_checkbox_value.get() else False
         configuration.curve_bonus_disabled = True if self.curve_bonus_checkbox_value.get() else False
-
+        configuration.color_bonus_disabled = True if self.color_bonus_checkbox_value.get() else False
         CL.WriteConfig(configuration)
         self.UpdateCallback(False)
         
@@ -1068,6 +1076,11 @@ class WindowUI:
                                                  variable=self.curve_bonus_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)
+            color_bonus_label = Label(popup, text="Disable Color Bonus:", font='Helvetica 9 bold', anchor="w")
+            color_bonus_checkbox = Checkbutton(popup,
+                                                 variable=self.color_bonus_checkbox_value,
+                                                 onvalue=1,
+                                                 offvalue=0)                                                 
             optionsStyle = Style()
             optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
             
@@ -1096,7 +1109,9 @@ class WindowUI:
             auto_average_checkbox.grid(row=5, column=1, columnspan=1, sticky="nsew", padx=(5,))
             curve_bonus_label.grid(row=6, column=0, columnspan=1, sticky="nsew", padx=(10,))
             curve_bonus_checkbox.grid(row=6, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=7, column=0, columnspan=2, sticky="nsew")
+            color_bonus_label.grid(row=7, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            color_bonus_checkbox.grid(row=7, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=8, column=0, columnspan=2, sticky="nsew")
             
             self.ControlTrace(True)
             
@@ -1260,6 +1275,7 @@ class WindowUI:
             self.trace_ids.append(self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback))
             self.trace_ids.append(self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
             self.trace_ids.append(self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.color_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
         else:
            self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
            self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
@@ -1268,6 +1284,7 @@ class WindowUI:
            self.missing_cards_checkbox_value.trace_vdelete("w", self.trace_ids[4])
            self.auto_average_checkbox_value.trace_vdelete("w", self.trace_ids[5])
            self.curve_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[6])
+           self.color_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[7])
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
         #self.deck_colors_options_list = []

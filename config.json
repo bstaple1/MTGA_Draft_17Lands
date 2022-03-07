@@ -11,7 +11,8 @@
         "hide_missing": false,
         "hide_stats": false,
         "auto_average_disabled": false,
-        "curve_bonus_disabled": true
+        "curve_bonus_disabled": false,
+        "color_bonus_disabled": true
     },
     "card_logic": {
         "alsa_weight": 0.25,
