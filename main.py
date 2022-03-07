@@ -311,6 +311,7 @@ class WindowUI:
         self.diag_log_file = self.draft.diag_log_file
         self.diag_log_enabled = self.draft.diag_log_enabled
         self.table_width = configuration.table_width
+        self.trace_ids = []
         
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -381,7 +382,7 @@ class WindowUI:
         #self.deck_colors_options.config(width=10)
         
         self.refresh_button_frame = Frame(self.root)
-        self.refresh_button = Button(self.refresh_button_frame, command=self.UpdateCallback, text="Refresh");
+        self.refresh_button = Button(self.refresh_button_frame, command= lambda : self.UpdateCallback(True), text="Refresh");
         
         self.status_frame = Frame(self.root)
         self.pack_pick_label = Label(self.status_frame, text="Pack: 0, Pick: 0", font='Helvetica 9 bold')
@@ -785,10 +786,11 @@ class WindowUI:
         config.disable_auto_average = True if self.auto_average_checkbox_value.get() else False
         print(config)
         WriteConfig(config)
-        self.UpdateCallback()
+        self.UpdateCallback(False)
         
-    def UpdateCallback(self, *args):
-        self.draft.DraftSearch()
+    def UpdateCallback(self, enable_draft_search):
+        if enable_draft_search:
+            self.draft.DraftSearch()
         
         self.UpdateOptions(self.draft.deck_colors)
         
@@ -838,11 +840,11 @@ class WindowUI:
                 
                 while(1):
 
-                    self.UpdateCallback()
+                    self.UpdateCallback(True)
                     print("previous pick: %u, current pick: %u" % (previous_pick, self.draft.current_pick))
                     if self.draft.current_pack < previous_pack:
                         self.DraftReset(True)
-                        self.UpdateCallback()
+                        self.UpdateCallback(True)
                     if self.draft.step_through and (previous_pick != self.draft.current_pick):
                         input("Continue?")
                     else:
@@ -1134,6 +1136,8 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
+            self.ControlTrace(False)
+            
             column_2_label = Label(popup, text="Column 2:", font='Helvetica 9 bold', anchor="w")
             column_3_label = Label(popup, text="Column 3:", font='Helvetica 9 bold', anchor="w")
             column_4_label = Label(popup, text="Column 4:", font='Helvetica 9 bold', anchor="w")
@@ -1180,6 +1184,9 @@ class WindowUI:
             auto_average_label.grid(row=5, column=0, columnspan=1, sticky="nsew", padx=(10,))
             auto_average_checkbox.grid(row=5, column=1, columnspan=1, sticky="nsew", padx=(5,))
             default_button.grid(row=6, column=0, columnspan=2, sticky="nsew")
+            
+            self.ControlTrace(True)
+            
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "ConfigPopup Error: %s" % error
@@ -1226,7 +1233,7 @@ class WindowUI:
                 self.root.update()
                 self.DataViewUpdate(list_box, sets)
                 self.DraftReset(True)
-                self.UpdateCallback()
+                self.UpdateCallback(True)
 
             except Exception as error:
                 result = False
@@ -1318,7 +1325,7 @@ class WindowUI:
             self.filename = filename
             self.DraftReset(True)
             self.draft.log_file = filename
-            self.UpdateCallback()
+            self.UpdateCallback(True)
             
     def ToggleLog(self):
         
@@ -1329,6 +1336,23 @@ class WindowUI:
             log_value_string = "Disable Log"
             self.diag_log_enabled = True 
         self.datamenu.entryconfigure(2, label=log_value_string)
+        
+    def ControlTrace(self, enabled):
+        if enabled:
+            self.trace_ids = []
+            self.trace_ids.append(self.column_2_selection.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.column_3_selection.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.column_4_selection.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
+        else:
+           self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
+           self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
+           self.column_4_selection.trace_vdelete("w", self.trace_ids[2])
+           self.deck_stats_checkbox_value.trace_vdelete("w", self.trace_ids[3])
+           self.missing_cards_checkbox_value.trace_vdelete("w", self.trace_ids[4])
+           self.auto_average_checkbox_value.trace_vdelete("w", self.trace_ids[5])
         
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
@@ -1364,13 +1388,7 @@ class WindowUI:
 
         if update_flag:
            self.UpdateUI()
-           #self.deck_colors_options_selection.trace("w", self.UpdateCallback)  
-           self.column_2_selection.trace("w", self.UpdateSettingsCallback) 
-           self.column_3_selection.trace("w", self.UpdateSettingsCallback) 
-           self.column_4_selection.trace("w", self.UpdateSettingsCallback)
-           self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback)
-           self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback)
-           self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback)
+           self.ControlTrace(True)
     def HideDeckStates(self, hide):
         try:
             if hide:
