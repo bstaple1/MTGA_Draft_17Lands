@@ -1,6 +1,36 @@
 import functools
 import json
 from itertools import combinations
+from dataclasses import dataclass, asdict
+
+@dataclass 
+class DeckType:
+    distribution: list
+    maximum_card_count: int
+    recommended_creature_count: int
+    cmc_average : float
+
+@dataclass
+class Config:
+    table_width : int=270
+    column_2 : str="All ALSA"
+    column_3 : str="All Decks"
+    column_4 : str="Auto"
+    hide_missing : bool=False
+    hide_stats : bool=False
+    hotkey_enabled : bool=True
+    images_enabled : bool=True
+    auto_average_disabled : bool=False
+    curve_bonus_disabled : bool=False
+    minimum_creatures : int=13
+    minimum_noncreatures : int=6
+    ratings_threshold : int=500
+    alsa_weight : float=0.25
+    iwd_weight :float=0.25
+
+    deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
+    deck_aggro : DeckType=DeckType([0,1,4,4,1,0,0], 24, 17, 2.40)
+    deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
 
 def CompareRatings(a, b):
     try:
@@ -54,41 +84,43 @@ def ColorBonus (deck, deck_colors, card):
     
     return color_bonus_factor * color_bonus_level
     
-def CurveBonus(deck, deck_colors, card, pick_number):
-    curve_bonus_levels = [0.4, 0.4, 0.4, 0.4, 0.4,
-                          0.6, 0.6, 0.6, 0.6, 0.6,
-                          1.0, 1.0, 1.0, 1.5, 1.5,
-                          2.0, 2.0, 3.0, 3.0, 3.0]
+def CurveBonus(deck, card, pick_number, color_filter, configuration):
+    curve_bonus_levels = [0.1, 0.1, 0.1, 0.1, 0.1,
+                          0.2, 0.2, 0.2, 0.2, 0.2,
+                          0.3, 0.3, 0.3, 0.5, 0.5,
+                          0.6, 0.6, 1.0, 1.0, 1.0]
 
+    curve_start = 15
+    index = max(pick_number - curve_start, 0)
     curve_bonus = 0.0
     curve_bonus_factor = 0.0
-    cmc_average = 3.04
-    minimum_creature_count = 13
-    minimum_noncreature_count = 6
-    minimum_distribution = [0, 0, 4, 3, 2, 1, 0]
+    cmc_average = configuration.deck_mid.cmc_average
+    minimum_creature_count = configuration.minimum_creatures
+    minimum_noncreature_count = configuration.minimum_noncreatures
+    minimum_distribution = configuration.deck_mid.distribution
     
     try:
-        matching_colors = list(filter((lambda x : x in deck_colors[0]), card["colors"]))
+        matching_colors = list(filter((lambda x : x in color_filter), card["colors"]))
         
         if len(matching_colors):
             if any(x in card["types"] for x in ["Creature", "Planeswalker"]):
-                card_colors_sorted = DeckColorSearch(deck, deck_colors[0], ["Creature", "Planeswalker"], True)
-                card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["deck_colors"]["All Decks"]["gihwr"], reverse = True)
+                card_colors_sorted = DeckColorSearch(deck, color_filter, ["Creature", "Planeswalker"], True, True, False)
+                card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["deck_colors"][color_filter]["gihwr"], reverse = True)
                 
                 cmc_total, count, distribution = ColorCmc(card_colors_sorted)
-                curve_bonus = curve_bonus_levels[int(min(pick_number, len(curve_bonus_levels) - 1))]
+                curve_bonus = curve_bonus_levels[int(min(index, len(curve_bonus_levels) - 1))]
                 
                 curve_bonus_factor = 1
                 if(count > minimum_creature_count):
-                    replaceable = [x for x in card_colors_sorted if (card["cmc"] <= x["cmc"] and (card["deck_colors"]["All Decks"]["gihwr"]> x["deck_colors"]["All Decks"]["gihwr"]))]
+                    replaceable = [x for x in card_colors_sorted if (card["cmc"] <= x["cmc"] and (card["deck_colors"][color_filter]["gihwr"]> x["deck_colors"][color_filter]["gihwr"]))]
                     curve_bonus_factor = 0
                     if len(replaceable):
                         index = int(min(card["cmc"], len(distribution) - 1))
                         
                         if(distribution[index] < minimum_distribution[index]):
-                            curve_bonus_factor = 1
-                        else:
                             curve_bonus_factor = 0.5
+                        else:
+                            curve_bonus_factor = 0.25
     except Exception as error:
         print("CurveBonus Error: %s" % error)
         
@@ -152,13 +184,13 @@ def ColorCmc(deck):
     
     return cmc_total, count, distribution
     
-def ColorFilter(deck, color_selection, color_list, disable_auto_average):
+def ColorFilter(deck, color_selection, color_list, auto_average_disabled):
     color_data = color_selection
     filtered_color_list = [color_data]
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     try:
         if color_data == "Auto":
-            filtered_color_list = AutoColors(deck, color_list, 2, disable_auto_average)
+            filtered_color_list = AutoColors(deck, color_list, 2, auto_average_disabled)
         elif color_data == "AI":
             filtered_color_list = ["AI"]
         elif color_data in non_color_options:
@@ -217,7 +249,7 @@ def DeckColors(deck, color_options, colors_max):
     
     return deck_colors
     
-def AutoColors(deck, color_options, colors_max, disable_auto_average):
+def AutoColors(deck, color_options, colors_max, auto_average_disabled):
     try:
         deck_colors_list = []
         deck_colors_list.append(next(iter(color_options)))
@@ -232,7 +264,7 @@ def AutoColors(deck, color_options, colors_max, disable_auto_average):
                 deck_colors_list = colors[0:1]
             elif len(colors) == 1:
                 deck_colors_list = colors[0:1]
-            elif disable_auto_average == False:
+            elif auto_average_disabled == False:
                 deck_colors_list = colors[0:2]
 
     except Exception as error:
@@ -256,24 +288,15 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold):
             print("CalculateColorAffinity Error: %s" % error)
     return colors 
 
-def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list):
-    alsa_weight = .25
-    iwd_weight = .25
-    try:
-        with open("config.json", "r") as config:
-                config_json = config.read()
-                config_data = json.loads(config_json)
-                alsa_weight = config_data["card_logic"]["alsa_weight"]
-                iwd_weight = config_data["card_logic"]["iwd_weight"]
-    except Exception as error:
-        print("CardFilter Error: %s" % error)
-    #if color == "AI":
-    #    filtered_cards = CardAIFilter(cards, deck, color_options, limits, alsa_weight, iwd_weight)
-    #else:
-    filtered_cards = CardColorFilter(cards, tier_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight)
+def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list, include_curve):
+    configuration = ReadConfig()
+    
+    configuration.curve_bonus_disabled = configuration.curve_bonus_disabled if include_curve else True
+    
+    filtered_cards = CardColorFilter(cards, tier_list, filter_a, filter_b, filter_c, limits, configuration, deck)
     return filtered_cards
     
-def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, alsa_weight, iwd_weight):
+def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, configuration, deck):
     filtered_list = []
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     ratings_filter_dict = {"rating_filter_a" : filter_a, "rating_filter_b" : filter_b, "rating_filter_c" : filter_c}
@@ -283,6 +306,8 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
             selected_card["rating_filter_a"] = 0.0
             selected_card["rating_filter_b"] = 0.0
             selected_card["rating_filter_c"] = 0.0
+            
+
             for key, value in ratings_filter_dict.items():
                 if len(value) == 1:
                     if value[0] in non_color_options:
@@ -294,7 +319,7 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                     else:
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == value[0]:
-                                selected_card[key] = CardRating(card["deck_colors"][value[0]], limits[value[0]], alsa_weight, iwd_weight)
+                                selected_card[key] = CardRating(card, limits, configuration, value[0], deck)
                 else:
                     rated_colors = []
                     
@@ -302,7 +327,7 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                         rating = 0
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == colors:
-                                rating = CardRating(card["deck_colors"][colors], limits[colors], alsa_weight, iwd_weight)
+                                rating = CardRating(card, limits, configuration, colors, deck)
                                 break
                         rated_colors.append(rating)
                     if len(rated_colors):
@@ -326,7 +351,7 @@ def CardAIFilter(pack, deck, color_options, limits, alsa_weight, iwd_weight):
         deck_colors = deck_colors.keys()
         for card in pack:
             selected_card = card
-            selected_card["rating_all"] = CardRating(selected_card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight)
+            #selected_card["rating_all"] = CardRating(selected_card["deck_colors"]["All Decks"], limits["All Decks"], alsa_weight, iwd_weight, deck)
             
             selected_card["rating_filter_c"] = CardAIRating(selected_card,
                                                             deck,
@@ -369,30 +394,36 @@ def DeckColorLimits(cards, color):
             error_string = "DeckColorLimits Error: %s" % error
     return upper_limit, lower_limit
 
-def CardRating(card_data, limits, alsa_weight, iwd_weight):
+def CardRating(card_data, limits, configuration, filter, deck):
     rating = 0
-    winrate = card_data["gihwr"]
+    curve_bonus = 0
+    winrate = card_data["deck_colors"][filter]["gihwr"]
     try:
-        upper_limit = limits["upper"]
-        lower_limit = limits["lower"]
+        upper_limit = limits[filter]["upper"]
+        lower_limit = limits[filter]["lower"]
         
         if (winrate != 0) and (upper_limit != lower_limit):
+            #Curve bonus
+            pick_number = len(deck) + 1
+            if (configuration.curve_bonus_disabled == False) and (filter != "All Decks"):
+                curve_bonus = CurveBonus(deck, card_data, pick_number, filter, configuration)
+        
             #Calculate the ALSA bonus
-            alsa_bonus = ((15 - card_data["alsa"]) / 10) * alsa_weight
+            alsa_bonus = ((15 - card_data["deck_colors"][filter]["alsa"]) / 10) * configuration.alsa_weight
             
             #Calculate IWD penalty
             iwd_penalty = 0
             
-            if card_data["iwd"] < 0:
-                iwd_penalty = (max(card_data["iwd"], -10) / 10) * iwd_weight     
+            if card_data["deck_colors"][filter]["iwd"] < 0:
+                iwd_penalty = (max(card_data["deck_colors"][filter]["iwd"], -10) / 10) * configuration.iwd_weight     
             
-            winrate = min(winrate, limits["upper"])
-            winrate = max(winrate, limits["lower"])
+            winrate = min(winrate, limits[filter]["upper"])
+            winrate = max(winrate, limits[filter]["lower"])
             
             rating = ((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0
             
             #Make adjustments
-            rating += alsa_bonus + iwd_penalty
+            rating += alsa_bonus + iwd_penalty + curve_bonus
             
             rating = round(rating, 1)
             
@@ -416,7 +447,7 @@ def CardAIRating(card, deck, deck_colors, limits, pick_number):
     
         #Identify curve bonus
         if(pick_number >= curve_start):
-            curve_bonus = CurveBonus(deck, deck_colors, card, (pick_number - curve_start))
+            #curve_bonus = CurveBonus(deck, deck_colors, card, (pick_number - curve_start))
             
             color_type = deck_colors[0] if color_bonus else "All Decks"
             
@@ -514,14 +545,14 @@ def DeckRating(deck, deck_type, color):
             except Exception as error:
                 rating += 0
         #Deck contains the recommended number of creatures
-        recommended_creature_count = deck_type["recommended_creature_count"]
+        recommended_creature_count = deck_type.recommended_creature_count
         filtered_cards = DeckColorSearch(deck, color, ["Creature", "Planeswalker"], True, True, False)
         
         if len(filtered_cards) < recommended_creature_count:
             rating -= (recommended_creature_count - len(filtered_cards)) * 100
             
         #Average CMC of the creatures is below the ideal cmc average
-        cmc_average = deck_type["cmc_average"]
+        cmc_average = deck_type.cmc_average
         total_cards = len(filtered_cards)
         total_cmc = 0
         
@@ -534,7 +565,7 @@ def DeckRating(deck, deck_type, color):
             rating -= 500
         
         #Cards fit distribution
-        minimum_distribution = deck_type["distribution"]
+        minimum_distribution = deck_type.distribution
         distribution = [0, 0, 0, 0, 0, 0, 0]
         for card in filtered_cards:
             index = int(min(card["cmc"], len(minimum_distribution) - 1))
@@ -712,31 +743,15 @@ def ManaBase(deck):
     return combined_deck
     
 def SuggestDeck(taken_cards, color_options, limits):
-    minimum_creature_count = 13
-    minimum_noncreature_count = 6
-    maximum_card_count = 23
-    ratings_threshold = 500
     colors_max = 3
+    maximum_card_count = 23
     used_list = []
     sorted_decks = {}
-    iwd_weight = 0.25
-    alsa_weight = 0.25
     try:
-        #Retrieve configuration
-        try:
-            with open("config.json", "r") as config:
-                config_json = config.read()
-                config_data = json.loads(config_json)
-                alsa_weight = config_data["card_logic"]["alsa_weight"]
-                iwd_weight = config_data["card_logic"]["iwd_weight"]
-                minimum_creature_count = config_data["card_logic"]["minimum_creatures"]
-                minimum_noncreature_count = config_data["card_logic"]["minimum_noncreatures"]
-                ratings_threshold = config_data["card_logic"]["ratings_threshold"]
-                deck_builder_type = config_data["card_logic"]["deck_types"]
-        except Exception as error:
-            print(error)
+        configuration = ReadConfig()
+        deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Calculate the base ratings
-        filtered_cards = CardColorFilter(taken_cards, None, ["All Decks"],["All Decks"],["All Decks"], limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(taken_cards, None, ["All Decks"],["All Decks"],["All Decks"], limits, configuration, taken_cards)
         
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max)
@@ -746,17 +761,17 @@ def SuggestDeck(taken_cards, color_options, limits):
         #Collect color stats and remove colors that don't meet the minimum requirements
         for color in colors:
             creature_count, noncreature_count = DeckColorStats(filtered_cards, color)
-            if((creature_count >= minimum_creature_count) and 
-               (noncreature_count >= minimum_noncreature_count) and
+            if((creature_count >= configuration.minimum_creatures) and 
+               (noncreature_count >= configuration.minimum_noncreatures) and
                (creature_count + noncreature_count >= maximum_card_count)):
                 filtered_colors.append(color)
             
         decks = {}
         for color in filtered_colors:
-            for type in deck_builder_type.keys():
-                deck, sideboard_cards = BuildDeck(deck_builder_type[type], taken_cards, color, limits, minimum_noncreature_count, alsa_weight, iwd_weight)
-                rating = DeckRating(deck, deck_builder_type[type], color)
-                if rating >= ratings_threshold:
+            for type in deck_types.keys():
+                deck, sideboard_cards = BuildDeck(deck_types[type], taken_cards, color, limits, configuration)
+                rating = DeckRating(deck, deck_types[type], color)
+                if rating >= configuration.ratings_threshold:
                     
                     if ((color not in decks.keys()) or 
                         (color in decks.keys() and rating > decks[color]["rating"] )):
@@ -776,17 +791,17 @@ def SuggestDeck(taken_cards, color_options, limits):
 
     return sorted_decks
     
-def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_weight, iwd_weight):
-    minimum_distribution = deck_type["distribution"]
-    maximum_card_count = deck_type["maximum_card_count"]
+def BuildDeck(deck_type, cards, color, limits, configuration):
+    minimum_distribution = deck_type.distribution
+    maximum_card_count = deck_type.maximum_card_count
     maximum_deck_size = 40
-    cmc_average = deck_type["cmc_average"]
-    recommended_creature_count = deck_type["recommended_creature_count"]
+    cmc_average = deck_type.cmc_average
+    recommended_creature_count = deck_type.recommended_creature_count
     used_list = []
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardColorFilter(cards, None, [color], [color], [color], limits, alsa_weight, iwd_weight)
+        filtered_cards = CardColorFilter(cards, None, [color], [color], [color], limits, configuration, cards)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color))
@@ -875,3 +890,81 @@ def BuildDeck(deck_type, cards, color, limits, minimum_noncreature_count, alsa_w
         print("BuildDeck Error: %s" % error)
     return used_list, sideboard_list
     
+def ReadConfig():
+    config = Config()
+    try:
+        with open("config.json", 'r') as data:
+            config_json = data.read()
+            config_data = json.loads(config_json)
+        config.hotkey_enabled = config_data["features"]["hotkey_enabled"]
+        config.images_enabled = config_data["features"]["images_enabled"]
+        config.table_width = int(config_data["settings"]["table_width"])
+        config.column_2 = config_data["settings"]["column_2"]
+        config.column_3 = config_data["settings"]["column_3"]
+        config.column_4 = config_data["settings"]["column_4"]
+        config.hide_missing = config_data["settings"]["hide_missing"]
+        config.hide_stats = config_data["settings"]["hide_stats"]
+        config.auto_average_disabled = config_data["settings"]["auto_average_disabled"]
+        config.curve_bonus_disabled = config_data["settings"]["curve_bonus_disabled"]
+    except Exception as error:
+        print("ReadConfig Error: %s" % error)
+    return config
+
+def WriteConfig(config):
+    try:
+        with open("config.json", 'r') as data:
+            config_json = data.read()
+            config_data = json.loads(config_json)
+        
+        config_data["settings"]["column_2"] = config.column_2
+        config_data["settings"]["column_3"] = config.column_3
+        config_data["settings"]["column_4"] = config.column_4
+        config_data["settings"]["hide_missing"] = config.hide_missing
+        config_data["settings"]["hide_stats"] = config.hide_stats
+        config_data["settings"]["auto_average_disabled"] = config.auto_average_disabled
+        config_data["settings"]["curve_bonus_disabled"] = config.curve_bonus_disabled
+        
+        with open('config.json', 'w', encoding='utf-8') as file:
+            json.dump(config_data, file, ensure_ascii=False, indent=4)
+    
+    except Exception as error:
+        print("WriteConfig Error: %s" % error)
+
+def ResetConfig():
+    config = Config()
+    data = {}
+    
+    try:
+    
+        data["features"] = {}
+        data["features"]["hotkey_enabled"] = config.hotkey_enabled
+        data["features"]["images_enabled"] = config.images_enabled
+        
+        data["settings"] = {}
+        data["settings"]["table_width"] = config.table_width
+        data["settings"]["column_2"] = config.column_2
+        data["settings"]["column_3"] = config.column_3
+        data["settings"]["column_4"] = config.column_4
+        data["settings"]["hide_missing"] = config.hide_missing
+        data["settings"]["hide_stats"] = config.hide_stats
+        data["settings"]["auto_average_disabled"] = config.auto_average_disabled
+        data["settings"]["curve_bonus_disabled"] = config.curve_bonus_disabled
+        
+        data["card_logic"] = {}
+        data["card_logic"]["alsa_weight"] = config.alsa_weight
+        data["card_logic"]["iwd_weight"] = config.iwd_weight
+        data["card_logic"]["minimum_creatures"] = config.minimum_creatures
+        data["card_logic"]["minimum_noncreatures"] = config.minimum_noncreatures
+        data["card_logic"]["ratings_threshold"] = config.ratings_threshold
+        data["card_logic"]["deck_types"] = {}
+        data["card_logic"]["deck_types"]["Mid"] = {}
+        data["card_logic"]["deck_types"]["Mid"] = asdict(config.deck_mid)
+        data["card_logic"]["deck_types"]["Aggro"] = {}
+        data["card_logic"]["deck_types"]["Aggro"] = asdict(config.deck_aggro)
+        data["card_logic"]["deck_types"]["Control"] = {}
+        data["card_logic"]["deck_types"]["Control"] = asdict(config.deck_control)
+    
+        with open('config.json', 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+    except Exception as error:
+        print("ResetConfig Error: %s" % error)

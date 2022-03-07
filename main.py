@@ -68,7 +68,6 @@ from tkinter.ttk import *
 from tkinter import filedialog
 from pynput.keyboard import Key, Listener, KeyCode
 from datetime import date
-from dataclasses import dataclass, asdict
 import tkinter.messagebox as MessageBox
 import urllib
 import json
@@ -85,34 +84,6 @@ from ttkwidgets.autocomplete import AutocompleteEntry
 
 __version__= 2.73
 
-@dataclass 
-class DeckType:
-    distribution: list
-    maximum_card_count: int
-    recommended_creature_count: int
-    cmc_average : float
-
-@dataclass
-class Config:
-    hotkey_enabled : bool=True
-    images_enabled : bool=False
-    table_width : int=270
-    column_2 : str="All ALSA"
-    column_3 : str="All Decks"
-    column_4 : str="Auto"
-    hide_missing : bool=False
-    hide_stats : bool=False
-    hotkey_enabled : bool=True
-    images_enabled : bool=True
-    minimum_creatures : int=13
-    minimum_noncreatures : int=6
-    ratings_threshold : int=500
-    alsa_weight : float=0.25
-    iwd_weight :float=0.25
-    disable_auto_average : bool=False
-    deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
-    deck_aggro : DeckType=DeckType([0,1,4,4,1,0,0], 24, 17, 2.40)
-    deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
     
 def CheckVersion(platform, version):
     return_value = False
@@ -171,83 +142,6 @@ def NavigateFileLocation(os_type):
     except Exception as error:
         print("NavigateFileLocation Error: %s" % error)
     return file_location
-    
-def ReadConfig():
-    config = Config()
-    try:
-        with open("config.json", 'r') as data:
-            config_json = data.read()
-            config_data = json.loads(config_json)
-        config.hotkey_enabled = config_data["features"]["hotkey_enabled"]
-        config.images_enabled = config_data["features"]["images_enabled"]
-        config.table_width = int(config_data["settings"]["table_width"])
-        config.column_2 = config_data["settings"]["column_2"]
-        config.column_3 = config_data["settings"]["column_3"]
-        config.column_4 = config_data["settings"]["column_4"]
-        config.hide_missing = config_data["settings"]["hide_missing"]
-        config.hide_stats = config_data["settings"]["hide_stats"]
-        config.disable_auto_average = config_data["settings"]["disable_auto_average"]
-
-    except Exception as error:
-        print("ReadConfig Error: %s" % error)
-    return config
-
-def WriteConfig(config):
-    try:
-        with open("config.json", 'r') as data:
-            config_json = data.read()
-            config_data = json.loads(config_json)
-        
-        config_data["settings"]["column_2"] = config.column_2
-        config_data["settings"]["column_3"] = config.column_3
-        config_data["settings"]["column_4"] = config.column_4
-        config_data["settings"]["hide_missing"] = config.hide_missing
-        config_data["settings"]["hide_stats"] = config.hide_stats
-        config_data["settings"]["disable_auto_average"] = config.disable_auto_average
-        
-        with open('config.json', 'w', encoding='utf-8') as file:
-            json.dump(config_data, file, ensure_ascii=False, indent=4)
-    
-    except Exception as error:
-        print("WriteConfig Error: %s" % error)
-
-def ResetConfig():
-    config = Config()
-    data = {}
-    
-    try:
-    
-        data["features"] = {}
-        data["features"]["hotkey_enabled"] = config.hotkey_enabled
-        data["features"]["images_enabled"] = config.images_enabled
-        
-        data["settings"] = {}
-        data["settings"]["table_width"] = config.table_width
-        data["settings"]["column_2"] = config.column_2
-        data["settings"]["column_3"] = config.column_3
-        data["settings"]["column_4"] = config.column_4
-        data["settings"]["hide_missing"] = config.hide_missing
-        data["settings"]["hide_stats"] = config.hide_stats
-        data["settings"]["disable_auto_average"] = config.disable_auto_average
-        
-        data["card_logic"] = {}
-        data["card_logic"]["alsa_weight"] = config.alsa_weight
-        data["card_logic"]["iwd_weight"] = config.iwd_weight
-        data["card_logic"]["minimum_creatures"] = config.minimum_creatures
-        data["card_logic"]["minimum_noncreatures"] = config.minimum_noncreatures
-        data["card_logic"]["ratings_threshold"] = config.ratings_threshold
-        data["card_logic"]["deck_types"] = {}
-        data["card_logic"]["deck_types"]["Mid"] = {}
-        data["card_logic"]["deck_types"]["Mid"] = asdict(config.deck_mid)
-        data["card_logic"]["deck_types"]["Aggro"] = {}
-        data["card_logic"]["deck_types"]["Aggro"] = asdict(config.deck_aggro)
-        data["card_logic"]["deck_types"]["Control"] = {}
-        data["card_logic"]["deck_types"]["Control"] = asdict(config.deck_control)
-    
-        with open('config.json', 'w', encoding='utf-8') as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
-    except Exception as error:
-        print("ResetConfig Error: %s" % error)
 
 def TableFilterOptions(table, filter_a, filter_b, filter_c):
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
@@ -354,6 +248,7 @@ class WindowUI:
         self.deck_stats_checkbox_value = IntVar(self.root)
         self.missing_cards_checkbox_value = IntVar(self.root)
         self.auto_average_checkbox_value = IntVar(self.root)
+        self.curve_bonus_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.draft.deck_colors
         self.column_3_selection = StringVar(self.root)
@@ -366,7 +261,8 @@ class WindowUI:
            self.column_4_selection.set(configuration.column_4)
            self.deck_stats_checkbox_value.set(configuration.hide_stats)
            self.missing_cards_checkbox_value.set(configuration.hide_missing)
-           self.auto_average_checkbox_value.set(configuration.disable_auto_average)
+           self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
+           self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -374,6 +270,7 @@ class WindowUI:
            self.deck_stats_checkbox_value.set(False)
            self.missing_cards_checkbox_value.set(False)
            self.auto_average_checkbox_value.set(False)
+           self.curve_bonus_checkbox_value.set(False)
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -493,7 +390,8 @@ class WindowUI:
                                           filtered_c,
                                           color_options,
                                           limits,
-                                          self.draft.tier_data)
+                                          self.draft.tier_data,
+                                          True)
                                           
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             # clear the previous rows
@@ -548,7 +446,8 @@ class WindowUI:
                                                   filtered_c,
                                                   color_options,
                                                   limits,
-                                                  self.draft.tier_data)
+                                                  self.draft.tier_data,
+                                                  False)
                     
                     filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
@@ -581,7 +480,8 @@ class WindowUI:
                                           filtered_c,
                                           color_options,
                                           limits,
-                                          self.draft.tier_data)
+                                          self.draft.tier_data,
+                                          True)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             compare_table.delete(*compare_table.get_children())
@@ -608,7 +508,8 @@ class WindowUI:
                                           filtered_c,
                                           color_options,
                                           limits,
-                                          self.draft.tier_data)
+                                          self.draft.tier_data,
+                                          False)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             list_length = len(filtered_list)
@@ -756,9 +657,9 @@ class WindowUI:
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
             
     def DefaultSettingsCallback(self, *args):
-        ResetConfig()
+        CL.ResetConfig()
         
-        config = ReadConfig()
+        config = CL.ReadConfig()
         
         try:
            self.column_2_selection.set(config.column_2) 
@@ -766,7 +667,8 @@ class WindowUI:
            self.column_4_selection.set(config.column_4)
            self.deck_stats_checkbox_value.set(config.hide_stats)
            self.missing_cards_checkbox_value.set(config.hide_missing)
-           self.auto_average_checkbox_value.set(config.disable_auto_average)
+           self.auto_average_checkbox_value.set(config.auto_average_disabled)
+           self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -774,18 +676,21 @@ class WindowUI:
            self.deck_stats_checkbox_value.set(False)
            self.missing_cards_checkbox_value.set(False)
            self.auto_average_checkbox_value.set(False)
+           self.curve_bonus_checkbox_value.set(False)
+           
     def UpdateSettingsCallback(self, *args):
-        config = Config()
+        configuration = CL.Config()
         
-        config.column_2 = self.column_2_selection.get()
-        config.column_3 = self.column_3_selection.get()
-        config.column_4 = self.column_4_selection.get()
+        configuration.column_2 = self.column_2_selection.get()
+        configuration.column_3 = self.column_3_selection.get()
+        configuration.column_4 = self.column_4_selection.get()
         
-        config.hide_missing = True if self.missing_cards_checkbox_value.get() else False
-        config.hide_stats = True if self.deck_stats_checkbox_value.get() else False
-        config.disable_auto_average = True if self.auto_average_checkbox_value.get() else False
-        print(config)
-        WriteConfig(config)
+        configuration.hide_missing = True if self.missing_cards_checkbox_value.get() else False
+        configuration.hide_stats = True if self.deck_stats_checkbox_value.get() else False
+        configuration.auto_average_disabled = True if self.auto_average_checkbox_value.get() else False
+        configuration.curve_bonus_disabled = True if self.curve_bonus_checkbox_value.get() else False
+
+        CL.WriteConfig(configuration)
         self.UpdateCallback(False)
         
     def UpdateCallback(self, enable_draft_search):
@@ -1157,6 +1062,12 @@ class WindowUI:
                                                  variable=self.auto_average_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)
+                                                 
+            curve_bonus_label = Label(popup, text="Disable Curve Bonus:", font='Helvetica 9 bold', anchor="w")
+            curve_bonus_checkbox = Checkbutton(popup,
+                                                 variable=self.curve_bonus_checkbox_value,
+                                                 onvalue=1,
+                                                 offvalue=0)
             optionsStyle = Style()
             optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
             
@@ -1183,7 +1094,9 @@ class WindowUI:
             missing_cards_checkbox.grid(row=4, column=1, columnspan=1, sticky="nsew", padx=(5,)) 
             auto_average_label.grid(row=5, column=0, columnspan=1, sticky="nsew", padx=(10,))
             auto_average_checkbox.grid(row=5, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=6, column=0, columnspan=2, sticky="nsew")
+            curve_bonus_label.grid(row=6, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            curve_bonus_checkbox.grid(row=6, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=7, column=0, columnspan=2, sticky="nsew")
             
             self.ControlTrace(True)
             
@@ -1346,6 +1259,7 @@ class WindowUI:
             self.trace_ids.append(self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback))
             self.trace_ids.append(self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback))
             self.trace_ids.append(self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
         else:
            self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
            self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
@@ -1353,7 +1267,7 @@ class WindowUI:
            self.deck_stats_checkbox_value.trace_vdelete("w", self.trace_ids[3])
            self.missing_cards_checkbox_value.trace_vdelete("w", self.trace_ids[4])
            self.auto_average_checkbox_value.trace_vdelete("w", self.trace_ids[5])
-        
+           self.curve_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[6])
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
         #self.deck_colors_options_list = []
@@ -1552,7 +1466,7 @@ def Startup(argv):
     if file_location == "":
         file_location = NavigateFileLocation(operating_system);
         
-    config = ReadConfig()
+    config = CL.ReadConfig()
     
     if operating_system == "MAC":
         config.hotkey_enabled = False
