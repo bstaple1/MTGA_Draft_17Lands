@@ -81,6 +81,14 @@ def ColorBonus (deck, deck_colors, card):
 
         searched_cards = DeckColorSearch(deck, search_colors, ["Creature", "Planeswalker","Instant", "Sorcery","Enchantment","Artifact"], True, False, False)
         color_bonus_level = min(len(searched_cards) * 0.1, 1)
+        for card in searched_cards:
+            if card["deck_colors"]["All Decks"]["gihwr"] >= 65.0:
+                color_bonus_level += 0.3
+            elif card["deck_colors"]["All Decks"]["gihwr"] >= 60.0:
+                color_bonus_level += 0.2
+            else:
+                color_bonus_level += 0.1
+        color_bonus_level = min(color_bonus_level, 1)
         
     except Exception as error:
         print(error)
@@ -228,10 +236,14 @@ def DeckColors(deck, color_options, colors_max):
         for count in range(colors_max + 1):
             if count > 1:
                 color_combination.extend(combinations(sorted_colors, count))
-        
+            else:
+                color_combination.extend((sorted_colors))
+
         #Convert tuples to list of strings
         color_strings = [''.join(tups) for tups in color_combination]
-        color_string = [x for x in color_strings if len(x) <= colors_max]
+        color_strings = [x for x in color_strings if len(x) <= colors_max]
+
+        color_strings = list(set(color_strings))
 
         color_dict = {}
         for color_string in color_strings:
