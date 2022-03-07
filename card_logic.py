@@ -80,7 +80,6 @@ def ColorBonus (deck, deck_colors, card):
             search_colors = matching_colors
 
         searched_cards = DeckColorSearch(deck, search_colors, ["Creature", "Planeswalker","Instant", "Sorcery","Enchantment","Artifact"], True, False, False)
-        color_bonus_level = min(len(searched_cards) * 0.1, 1)
         for card in searched_cards:
             if card["deck_colors"]["All Decks"]["gihwr"] >= 65.0:
                 color_bonus_level += 0.3
