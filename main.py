@@ -659,15 +659,15 @@ class WindowUI:
     def DefaultSettingsCallback(self, *args):
         CL.ResetConfig()
         
-        config = CL.ReadConfig()
+        configuration = CL.ReadConfig()
         
         try:
-           self.column_2_selection.set(config.column_2) 
-           self.column_3_selection.set(config.column_3)
-           self.column_4_selection.set(config.column_4)
-           self.deck_stats_checkbox_value.set(config.hide_stats)
-           self.missing_cards_checkbox_value.set(config.hide_missing)
-           self.auto_average_checkbox_value.set(config.auto_average_disabled)
+           self.column_2_selection.set(configuration.column_2) 
+           self.column_3_selection.set(configuration.column_3)
+           self.column_4_selection.set(configuration.column_4)
+           self.deck_stats_checkbox_value.set(configuration.hide_stats)
+           self.missing_cards_checkbox_value.set(configuration.hide_missing)
+           self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
            self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
