@@ -1226,10 +1226,16 @@ class WindowUI:
                             try:
                                 curve_bonus = 0
                                 color_bonus = 0
-                                if "curve_bonus" in card.keys():
+                                if "curve_bonus" not in card.keys() or len(card["curve_bonus"]) == 0:
+                                    include_bonuses = False
+                                else:
                                     curve_bonus = card["curve_bonus"][count]
-                                if "color_bonus" in card.keys():
+
+                                if "color_bonus" not in card.keys() or len(card["color_bonus"]) == 0:
+                                    include_bonuses = False
+                                else:
                                     color_bonus = card["color_bonus"][count]
+
                                 color_dict[color] = {"alsa" : card["deck_colors"][color]["alsa"],
                                                      "iwd" : card["deck_colors"][color]["iwd"],
                                                      "gihwr" : card["deck_colors"][color]["gihwr"],
