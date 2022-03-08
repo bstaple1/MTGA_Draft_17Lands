@@ -66,11 +66,11 @@ class LogScanner:
         self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
-        
+        self.file_size = 0
     def ClearDraft(self, full_clear):
         if full_clear:
             self.search_offset = 0
-            
+            self.file_size = 0
         self.set_data = None
         self.tier_data = None
         self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "",  "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
@@ -100,8 +100,9 @@ class LogScanner:
         
         try:
             #Check if a new player.log was created (e.g. application was started before Arena was started)
-            if self.search_offset > os.path.getsize(self.log_file):
+            if self.file_size > os.path.getsize(self.log_file):
                 self.ClearDraft(True)
+            self.file_size = os.path.getsize(self.log_file)
             offset = self.search_offset
             previous_draft_type = self.draft_type
             previous_draft_set = self.draft_set
