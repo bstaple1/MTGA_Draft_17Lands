@@ -79,20 +79,20 @@ def ColorBonus (deck, deck_colors, card):
             color_bonus_factor = len(matching_colors) / len(card_colors)
             search_colors = matching_colors
 
-        searched_cards = DeckColorSearch(deck, search_colors, ["Creature", "Planeswalker","Instant", "Sorcery","Enchantment","Artifact"], True, False, False)
+        searched_cards = DeckColorSearch(deck, search_colors, ["Creature", "Planeswalker","Instant", "Sorcery","Enchantment","Artifact"], True, False, True)
         for card in searched_cards:
             if card["deck_colors"]["All Decks"]["gihwr"] >= 65.0:
                 color_bonus_level += 0.3
             elif card["deck_colors"]["All Decks"]["gihwr"] >= 60.0:
                 color_bonus_level += 0.2
-            else:
+            elif card["deck_colors"]["All Decks"]["gihwr"] >= 52.0:
                 color_bonus_level += 0.1
         color_bonus_level = min(color_bonus_level, 1)
         
     except Exception as error:
         print(error)
     
-    return color_bonus_factor * color_bonus_level
+    return round(color_bonus_factor * color_bonus_level,1)
     
 def CurveBonus(deck, card, pick_number, color_filter, configuration):
     curve_bonus_levels = [0.1, 0.1, 0.1, 0.1, 0.1,
@@ -325,9 +325,16 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
             selected_card["rating_filter_a"] = 0.0
             selected_card["rating_filter_b"] = 0.0
             selected_card["rating_filter_c"] = 0.0
-            
+            selected_card["curve_bonus"] = []
+            selected_card["color_bonus"] = []
 
             for key, value in ratings_filter_dict.items():
+                disable_curve_bonus = True
+                disable_color_bonus = True
+                #Only include the color and curve bonuses for filter c
+                if key == "rating_filter_c":
+                    disable_curve_bonus = configuration.curve_bonus_disabled
+                    disable_color_bonus = configuration.color_bonus_disabled
                 if len(value) == 1:
                     if value[0] in non_color_options:
                         color, type = value[0].split(" ")
@@ -338,7 +345,10 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                     else:
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == value[0]:
-                                selected_card[key] = CardRating(card, limits, configuration, value[0], deck, deck_colors)
+                                selected_card[key], curve_bonus, color_bonus = CardRating(card, limits, configuration, value[0], deck, deck_colors, disable_curve_bonus, disable_color_bonus)
+                                if key == "rating_filter_c":
+                                    selected_card["curve_bonus"].append(curve_bonus)
+                                    selected_card["color_bonus"].append(color_bonus)
                 else:
                     rated_colors = []
                     
@@ -346,9 +356,12 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                         rating = 0
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == colors:
-                                rating = CardRating(card, limits, configuration, colors, deck, deck_colors)
+                                rating, curve_bonus, color_bonus = CardRating(card, limits, configuration, colors, deck, deck_colors, disable_curve_bonus, disable_color_bonus)
                                 break
                         rated_colors.append(rating)
+                        if key == "rating_filter_c":
+                            selected_card["curve_bonus"].append(curve_bonus)
+                            selected_card["color_bonus"].append(color_bonus)
                     if len(rated_colors):
                         selected_card[key] = round(sum(rated_colors)/float(len(rated_colors)), 1) #Find the average of all of the ratings
             filtered_list.append(selected_card)
@@ -413,10 +426,10 @@ def DeckColorLimits(cards, color):
             error_string = "DeckColorLimits Error: %s" % error
     return upper_limit, lower_limit
 
-def CardRating(card_data, limits, configuration, filter, deck, deck_colors):
+def CardRating(card_data, limits, configuration, filter, deck, deck_colors, disable_curve_bonus, disable_color_bonus):
     rating = 0
-    curve_bonus = 0
-    color_bonus = 0
+    curve_bonus = 0.0
+    color_bonus = 0.0
     winrate = card_data["deck_colors"][filter]["gihwr"]
     try:
         upper_limit = limits[filter]["upper"]
@@ -425,11 +438,11 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors):
         if (winrate != 0) and (upper_limit != lower_limit):
             #Curve bonus
             pick_number = len(deck)
-            if (configuration.curve_bonus_disabled == False) and (filter != "All Decks"):
+            if (disable_curve_bonus == False) and (filter != "All Decks"):
                 curve_bonus = CurveBonus(deck, card_data, pick_number, filter, configuration)
                 
             #Color bonus
-            if (configuration.color_bonus_disabled == False) and (filter == "All Decks"):
+            if (disable_color_bonus == False) and (filter == "All Decks"):
                 color_bonus = ColorBonus(deck, deck_colors, card_data)
         
             #Calculate the ALSA bonus
@@ -456,7 +469,7 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors):
             
     except Exception as error:
         print("CardRating Error: %s" % error)
-    return rating
+    return rating, curve_bonus, color_bonus
     
 def CardAIRating(card, deck, deck_colors, limits, pick_number):
     rating = 0

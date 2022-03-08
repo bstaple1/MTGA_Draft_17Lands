@@ -1222,15 +1222,19 @@ class WindowUI:
                             color_list = ["All Decks"]
                         else:
                             color_list = selected_color
-                        for color in color_list:
+                        for count, color in enumerate(color_list):
                             try:
                                 color_dict[color] = {"alsa" : card["deck_colors"][color]["alsa"],
                                                      "iwd" : card["deck_colors"][color]["iwd"],
-                                                     "gihwr" : card["deck_colors"][color]["gihwr"]}
+                                                     "gihwr" : card["deck_colors"][color]["gihwr"],
+                                                     "curve_bonus" : card["curve_bonus"][count],
+                                                     "color_bonus" : card["color_bonus"][count]}                 
                             except Exception as error:
                                 color_dict[color] = {"alsa" : 0,
                                                      "iwd" : 0,
-                                                     "gihwr" : 0}
+                                                     "gihwr" : 0,
+                                                     "curve_bonus" : 0,
+                                                     "color_bonus" : 0}
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
                                                            color_dict,
@@ -1406,7 +1410,7 @@ class CreateCardToolTip(object):
                     image = ImageTk.PhotoImage(im)
                     image_label = Label(tt_frame, image=image)
                     columnspan = 1 if len(self.image) == 2 else 2
-                    image_label.grid(column=count, row=5, columnspan=columnspan)
+                    image_label.grid(column=count, row=7, columnspan=columnspan)
                     self.images.append(image)
             
 
@@ -1426,7 +1430,15 @@ class CreateCardToolTip(object):
             gihwr_values = [str(x['gihwr']) for x in self.color_dict.values()]
             gihwr_label = Label(tt_frame, text="Games In Hand Win Rate:", font=("Consolas", 10, "bold"))
             gihwr_value = Label(tt_frame, text="/".join(gihwr_values)+ "%", font=("Consolas", 10))
-
+            
+            curve_bonus_values = [str(x['curve_bonus']) for x in self.color_dict.values()]
+            curve_bonus_label = Label(tt_frame, text="Curve Bonus:", font=("Consolas", 10, "bold"))
+            curve_bonus_value = Label(tt_frame, text="+" + "/".join(curve_bonus_values), font=("Consolas", 10))
+            
+            color_bonus_values = [str(x['color_bonus']) for x in self.color_dict.values()]
+            color_bonus_label = Label(tt_frame, text="Color Bonus:", font=("Consolas", 10, "bold"))
+            color_bonus_value = Label(tt_frame, text="+" + "/".join(color_bonus_values), font=("Consolas", 10))
+            
             card_label.grid(column=0, row=0, columnspan=2)
             filter_label.grid(column=0, row=1, columnspan=1)
             filter_value.grid(column=1, row=1, columnspan=1)
@@ -1436,7 +1448,10 @@ class CreateCardToolTip(object):
             iwd_value.grid(column=1, row=3, columnspan=1)
             gihwr_label.grid(column=0, row=4, columnspan=1)
             gihwr_value.grid(column=1, row=4, columnspan=1)
-
+            curve_bonus_label.grid(column=0, row=5, columnspan=1)
+            curve_bonus_value.grid(column=1, row=5, columnspan=1)
+            color_bonus_label.grid(column=0, row=6, columnspan=1)
+            color_bonus_value.grid(column=1, row=6, columnspan=1)
             tt_frame.pack()
             
             
