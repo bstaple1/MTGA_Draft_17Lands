@@ -112,7 +112,7 @@ def CurveBonus(deck, card, pick_number, color_filter, configuration):
     try:
         matching_colors = list(filter((lambda x : x in color_filter), card["colors"]))
         
-        if len(matching_colors):
+        if len(matching_colors) or len(card["colors"]) == 0:
             if any(x in card["types"] for x in ["Creature", "Planeswalker"]):
                 card_colors_sorted = DeckColorSearch(deck, color_filter, ["Creature", "Planeswalker"], True, True, False)
                 card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["deck_colors"][color_filter]["gihwr"], reverse = True)
@@ -147,9 +147,6 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
             if not card_colors:
                 card_colors = card["colors"]
 
-            if include_partial and len(card_colors):
-                card_colors = card_colors[0] #Just use the first color
-
             if bool(card_colors) and (set(card_colors) <= set(search_colors)):
                 main_color = card_colors[0]
 
@@ -162,6 +159,17 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
                     #if search_colors in card["deck_colors"].keys(): 
                     card_color_sorted[main_color].append(card)
 
+            elif set(search_colors).intersection(card_colors) and include_partial:
+                for color in card_colors:
+                    if((include_types and any(x in card["types"][0] for x in card_types)) or
+                    (not include_types and not any(x in card["types"][0] for x in card_types))):
+    
+                        if color not in card_color_sorted.keys():
+                            card_color_sorted[color] = []
+                            
+                        #if search_colors in card["deck_colors"].keys(): 
+                        card_color_sorted[color].append(card)
+
             if (bool(card_colors) == False) and include_colorless:
             
                 if((include_types and any(x in card["types"][0] for x in card_types)) or
@@ -173,7 +181,8 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
             print("DeckColorSearch Error: %s" % error)
 
     for color in card_color_sorted:
-        combined_cards.extend(card_color_sorted[color])
+        if color in search_colors:
+            combined_cards.extend(card_color_sorted[color])
             
     return combined_cards
     

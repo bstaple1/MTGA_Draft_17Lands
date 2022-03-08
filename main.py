@@ -417,7 +417,7 @@ class WindowUI:
                 row_tag = CL.RowColorTag(card["colors"])
                 
                 self.pack_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-            self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_c))
+            self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_c, include_bonuses=True))
         except Exception as error:
             error_string = "UpdatePackTable Error: %s" % error
             print(error_string)
@@ -460,7 +460,7 @@ class WindowUI:
                         card_name = "*" + card["name"] if card["name"] in picked_cards else card["name"]
                         
                         self.missing_table.insert("",index = count, iid = count, values = (card_name, card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-                    self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_c))
+                    self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_c, include_bonuses=False))
         except Exception as error:
             error_string = "UpdateMissingTable Error: %s" % error
             print(error_string)
@@ -498,7 +498,7 @@ class WindowUI:
             for count, card in enumerate(filtered_list):
                 row_tag = CL.RowColorTag(card["colors"])
                 compare_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-            compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_c))
+            compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_c, include_bonuses=True))
         except Exception as error:
             error_string = "UpdateCompareTable Error: %s" % error
             print(error_string)
@@ -527,7 +527,7 @@ class WindowUI:
             for count, card in enumerate(filtered_list):
                 row_tag = CL.RowColorTag(card["colors"])
                 taken_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-            taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_c))
+            taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_c, include_bonuses=False))
         except Exception as error:
             error_string = "UpdateTakenTable Error: %s" % error
             print(error_string)
@@ -548,7 +548,7 @@ class WindowUI:
                                                                  card["colors"],
                                                                  card["cmc"],
                                                                  card["types"]), tag = (row_tag,))
-            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
+            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color], include_bonuses=False))
     
         except Exception as error:
             error_string = "UpdateSuggestTable Error: %s" % error
@@ -1209,7 +1209,7 @@ class WindowUI:
             
             break
             
-    def OnClickTable(self, event, table, card_list, selected_color):
+    def OnClickTable(self, event, table, card_list, selected_color, include_bonuses):
         color_dict = {}
         for item in table.selection():
             card_name = table.item(item, "value")[0]
@@ -1224,30 +1224,39 @@ class WindowUI:
                             color_list = selected_color
                         for count, color in enumerate(color_list):
                             try:
+                                curve_bonus = 0
+                                color_bonus = 0
+                                if "curve_bonus" in card.keys():
+                                    curve_bonus = card["curve_bonus"][count]
+                                if "color_bonus" in card.keys():
+                                    color_bonus = card["color_bonus"][count]
                                 color_dict[color] = {"alsa" : card["deck_colors"][color]["alsa"],
                                                      "iwd" : card["deck_colors"][color]["iwd"],
                                                      "gihwr" : card["deck_colors"][color]["gihwr"],
-                                                     "curve_bonus" : card["curve_bonus"][count],
-                                                     "color_bonus" : card["color_bonus"][count]}                 
+                                                     "curve_bonus" : curve_bonus,
+                                                     "color_bonus" : color_bonus}                 
                             except Exception as error:
                                 color_dict[color] = {"alsa" : 0,
                                                      "iwd" : 0,
                                                      "gihwr" : 0,
                                                      "curve_bonus" : 0,
                                                      "color_bonus" : 0}
+                            
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
                                                            color_dict,
                                                            card["image"],
                                                            self.images_enabled,
-                                                           self.operating_system)
+                                                           self.operating_system,
+                                                           include_bonuses)
                     except Exception as error:
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
                                                            color_dict,
                                                            card["image"],
                                                            self.images_enabled,
-                                                           self.operating_system)
+                                                           self.operating_system,
+                                                           include_bonuses)
                     break
     def FileOpen(self):
         filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),
@@ -1348,12 +1357,13 @@ class WindowUI:
             self.missing_table_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, operating_system):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, operating_system, include_bonuses):
         self.waittime = 1     #miliseconds
         self.wraplength = 180   #pixels
         self.widget = widget
         self.card_name = card_name
         self.color_dict = color_dict
+        self.include_bonuses = include_bonuses
         self.image = image
         self.operating_system = operating_system
         self.images_enabled = images_enabled
@@ -1448,10 +1458,11 @@ class CreateCardToolTip(object):
             iwd_value.grid(column=1, row=3, columnspan=1)
             gihwr_label.grid(column=0, row=4, columnspan=1)
             gihwr_value.grid(column=1, row=4, columnspan=1)
-            curve_bonus_label.grid(column=0, row=5, columnspan=1)
-            curve_bonus_value.grid(column=1, row=5, columnspan=1)
-            color_bonus_label.grid(column=0, row=6, columnspan=1)
-            color_bonus_value.grid(column=1, row=6, columnspan=1)
+            if self.include_bonuses:
+                curve_bonus_label.grid(column=0, row=5, columnspan=1)
+                curve_bonus_value.grid(column=1, row=5, columnspan=1)
+                color_bonus_label.grid(column=0, row=6, columnspan=1)
+                color_bonus_value.grid(column=1, row=6, columnspan=1)
             tt_frame.pack()
             
             
