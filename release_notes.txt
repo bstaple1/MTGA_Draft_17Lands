@@ -1,3 +1,19 @@
+===================== RELEASE NOTES 2.80 =====================
+- New Feature: Auto Averaging - see the card logic and settings sections of the README
+
+- New Feature: Color Bonus - see the card logic and settings sections of the README
+
+- New Feature: Curve Bonus - see the card logic and settings sections of the README
+
+- Modified Feature: Moved the 17Lands notice information to the main window
+
+- Modified Feature: Changed the minimize/maximize hotkey from Ctrl+F to Ctrl+G and added a note to the main window
+
+- Bug Fixes:
+    - The auto filter logic has been reworked (Issue #3) - see the card logic section of the README
+    - The tool will no longer fail to calculate pick ratings due to incomplete 17Lands data (Issue#2 a continuation of Issue#1)
+    - The tool will not generate an extra log file while drafting
+
 ===================== RELEASE NOTES 2.73 =====================
 - New Feature: Added settings options for hiding the missing cards and deck stats tables
 
@@ -6,11 +22,11 @@
 - Modified Feature: After pick 15, the auto filter will now remain at "All Decks" until there's a clear leading color pair
 
 - Bug Fixes:
-  - Clicking on the reset config drop-down option will no longer prevent the deck suggester from working
-    - Reset config has been replaced with a default settings button in the settings window
-  - Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
-  - Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards
-  - Incomplete 17Lands data will no longer result in inaccurate pick ratings (Issue #1) 
+    - Clicking on the reset config drop-down option will no longer prevent the deck suggester from working
+        - Reset config has been replaced with a default settings button in the settings window
+    - Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
+    - Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards
+    - Incomplete 17Lands data will no longer result in inaccurate pick ratings (Issue #1) 
 
 ===================== RELEASE NOTES 2.72 =====================
 
