@@ -5,7 +5,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Steps for Windows
 
-- Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file or clone the repository.
+- Step 1: Download and unzip the MTGA_Draft_17Lands-main.zip file, clone the repository, or download the executable from the releases page.
 
 - Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
@@ -59,17 +59,17 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   
 - Deck Filter: A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
 
-    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color ratings page on 17 Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
+    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color ratings page on 17Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
     - The "All Decks" option lists the combined rating across all of the deck color combinations
-        -The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards.
+        -The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards. See the auto averaging note in the card logic section.
 - Pack, Pick Table: This table lists the cards contained in the current pack. 
 
-    - The "All" column lists the card rating for the "All Decks" filter. This is visible regardless of the Deck Filter option chosen.
+    - The "All" column lists the card rating for the "All Decks" filter.
         - The last column will list the card rating for the chosen Deck Filter option.
-        - The card rating is derived from the Games in Hand Win Rate, Average Last Seen At, and Improvement When Drawn fields from 17 Lands. The individual values can be seen by clicking on the card in the table.
+        - The card rating is derived from the Games in Hand Win Rate, Average Last Seen At, and Improvement When Drawn fields from 17Lands. The individual values can be seen by clicking on the card in the table.
         - For Premier and Traditional drafts, P1P1 doesn't appear in the logs until after P1P2. Use the Card Compare feature to perform the card analysis.
 	
-- Missing Cards Table: This table will list the cards missing from a pack that's already been seen. 
+- Missing Cards Table: This table will list the cards missing from a pack that has already been seen. 
 
     - The user's chosen card will have an asterisk next to the name.
 	
@@ -81,15 +81,12 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Draft_Menus.png?raw=true)
 
-- Read Draft Logs: Read the log file from a draft by selecting File->Open. Select a .log file to read the file.
+- Read Draft Logs: Read the log file from a draft by selecting File->Open. Select a file that has the following naming scheme DraftLog_<Set>_<Draft Type>_<Timestamp>.log file to read the file.
 
 - Download Set Data: Get to the Add Sets window by selecting Data->View Sets. Enter the set information and click on the ADD SET button to begin downloading the set data.
 
     - For the ID field, keep the value at 0.
     - The download can take several minutes.
-    
-- Settings: Get to the Settings window by selecting Data->Settings. 
-    - Use the drop-downs to configure the second, third, and fourth columns for each of the tables (Pick, Missing, and Taken tables).
     
 - List Taken Cards: Get to the Taken Cards window by selecting Cards->Taken Cards. 
     - This table lists the cards that were taken by the user over the course of the draft.
@@ -106,7 +103,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     
 ## Additional Features
 
-- Hotkey: The user can use the hotkey ctrl+f to toggle between minimizing and maximizing the main application window.
+- Hotkey: The user can use the hotkey ctrl+g to toggle between minimizing and maximizing the main application window.
 
     - This feature doesn't work on Mac.
     - You need to run the executable as an administrator for this feature to work in Arena.
@@ -119,10 +116,43 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 	
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tooltip.png?raw=true)	
 	
+## Settings
 
+- Column 2: Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used.
 
+- Column 3: Configure column 3 of the pack table, missing table, compare table, and taken table. Any filter can be used.
 
+- Column 4: Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used. This configures the same column as the deck filter drop-down in the main window.
 
+- Hide Deck Stats: Hides the deck stats table and drop-down in the main window.
+
+- Hide Missing Cards: Hides the missing cards table in the main window.
+
+- Disable Auto Average: Disables the auto averaging logic for the "Auto" filter configuration for column 4. See the auto averaging note in the card logic section.
+
+- Disable Curve Bonus: Disables the curve bonus logic for the "Auto" filter configuration for column 4. See the curve bonus note in the card logic section.
+
+- Disable Color Bonus: Disables the color bonus logic for the "Auto" and "All Decks" filter configurations for column 4. See the color bonus note in the card logic section
+
+## Card Logic:
+
+- Auto Averaging: If the "Auto" filter is set, then the tool will attempt to identify the user's deck (two-color pair) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will take the pick ratings from the top two color pairs and average them together. The column header will display both colors separated by a slash.
+    - Example: If the user has taken primarily black, blue, and green cards, and High-Speed Hoverbike has a BG rating of 2.6 and a UB rating of 2.8, then the displayed pick rating will be 2.7.
+
+- Curve Bonus: If column 4 is set to a specific color filter, or the "Auto" filter is used, then the tool will add a curve bonus if certain conditions aren't met.
+    - Curve Bonus Conditions:
+        - If the identified, or configured, color pair has fewer than 13 creatures, then the tool will add a curve bonus ranging from 0.1 - 1.0.
+        - If the identified, or configured, color pair has fewer than 4 2-drops, 3 3-drops, 2 4-drops, and 1 5-drop, then it will add a curve bonus ranging from 0.1 - 0.5 to cards that fit the distribution.
+        - If the identified, or configured, color pair identifies a card in a pack that could potentially replace a taken card (due to higher GIHWR or lower CMC), then it will add a curve bonus ranging from 0.1 - 0.25.
+        
+- Color Bonus: If column 4 is set to "All Decks", or "Auto" with fewer than 16 cards, then the tool will add a color bonus based on the top 3 colors identified from the taken cards.
+    - Color Bonus Factors:
+        - The tool will add a color bonus of 0.3 for each taken card that has a GIHWR equal to or above 65%
+        - The tool will add a color bonus of 0.2 for each taken card that has a GIHWR between 64.9% and 60%.
+        - The tool will add a color bonus of 0.1 for each taken card that has a GIHWR between 59.9% and 52%.
+        - For colorless cards, the tool will divide the highest color bonus by 2.
+        
+   
 
 
 
