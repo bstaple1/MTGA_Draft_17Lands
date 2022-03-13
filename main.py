@@ -1065,7 +1065,7 @@ class WindowUI:
                                                  onvalue=1,
                                                  offvalue=0)
                                                  
-            auto_average_label = Label(popup, text="Disable Auto Average:", font='Helvetica 9 bold', anchor="w")
+            auto_average_label = Label(popup, text="Disable Highest Rated:", font='Helvetica 9 bold', anchor="w")
             auto_average_checkbox = Checkbutton(popup,
                                                  variable=self.auto_average_checkbox_value,
                                                  onvalue=1,

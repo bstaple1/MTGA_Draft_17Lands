@@ -336,6 +336,7 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
             selected_card["rating_filter_c"] = 0.0
             selected_card["curve_bonus"] = []
             selected_card["color_bonus"] = []
+            selected_card["selected_color"] = ""
 
             for key, value in ratings_filter_dict.items():
                 disable_curve_bonus = True
@@ -372,7 +373,8 @@ def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, 
                             selected_card["curve_bonus"].append(curve_bonus)
                             selected_card["color_bonus"].append(color_bonus)
                     if len(rated_colors):
-                        selected_card[key] = round(sum(rated_colors)/float(len(rated_colors)), 1) #Find the average of all of the ratings
+                        selected_card[key] = sorted(rated_colors, reverse = True)[0]
+                        #selected_card[key] = round(sum(rated_colors)/float(len(rated_colors)), 1) #Find the average of all of the ratings
             filtered_list.append(selected_card)
         except Exception as error:
             print("CardColorFilter Error: %s" % error)
