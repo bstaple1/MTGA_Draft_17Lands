@@ -82,7 +82,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.80
+__version__= 2.81
 
     
 def CheckVersion(platform, version):
