@@ -2,6 +2,7 @@ import os
 import time
 import json
 import card_logic as CL
+import file_extractor as FE
 # Global Constants
 ## The different types of draft.
 DRAFT_TYPE_UNKNOWN     = 0
@@ -67,6 +68,7 @@ class LogScanner:
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
         self.file_size = 0
+        self.data_source = "None"
     def ClearDraft(self, full_clear):
         if full_clear:
             self.search_offset = 0
@@ -88,7 +90,8 @@ class LogScanner:
         self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
-
+        self.data_source = "None"
+        
     def DraftStartSearch(self): 
         #Open the file
         switcher={
@@ -892,6 +895,10 @@ class LogScanner:
         draft_list = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
         draft_list.extend(list(draft_types_dict.keys()))
         self.set_data = None
+        self.data_source = "None"
+        data_source = "None"
+        result = FE.Result.ERROR_MISSING_FILE
+        json_data = {}
         try:
             #Retrieve card ratings
             for type in draft_list:
@@ -902,16 +909,17 @@ class LogScanner:
                         filename = case + "_" + type + "_Data.json"
                         if filename == files:
                             ratings_location = os.path.join(root, filename)
-                            print("File Found: %s" % ratings_location)
-                            break                           
-                if len(ratings_location):
+                            data_source = type
+                            result, json_data = FE.FileIntegrityCheck(ratings_location)
+                            if result == FE.Result.VALID:
+                                print("File Found: %s" % ratings_location)
+                                break                           
+                if result == FE.Result.VALID:
                     break
                     
-            if len(ratings_location):
-                with open(ratings_location, 'r') as json_file:
-                    json_data = json_file.read()
-                json_file.close()
-                self.set_data = json.loads(json_data)
+            if result == FE.Result.VALID:
+                self.data_source = data_source
+                self.set_data = json_data
                 try:
                     #Identify the upper and lower limits of the gihwr for each set color combination
                     for color in self.deck_colors.keys():
@@ -929,7 +937,7 @@ class LogScanner:
                     print("RetrieveSet Sub Error: %s" % error)
                     for deck_color in self.deck_colors.keys():
                         self.deck_colors[deck_color] = deck_color
-             
+
         except Exception as error:
             print("RetrieveSet Error: %s" % error)   
         return

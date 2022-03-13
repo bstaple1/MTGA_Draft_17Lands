@@ -7,20 +7,18 @@ import json
 import urllib.request
 import datetime
 import ssl
+from enum import Enum
 import log_scanner as LS
 from datetime import date
 from urllib.parse import quote as urlencode
-#TYPE_CARD_RATING  = "0"
-#TYPE_COLOR_RATING = "1"
-#TYPE_TROPHY_DECKS = "2"
 
 #https://www.17lands.com/card_ratings/data?expansion=MID&format=PremierDraft&colors=W&start_date=2021-01-01&end_date=2021-09-27&colors=WUB
 
-#output_suffix_type_dict = {
-#    TYPE_CARD_RATING  : "_Card_Rating.json",
-#    TYPE_COLOR_RATING : "_Color_Rating.json",
-#    TYPE_TROPHY_DECKS : "_Trophy.json",
-#}
+class Result(Enum):
+    VALID = 0
+    ERROR_MISSING_FILE = 1
+    ERROR_UNREADABLE_FILE = 2
+
 def ExtractTypes(type_line):
     types = []
     if "Creature" in type_line:
@@ -61,6 +59,54 @@ def DateCheck(date):
     except Exception as error:
         result = False
     return result
+    
+def FileIntegrityCheck(filename):
+    result = Result.VALID;
+    json_data = {}
+    while(1):
+        #Check 1) File is present
+        try:
+            with open(filename, 'r') as json_file:
+                json_data = json_file.read()
+        except Exception as error:
+            result = Result.ERROR_MISSING_FILE
+            break
+            
+        #Check 2) File contains required elements
+        try:
+            json_data = json.loads(json_data)
+            
+            #Check 2A) Meta data is present
+            version = json_data["meta"]["version"]
+            if version == 1:
+                start_date, end_date = json_data["meta"]["date_range"].split("->")
+            elif version == 2:
+                start_date = json_data["meta"]["start_date"] 
+                end_date = json_data["meta"]["end_date"] 
+                
+            #Check 2B) Card data is present
+            cards = json_data["card_ratings"]
+            for card in cards:
+                name = cards[card]["name"]
+                colors = cards[card]["colors"]
+                cmc = cards[card]["cmc"]
+                types = cards[card]["types"]
+                mana_cost = cards[card]["mana_cost"]
+                image = cards[card]["image"]
+                gihwr = cards[card]["deck_colors"]["All Decks"]["gihwr"]
+                alsa = cards[card]["deck_colors"]["All Decks"]["alsa"]
+                iwd = cards[card]["deck_colors"]["All Decks"]["iwd"]
+                break
+                
+            if len(cards.keys()) < 100:
+                result = Result.ERROR_UNREADABLE_FILE
+                break
+            
+        except Exception as error:
+            result = Result.ERROR_UNREADABLE_FILE
+            break
+        break
+    return result, json_data
        
 class DataPlatform:
     def __init__(self, diag_log_file, diag_log_enabled):

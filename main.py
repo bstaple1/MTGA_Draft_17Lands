@@ -240,6 +240,12 @@ class WindowUI:
         current_draft_value_frame = Frame(self.root)
         self.current_draft_value_label = Label(current_draft_value_frame, text="", font='Helvetica 9', anchor="w")
         
+        data_source_label_frame = Frame(self.root)
+        self.data_source_label = Label(data_source_label_frame, text="Data Source:", font='Helvetica 9 bold', anchor="e")
+        
+        data_source_value_frame = Frame(self.root)
+        self.data_source_value_label = Label(data_source_value_frame, text="", font='Helvetica 9', anchor="w")
+        
         deck_colors_label_frame = Frame(self.root)
         self.deck_colors_label = Label(deck_colors_label_frame, text="Deck Filter:", font='Helvetica 9 bold', anchor="e")
         
@@ -328,13 +334,15 @@ class WindowUI:
         citation_label.grid(row = 0, column = 0, columnspan = 2) 
         current_draft_label_frame.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
         current_draft_value_frame.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
-        deck_colors_label_frame.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
-        deck_colors_option_frame.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsw')
-        hotkey_label.grid(row = 3, column = 0, columnspan = 2) 
-        self.refresh_button_frame.grid(row = 4, column = 0, columnspan = 2, sticky = 'nsew')
-        self.status_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
-        self.pack_table_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
-        footnote_label.grid(row = 11, column = 0, columnspan = 2)
+        data_source_label_frame.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
+        data_source_value_frame.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsew')
+        deck_colors_label_frame.grid(row = 3, column = 0, columnspan = 1, sticky = 'nsew')
+        deck_colors_option_frame.grid(row = 3, column = 1, columnspan = 1, sticky = 'nsw')
+        hotkey_label.grid(row = 4, column = 0, columnspan = 2) 
+        self.refresh_button_frame.grid(row = 5, column = 0, columnspan = 2, sticky = 'nsew')
+        self.status_frame.grid(row = 6, column = 0, columnspan = 2, sticky = 'nsew')
+        self.pack_table_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
+        footnote_label.grid(row = 12, column = 0, columnspan = 2)
         self.HideDeckStates(self.deck_stats_checkbox_value.get())
         self.HideMissingCards(self.missing_cards_checkbox_value.get())
 
@@ -348,6 +356,8 @@ class WindowUI:
         self.stat_options.pack(side=RIGHT, expand = True, fill = None)
         self.current_draft_label.pack(expand = True, fill = None, anchor="e")
         self.current_draft_value_label.pack(expand = True, fill = None, anchor="w")
+        self.data_source_label.pack(expand = True, fill = None, anchor="e")
+        self.data_source_value_label.pack(expand = True, fill = None, anchor="w")
         self.deck_colors_label.pack(expand = False, fill = None, anchor="e")
         self.deck_colors_options.pack(expand = False, fill = None, anchor="w")
         #self.draft.DraftSearch()
@@ -618,7 +628,7 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)   
      
-    def UpdateCurrentDraft(self, set, draft_type):
+    def UpdateCurrentDraft(self, set, draft_type, data_source):
         try: 
             draft_type_string = ''
             
@@ -628,7 +638,7 @@ class WindowUI:
                     
             new_label = "%s %s" % (set, draft_type_string)
             self.current_draft_value_label.config(text = new_label)
-        
+            self.data_source_value_label.config(text = data_source)
         except Exception as error:
             error_string = "UpdateCurrentDraft Error: %s" % error
             print(error_string)
@@ -714,7 +724,7 @@ class WindowUI:
         filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
         filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
 
-        self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
+        self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type, self.draft.data_source)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
 
@@ -1190,18 +1200,16 @@ class WindowUI:
                             main_sets = [v[0] for k, v in sets.items()]
                             print(main_sets)
                             set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
-                            json_data = {}
-                            with open(filename, 'r') as json_file:
-                                json_data = json_file.read()
-                            json_data = json.loads(json_data)
-                            if json_data["meta"]["version"] == 1:
-                                print(json_data["meta"]["date_range"])
-                                start_date, end_date = json_data["meta"]["date_range"].split("->")
-                                list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
-                            elif json_data["meta"]["version"] == 2:
-                                start_date = json_data["meta"]["start_date"] 
-                                end_date = json_data["meta"]["end_date"] 
-                                list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
+                            result, json_data = FE.FileIntegrityCheck(filename)
+                            if result == FE.Result.VALID:
+                                if json_data["meta"]["version"] == 1:
+                                    print(json_data["meta"]["date_range"])
+                                    start_date, end_date = json_data["meta"]["date_range"].split("->")
+                                    list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
+                                elif json_data["meta"]["version"] == 2:
+                                    start_date = json_data["meta"]["start_date"] 
+                                    end_date = json_data["meta"]["end_date"] 
+                                    list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
                         except Exception as error:
                             error_string = "DataViewUpdate Error: %s" % error
                             print(error_string)
@@ -1345,22 +1353,22 @@ class WindowUI:
                 self.stat_frame.grid_remove()
                 self.stat_table.grid_remove()
             else:
-                self.stat_frame.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew') 
-                self.stat_table.grid(row=10, column = 0, columnspan = 2, sticky = 'nsew')
+                self.stat_frame.grid(row=10, column = 0, columnspan = 2, sticky = 'nsew') 
+                self.stat_table.grid(row=11, column = 0, columnspan = 2, sticky = 'nsew')
         except Exception as error:
-            self.stat_frame.grid(row=9, column = 0, columnspan = 2, sticky = 'nsew') 
-            self.stat_table.grid(row=10, column = 0, columnspan = 2, sticky = 'nsew')
+            self.stat_frame.grid(row=10, column = 0, columnspan = 2, sticky = 'nsew') 
+            self.stat_table.grid(row=11, column = 0, columnspan = 2, sticky = 'nsew')
     def HideMissingCards(self, hide):
         try:
             if hide:
                 self.missing_frame.grid_remove()
                 self.missing_table_frame.grid_remove()
             else:
-                self.missing_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
-                self.missing_table_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
+                self.missing_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
+                self.missing_table_frame.grid(row = 9, column = 0, columnspan = 2, sticky = 'nsew')
         except Exception as error:
-            self.missing_frame.grid(row = 7, column = 0, columnspan = 2, sticky = 'nsew')
-            self.missing_table_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
+            self.missing_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
+            self.missing_table_frame.grid(row = 9, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, color_dict, image, images_enabled, operating_system, include_bonuses):
