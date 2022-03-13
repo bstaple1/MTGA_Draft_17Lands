@@ -133,7 +133,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Hide Missing Cards: Hides the missing cards table in the main window.
 
-- Disable Highest Rated: Disables the auto averaging logic for the "Auto" filter configuration for column 4. See the auto averaging note in the card logic section.
+- Disable Highest Rated: Disables the highest rated card logic for the "Auto" filter configuration for column 4. See the auto highest rating note in the card logic section.
 
 - Disable Curve Bonus: Disables the curve bonus logic for the "Auto" filter configuration for column 4. See the curve bonus note in the card logic section.
 
