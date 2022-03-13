@@ -441,8 +441,9 @@ class WindowUI:
             
             #Update the filtered column header with the filtered colors
             TableFilterOptions(self.missing_table, filtered_a, filtered_b, filtered_c)
-
-            if len(previous_pack) != 0:
+            if len(previous_pack) == 0:
+                self.missing_table.config(height=1)
+            else:
                 missing_cards = [x for x in previous_pack if x not in current_pack]
                 
                 list_length = len(missing_cards)

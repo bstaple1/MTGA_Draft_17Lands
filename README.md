@@ -133,7 +133,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Hide Missing Cards: Hides the missing cards table in the main window.
 
-- Disable Auto Average: Disables the auto averaging logic for the "Auto" filter configuration for column 4. See the auto averaging note in the card logic section.
+- Disable Highest Rated: Disables the auto averaging logic for the "Auto" filter configuration for column 4. See the auto averaging note in the card logic section.
 
 - Disable Curve Bonus: Disables the curve bonus logic for the "Auto" filter configuration for column 4. See the curve bonus note in the card logic section.
 
@@ -141,7 +141,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Card Logic:
 
-- Auto Highest Rating: If the "Auto" filter is set, then the tool will attempt to identify the user's deck (two-color pair) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will display the highest pick rating of the two color pairs. The column header will display both color pairs separated by a slash.
+- Auto Highest Rating: If the "Auto" filter is set, then the tool will attempt to identify the user's deck (using two-color pairs) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will display the highest pick rating of the top two color pairs. The column header will display both color pairs separated by a slash.
     - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG rating of 3.5 and a UB rating of 0, then the displayed pick rating will be 3.5.
 
 - Curve Bonus: If column 4 is set to a specific color filter, or the "Auto" filter is used, then the tool will add a curve bonus if certain conditions aren't met.
@@ -179,5 +179,5 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The deck distribution and CMC requirements can result in the inclusion of some poor performing cards.
             Example: If the user has a pool of white and blue cards, and the only 3-drops are Acquisition Octopus (53.7% for WU) and Guardians of Oboro (50.7% for WU), then the suggester will include those two cards to fulfill the 3-drop requirement (3 Aggro/3 Mid/3 Control).
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
-
+        - The NEO creature sagas count as creatures.
 
