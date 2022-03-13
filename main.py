@@ -1165,7 +1165,10 @@ class WindowUI:
                     result = False
                     result_string = "Couldn't Collect Ratings Data"
                     break
-                platform.ExportData()
+                if platform.ExportData() == False:
+                    result = False
+                    result_string = "File Write Failure"
+                    break
                 progress['value']=100
                 button['state'] = 'normal'
                 self.root.update()

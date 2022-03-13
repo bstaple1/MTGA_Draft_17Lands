@@ -512,7 +512,7 @@ class DataPlatform:
                         sets[set_name].append("sta")
                     counter += 1
                     
-                    # Only retrieve the last 10 sets
+                    # Only retrieve the last 15 sets
                     if counter >= 15:
                         break
             except Exception as error:
@@ -525,10 +525,21 @@ class DataPlatform:
         
         return version
     def ExportData(self):
+        result = True
         try:
             output_file = self.sets[0].upper() + "_" + self.draft + "_Data.json"
 
             with open(output_file, 'w') as f:
                 json.dump(self.combined_data, f)
+                
+            #Verify that the file was written
+            write_result, write_data = FileIntegrityCheck(output_file)
+            
+            if write_result != Result.VALID:
+                result = False
+            
         except Exception as error:
             print("ExportData Error: %s" % error)
+            result = False
+            
+        return result
