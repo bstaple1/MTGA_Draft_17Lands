@@ -31,7 +31,7 @@ class Config:
     iwd_weight :float=0.25
 
     deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
-    deck_aggro : DeckType=DeckType([0,1,4,4,1,0,0], 24, 17, 2.40)
+    deck_aggro : DeckType=DeckType([0,2,5,3,0,0,0], 24, 17, 2.40)
     deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
 
 def CompareRatings(a, b):

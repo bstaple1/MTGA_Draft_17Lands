@@ -52,10 +52,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## UI Features
 
-- Current Draft: Lists the current draft type (Premier, Quick, or Traditional) that the application has identified
+- Current Draft: Lists the current draft type (Premier, Quick, or Traditional) that the application has identified.
 
     - The application has been tested with Premier, Quick, and Traditional drafts.
-    - In the Arena logs, P1P1 doesn't appear for Premier and Traditional drafts until after P1P2
+    - In the Arena logs, P1P1 doesn't appear for Premier and Traditional drafts until after P1P2.
+
+- Data Source: Lists the current draft type (Premier, Quick, or Traditional) from which the application is pulling the card data.
+
+    - The application will attempt to pull data for the current draft type and set (e.g. data from NEO_PremierDraft_Data.json for a Premier Draft). If the user hasn't downloaded the data file for the current draft type and set, then the application will attempt to use a different data file from the same set (e.g. NEO_QuickDraft_Data.json if NEO_PremierDraft_Data.json isn't available).
+    - This field will display "None" if the application is unable to find a valid data file for the current draft type and set.
   
 - Deck Filter: A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
 
@@ -94,7 +99,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - List Suggested Decks: Get to the Suggested Decks window by selecting Cards->Suggested Decks. 
     - This table lists a 40 card deck that the application has built from your taken cards. You might see multiple decks if the application is able to build them.
     - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
-        - The application builds the decks based on a number of constraints including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
+        - The application builds the decks based on a number of requirements including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 
 - Card Compare: Get to the Card Compare window by selecting Cards->Compare Cards. This window will allow you to compare cards that you've entered in.
     - This feature can be used to quickly compare cards for P1P1 of the Premier and Traditional drafts.
@@ -136,8 +141,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Card Logic:
 
-- Auto Averaging: If the "Auto" filter is set, then the tool will attempt to identify the user's deck (two-color pair) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will take the pick ratings from the top two color pairs and average them together. The column header will display both colors separated by a slash.
-    - Example: If the user has taken primarily black, blue, and green cards, and High-Speed Hoverbike has a BG rating of 2.6 and a UB rating of 2.8, then the displayed pick rating will be 2.7.
+- Auto Highest Rating: If the "Auto" filter is set, then the tool will attempt to identify the user's deck (two-color pair) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will display the highest pick rating of the two color pairs. The column header will display both color pairs separated by a slash.
+    - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG rating of 3.5 and a UB rating of 0, then the displayed pick rating will be 3.5.
 
 - Curve Bonus: If column 4 is set to a specific color filter, or the "Auto" filter is used, then the tool will add a curve bonus if certain conditions aren't met.
     - Curve Bonus Conditions:
@@ -152,8 +157,27 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The tool will add a color bonus of 0.1 for each taken card that has a GIHWR between 59.9% and 52%.
         - For colorless cards, the tool will divide the highest color bonus by 2.
         
-   
-
-
+- Deck Suggester: For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build a deck that's intentionally synergistic. 
+    - Deck Building Requirements:
+        - Aggro Deck:
+            - The deck must have a minimum of 13 creatures and should have no less than 17 creatures.
+            - The deck should have at least 2 2-drops, 5 2-drops, 3 3-drops.
+            - The average CMC of all of the creatures must be 2.40 or less.
+            - The deck has 16 lands.
+        - Mid Deck:
+            - The deck must have a minimum of 13 creatures and should have no less than 15 creatures.
+            - The deck should have at least 4 2-drops, 3 3-drops, 2 4-drops, and 1 5-drop.
+            - The average CMC of all of the creatures must be 3.04 or less.
+            - The deck has 17 lands.
+        - Control Deck:
+            - The deck must have a minimum of 13 creatures and should have no less than 14 creatures.
+            - The deck should have at least 3 2-drops, 3 3-drops, 3 4-drops, 1 5-drop, and 1 6-drop.
+            - The average CMC of all of the creatures must be 3.68 or less.      
+            - The deck has 18 lands.
+    - Notes:
+        - The CMC average and land requirements were derived from this article: https://strategy.channelfireball.com/all-strategy/mtg/channelmagic-articles/how-many-lands-do-you-need-to-consistently-hit-your-land-drops/
+        - The deck distribution and CMC requirements can result in the inclusion of some poor performing cards.
+            Example: If the user has a pool of white and blue cards, and the only 3-drops are Acquisition Octopus (53.7% for WU) and Guardians of Oboro (50.7% for WU), then the suggester will include those two cards to fulfill the 3-drop requirement (3 Aggro/3 Mid/3 Control).
+        - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
 
 
