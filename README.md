@@ -161,7 +161,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - Deck Building Requirements:
         - Aggro Deck:
             - The deck must have a minimum of 13 creatures and should have no less than 17 creatures.
-            - The deck should have at least 2 2-drops, 5 2-drops, 3 3-drops.
+            - The deck should have at least 2 1-drops, 5 2-drops, 3 3-drops.
             - The average CMC of all of the creatures must be 2.40 or less.
             - The deck has 16 lands.
         - Mid Deck:
