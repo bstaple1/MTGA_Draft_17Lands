@@ -5,23 +5,27 @@ import card_logic as CL
 import file_extractor as FE
 # Global Constants
 ## The different types of draft.
-DRAFT_TYPE_UNKNOWN     = 0
-DRAFT_TYPE_PREMIER_V1  = 1
-DRAFT_TYPE_PREMIER_V2  = 2
-DRAFT_TYPE_QUICK       = 3
-DRAFT_TYPE_TRADITIONAL = 4
+LIMITED_TYPE_UNKNOWN            = 0
+LIMITED_TYPE_DRAFT_PREMIER_V1   = 1
+LIMITED_TYPE_DRAFT_PREMIER_V2   = 2
+LIMITED_TYPE_DRAFT_QUICK        = 3
+LIMITED_TYPE_DRAFT_TRADITIONAL  = 4
+LIMITED_TYPE_SEALED             = 5
+LIMITED_TYPE_SEALED_TRADITIONAL = 6
 
 ## Location of the MTGA player log.
 LOG_LOCATION_PC = "\\AppData\\LocalLow\\Wizards Of The Coast\\MTGA\\Player.log"
 LOG_LOCATION_MAC = "/Library/Logs/Wizards of the Coast/MTGA/Player.log"
 
 #Dictionaries
-## Used to identify draft type based on log string
-draft_types_dict = {
-    "PremierDraft"     : DRAFT_TYPE_PREMIER_V1,
-    "QuickDraft"       : DRAFT_TYPE_QUICK,
-    "TradDraft"        : DRAFT_TYPE_TRADITIONAL,
-    "BotDraft"         : DRAFT_TYPE_QUICK,
+## Used to identify the limited type based on log string
+limited_types_dict = {
+    "PremierDraft"     : LIMITED_TYPE_DRAFT_PREMIER_V1,
+    "QuickDraft"       : LIMITED_TYPE_DRAFT_QUICK,
+    "TradDraft"        : LIMITED_TYPE_DRAFT_TRADITIONAL,
+    "BotDraft"         : LIMITED_TYPE_DRAFT_QUICK,
+    "Sealed"           : LIMITED_TYPE_SEALED,
+    "TradSealed"       : LIMITED_TYPE_SEALED_TRADITIONAL,
 }
 
 ## Used to identify OS type based on CLI string
@@ -53,7 +57,7 @@ class LogScanner:
         for deck_color in self.deck_colors.keys():
             self.deck_colors[deck_color] = deck_color
         self.deck_limits = {}
-        self.draft_type = DRAFT_TYPE_UNKNOWN
+        self.draft_type = LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
         self.search_offset = 0
@@ -77,7 +81,7 @@ class LogScanner:
         self.tier_data = None
         self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "",  "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
         self.deck_limits = {}
-        self.draft_type = DRAFT_TYPE_UNKNOWN
+        self.draft_type = LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
         self.draft_set = None
@@ -126,7 +130,7 @@ class LogScanner:
                             LogEntry(self.diag_log_file, line, self.diag_log_enabled)
                             break
                                 
-            if (self.draft_type != DRAFT_TYPE_UNKNOWN) and \
+            if (self.draft_type != LIMITED_TYPE_UNKNOWN) and \
                ((self.draft_type != previous_draft_type) or \
                 (self.draft_set != previous_draft_set)):
                 self.pick_offset = self.search_offset 
@@ -147,16 +151,20 @@ class LogScanner:
             event_string = event_name.split('_')
             
             if len(event_string) > 1:
-
+                #Trad_Sealed_NEO_20220317
                 for count, event in enumerate(event_string):
-                    if event in draft_types_dict.keys():
-                        event_type = event
-                        if count == 0:
+                    if event in limited_types_dict.keys() or event == "Sealed":
+                        if event == "Sealed":
+                            event_type = "TradSealed" if event_string[0] == "Trad" else "Sealed"
                             event_set = event_string[count + 1]
                         else:
-                            event_set = event_string[count - 1]
+                            event_type = event
+                            if count == 0:
+                                event_set = event_string[count + 1]
+                            else:
+                                event_set = event_string[count - 1]
                 
-                        self.draft_type = draft_types_dict[event_type]
+                        self.draft_type = limited_types_dict[event_type]
                         self.draft_set = event_set.upper()
                         directory = "Logs\\"
                         if self.os == "MAC":
@@ -179,8 +187,8 @@ class LogScanner:
                 event_type = event_string[0]
                 event_set = event_string[1]
                 
-                if event_type in draft_types_dict.keys():
-                    self.draft_type = draft_types_dict[event_type]
+                if event_type in limited_types_dict.keys():
+                    self.draft_type = limited_types_dict[event_type]
                     self.draft_set = event_set.upper()
                     directory = "Logs\\"
                     if self.os == "MAC":
@@ -197,25 +205,26 @@ class LogScanner:
         #    self.ClearDraft(False)
         self.DraftStartSearch()
         
-        if self.draft_type == DRAFT_TYPE_PREMIER_V1:
+        if self.draft_type == LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV1()
             self.DraftPickedSearchPremierV1()
-        elif self.draft_type == DRAFT_TYPE_PREMIER_V2:
+        elif self.draft_type == LIMITED_TYPE_DRAFT_PREMIER_V2:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV2()
             self.DraftPickedSearchPremierV2() 
-        elif self.draft_type == DRAFT_TYPE_QUICK:
+        elif self.draft_type == LIMITED_TYPE_DRAFT_QUICK:
             self.DraftPackSearchQuick()
             self.DraftPickedSearchQuick()
-        elif self.draft_type == DRAFT_TYPE_TRADITIONAL:
+        elif self.draft_type == LIMITED_TYPE_DRAFT_TRADITIONAL:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchTraditionalP1P1()
             self.DraftPackSearchTraditional()
             self.DraftPickedSearchTraditional()
-            
+        elif (self.draft_type == LIMITED_TYPE_SEALED) or (self.draft_type == LIMITED_TYPE_SEALED_TRADITIONAL):
+            self.SealedPackSearch()
         return
         
     def DraftPackSearchPremierP1P1(self):
@@ -889,11 +898,61 @@ class LogScanner:
             print(error_string)
             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         return pack_cards
+
+    def SealedPackSearch(self):
+        offset = self.pack_offset
+        draft_data = object()
+        draft_string = "EventGrantCardPool"
+        pack_cards = []
+        pack = 0
+        pick = 0
+        #Identify and print out the log lines that contain the draft packs
+        try:
+            with open(self.log_file, 'r') as log:
+                log.seek(offset)
+
+                while(True):
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
+                    
+                    string_offset = line.find(draft_string)
+                    
+                    if string_offset != -1:
+                        self.pack_offset = offset
+                        start_offset = line.find("{\"CurrentModule\"")
+                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        #Identify the pack
+                        draft_data = json.loads(line[start_offset:])
+                        payload_data = json.loads(draft_data["Payload"])
+                        changes = payload_data["Changes"]
+                        try:
+                            for change in changes:
+                                if change["Source"] == "EventGrantCardPool":
+                                    card_list_data = change["GrantedCards"]
+                                    for card_data in card_list_data:
+                                        card = str(card_data["GrpId"])
+                                        self.taken_cards.append(self.set_data["card_ratings"][card])
+                            #self.initial_pack = [[]] * 8
+                                                   
+                        except Exception as error:
+                            error_string = "SealedPackSearch Sub Error: %s" % error
+                            print(error_string)
+                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+             
+        except Exception as error:
+            error_string = "SealedPackSearch Error: %s" % error
+            print(error_string)
+            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+        return pack_cards
             
     def RetrieveSet(self):
         ratings_location = ''
-        draft_list = [x for x in draft_types_dict.keys() if draft_types_dict[x] == self.draft_type]
-        draft_list.extend(list(draft_types_dict.keys()))
+        draft_list = [x for x in limited_types_dict.keys() if limited_types_dict[x] == self.draft_type]
+        if self.draft_type == LIMITED_TYPE_SEALED or self.draft_type == LIMITED_TYPE_SEALED_TRADITIONAL:
+            draft_list.extend(["Sealed", "TradSealed"])
+        draft_list.extend(list(limited_types_dict.keys()))
         self.set_data = None
         self.data_source = "None"
         data_source = "None"

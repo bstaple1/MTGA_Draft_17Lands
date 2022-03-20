@@ -61,7 +61,7 @@ def DateCheck(date):
     return result
     
 def FileIntegrityCheck(filename):
-    result = Result.VALID;
+    result = Result.VALID
     json_data = {}
     while(1):
         #Check 1) File is present

@@ -633,8 +633,8 @@ class WindowUI:
         try: 
             draft_type_string = ''
             
-            for key, value in LS.draft_types_dict.items():
-                if LS.draft_types_dict[key] == draft_type:
+            for key, value in LS.limited_types_dict.items():
+                if LS.limited_types_dict[key] == draft_type:
                     draft_type_string = key
                     
             new_label = "%s %s" % (set, draft_type_string)
@@ -813,7 +813,7 @@ class WindowUI:
             end_label = Label(popup, text="End Date:")
             color_label = Label(popup, text="Color Rating:")
             id_label = Label(popup, text="ID:")
-            draft_choices = ["PremierDraft", "QuickDraft", "TradDraft"]
+            draft_choices = ["PremierDraft", "QuickDraft", "TradDraft", "Sealed", "TradSealed"]
             
             draft_value = StringVar(self.root)
             draft_value.set('PremierDraft')
@@ -1197,7 +1197,7 @@ class WindowUI:
             for filename in filenames:
                 name_segments = filename.split("_")
                 if len(name_segments) == 3:
-                    if name_segments[1] in LS.draft_types_dict.keys():
+                    if name_segments[1] in LS.limited_types_dict.keys():
                         #Retrieve the start and end dates
                         try:
                             print(sets.values())
