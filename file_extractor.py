@@ -328,11 +328,12 @@ class DataPlatform:
                 gihwr = card["ever_drawn_win_rate"]
                 iwd = card["drawn_improvement_win_rate"]
                 alsa = card["avg_seen"]
-                drawn_count = card["ever_drawn_game_count"]
                 
                 gihwr = gihwr if gihwr != None else "0.0"
                 
-                gihwr = float(gihwr) * 100 if int(card["ever_drawn_game_count"]) > 200 else 0.0
+                win_count = float(gihwr) * int(card["ever_drawn_game_count"])
+                gihwr = 100.0*(win_count + 10)/ ( int(card["ever_drawn_game_count"]) + 20)
+
                 gihwr = round(gihwr, 2)
                 iwd = round(float(card["drawn_improvement_win_rate"]) * 100, 2)
                 alsa = round(float(card["avg_seen"]), 2)
