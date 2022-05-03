@@ -19,6 +19,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 6: Download the sets that you plan on using (Data->View Sets).
 
+    - Enter ID 80152 for the Streets of New Capenna set.
+    - Enter ID 0 for all other sets.
+
 - Step 7: Start the draft in Arena.
 
 ## Steps for Mac
@@ -47,6 +50,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - Step 12: Set Arena to window mode.
 
 - Step 13: Download the sets that you plan on using (Data->View Sets).
+
+    - Enter ID 80152 for the Streets of New Capenna set.
+    - Enter ID 0 for all other sets.
 
 - Step 14: Start the draft in Arena.
 

@@ -1,3 +1,12 @@
+===================== RELEASE NOTES 2.82 =====================
+- New Feature: Using Bayesian average for small data sets
+
+- New Feature: Added support for sealed (BO1) and traditional sealed (BO3)
+
+- Modified Feature: Disabling the color bonus and curve bonus by default
+
+- Note: When downloading the Streets of New Capenna set, use ID 80152 for the first couple of weeks
+
 ===================== RELEASE NOTES 2.81 =====================
 - Modified Feature: Auto Highest Rated - the auto filter will now display the highest rated pick rating of the two leading color pairs
     - Replaces the questionably useful Auto Averaging feature that averaged the ratings of the two leading color pairs

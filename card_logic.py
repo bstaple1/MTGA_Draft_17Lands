@@ -22,8 +22,8 @@ class Config:
     hotkey_enabled : bool=True
     images_enabled : bool=True
     auto_average_disabled : bool=False
-    curve_bonus_disabled : bool=False
-    color_bonus_disabled : bool=False
+    curve_bonus_disabled : bool=True
+    color_bonus_disabled : bool=True
     minimum_creatures : int=13
     minimum_noncreatures : int=6
     ratings_threshold : int=500
