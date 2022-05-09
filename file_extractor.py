@@ -14,10 +14,144 @@ from urllib.parse import quote as urlencode
 
 #https://www.17lands.com/card_ratings/data?expansion=MID&format=PremierDraft&colors=W&start_date=2021-01-01&end_date=2021-09-27&colors=WUB
 
+LOCAL_DATA_FOLDER_PATH_PC = "/Wizards of the Coast/MTGA/MTGA_Data/Downloads/Data/"
+LOCAL_DATA_LOCATION_MAC = "/AppData/LocalLow/Wizards Of The Coast/MTGA/"
+
+LOCAL_DATA_DIRECTORY_PREFIX_PC = "Program Files"
+LOCAL_DATA_DIRECTORY_PREFIX_MAC = "Users/"
+
+LOCAL_DATA_FILE_PREFIX_CARDS = "Data_cards_"
+LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
+
+local_data_folder_path_dict = {
+    "PC" : LOCAL_DATA_FOLDER_PATH_PC,
+    "MAC" : LOCAL_DATA_LOCATION_MAC,
+}
+
 class Result(Enum):
     VALID = 0
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
+    
+def RetrieveLocalArenaData(operating_system, card_data, card_set):
+    result_string = "Arena IDs Unavailable"
+    result = False
+    
+    while(1):
+        try:       
+            #Identify the locations of local arena files
+            arena_cards_location = LocalFileLocation(operating_system, LOCAL_DATA_FILE_PREFIX_CARDS)
+            
+            if len(arena_cards_location) == 0:
+                break
+            
+            arena_text_location = LocalFileLocation(operating_system, LOCAL_DATA_FILE_PREFIX_TEXT)
+            
+            if len(arena_text_location) == 0:
+                break
+                
+            #Retrieve the arena IDs without card names
+            result, arena_data = RetrieveLocalArenaId(arena_cards_location, card_set)
+            
+            if result == False:
+                break
+                
+            #Retrieve the card names for each arena ID
+            result = RetrieveLocalCardName(arena_text_location, arena_data, card_data)
+            
+        except Exception as error:
+            print("RetrieveLocalArenaData Error: %s" % error)
+        break
+    return result, result_string
+ 
+def LocalFileLocation(operating_system, file_prefix):
+    file_location = ""
+    try:
+        computer_root = os.path.abspath(os.sep)
+        
+        for root, dirs, files in os.walk(computer_root):
+            path = root
+            try:
+                if operating_system == "MAC":
+                    path += LOCAL_DATA_DIRECTORY_PREFIX_MAC
+                    folders = os.listdir(path)
+                else:
+                    folders = [folder_name for folder_name in os.listdir(path) if folder_name.startswith(LOCAL_DATA_DIRECTORY_PREFIX_PC)]
+                folder_path = local_data_folder_path_dict[operating_system]
+                for folder in folders:
+                    file_path = path + folder + folder_path
+                    
+                    try:
+                        if os.path.exists(file_path):
+                            file = [filename for filename in os.listdir(file_path) if filename.startswith(file_prefix)][0]
+                            
+                            file_location = file_path + file
+                            return file_location
+
+                    except Exception as error:
+                        print(error)
+                        
+            except Exception as error:
+                print(error)
+                    
+    except Exception as error:
+        print(error)
+                    
+    return file_location
+    
+def RetrieveLocalArenaId(file_location, card_set):
+    arena_data = {}
+    result = False
+    try:
+        with open(file_location, 'r', encoding="utf8") as json_file:
+            json_data = json.loads(json_file.read())
+            
+            for card in json_data:
+                if card["set"] == card_set:
+                    if "isSecondaryCard" not in card: #Skip alternate art cards
+                        group_id = card["grpid"]
+                        title_id = card["titleId"]
+                        
+                        arena_data[title_id] = group_id
+                        result = True
+    
+    except Exception as error:
+        print("RetrieveLocalArenaId Error: %s" % error)
+        
+    return result, arena_data
+    
+def RetrieveLocalCardName(file_location, arena_data, scryfall_data):
+    result = True
+    processed_data = {}
+    try:
+        #Retrieve the title (card name) for each of the collected arena IDs
+        with open(file_location, 'r', encoding="utf8") as json_file:
+            json_data = json.loads(json_file.read())
+            
+            for group in json_data:
+                if group["isoCode"] == "en-US":
+                    keys = group["keys"]
+                    
+                    for key in keys:
+                        try:
+                            if "raw" in key:
+                                processed_data[key["raw"]] = arena_data[key["id"]]
+                            else:
+                                processed_data[key["text"]] = arena_data[key["id"]]
+                        except Exception as error:
+                            print(error)
+                       
+       
+        #Add the arena IDs to the scryfall data set
+        for card in scryfall_data:
+            card_name = card["name"].split(" // ") [0]
+            card["arena_id"] = processed_data[card_name]    
+        
+    except Exception as error:
+        print("RetrieveLocalCardName Error: %s" % error)
+        result = False
+    
+    return result
 
 def ExtractTypes(type_line):
     types = []
@@ -119,6 +253,7 @@ class DataPlatform:
         self.end_date = ""
         self.context = ssl.SSLContext()
         self.id = id
+        self.operating_system = "PC"
         self.card_ratings = {}
         self.combined_data = {}
         self.card_list = []
@@ -126,6 +261,9 @@ class DataPlatform:
         #self.driver = webdriver.Firefox(executable_path = self.driver_path)
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
         self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
+    def OS(self, operating_system):
+        self.operating_system = operating_system
+    
     def Sets(self, sets):
         self.sets = sets
         
@@ -184,6 +322,8 @@ class DataPlatform:
     def SessionCardData(self):
         arena_id = int(self.id)
         result = False
+        local_check = False
+        self.card_list = []
         result_string = "Couldn't Retrieve Card Data"
         for set in self.sets:
             print(set)
@@ -198,14 +338,18 @@ class DataPlatform:
                     
                     set_json_data = json.loads(url_data)
         
-                    arena_id, result, result_string = self.ProcessCardData(set_json_data["data"], arena_id)
+                    arena_id, result, result_string, local_check = self.ProcessCardData(set_json_data["data"], arena_id)
                     
                     while (set_json_data["has_more"] == True) and (result == True):
                         url = set_json_data["next_page"]
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         set_json_data = json.loads(url_data)
-                        arena_id, result, result_string = self.ProcessCardData(set_json_data["data"], arena_id)
-                        
+                        arena_id, result, result_string, local_check = self.ProcessCardData(set_json_data["data"], arena_id)
+                    
+                    #Collect arena IDs from local files
+                    if local_check:
+                        result, result_string = RetrieveLocalArenaData(self.operating_system, self.card_list, set.upper())
+                    
                     if result == True:
                         break
                         
@@ -223,6 +367,7 @@ class DataPlatform:
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
         result = False
+        self.card_ratings = {}
         for set in self.sets:
             if set == "dbl":
                 continue
@@ -313,9 +458,16 @@ class DataPlatform:
     def RetrieveCardRatingsUrl(self, colors, cards):  
         result = True
         
+        #if len(cards) == 0:
+        #    result = False
         if len(cards) == 0:
-            result = False
-        
+            #Fill in incomplete data sets as long as some data was collected
+            if len(self.card_ratings) != 0:
+                for card in self.card_ratings:
+                    self.card_ratings[card].append({colors : {"gihwr" : 0, "iwd" : 0, "alsa" : 0}})
+            else:
+                result = False
+
         for card in cards:
             try:
                 print("Name: %s" % card["name"])
@@ -332,7 +484,7 @@ class DataPlatform:
                 gihwr = gihwr if gihwr != None else "0.0"
                 
                 win_count = float(gihwr) * int(card["ever_drawn_game_count"])
-                gihwr = 100.0*(win_count + 10)/ ( int(card["ever_drawn_game_count"]) + 20)
+                gihwr = 100.0*(win_count + 10)/ ( int(card["ever_drawn_game_count"]) + 20) #Bayesian average
 
                 gihwr = round(gihwr, 2)
                 iwd = round(float(card["drawn_improvement_win_rate"]) * 100, 2)
@@ -352,7 +504,7 @@ class DataPlatform:
         for land in lands:
             self.card_ratings[land] = []
             self.card_ratings[land].append({colors : {"gihwr" : 0, "iwd" : 0, "alsa" : 0}})
-        return result
+        return result  
         
     def RetrieveColorRatings(self, colors):
         color_ratings_dict = {
@@ -409,6 +561,7 @@ class DataPlatform:
           
     def ProcessCardData (self, data, arena_id):
         result = False
+        local_check = False
         result_string = ""
         for card_data in data:
             try:
@@ -425,7 +578,11 @@ class DataPlatform:
                 card["image"] = []
                 
                 if arena_id == 0:
-                    card["arena_id"] = card_data["arena_id"]
+                    try:
+                        #card["arena_id"] = card_data["arena_id"]
+                        card["arena_id"] = card_data["arena_id"]
+                    except Exception as error:
+                        local_check = True
                 elif "card_faces" in card_data.keys():
                     card["arena_id"] = arena_id
                     arena_id += 2
@@ -452,7 +609,7 @@ class DataPlatform:
                 print("ProcessCardData Error: %s" % error)
                 result_string = error
         #print("combined_data: %s" % str(combined_data))
-        return arena_id, result, result_string   
+        return arena_id, result, result_string, local_check 
         
     def ProcessCardRatings (self, card):
         try:

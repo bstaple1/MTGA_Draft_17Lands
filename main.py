@@ -117,7 +117,7 @@ def FixedMap(style, option):
 def NavigateFileLocation(os_type):
     file_location = ""
     try:
-        computer_root = os.path.abspath(os.sep);
+        computer_root = os.path.abspath(os.sep)
         
         for root, dirs, files in os.walk(computer_root):
             for path in root:
@@ -1142,6 +1142,7 @@ class WindowUI:
                 self.root.update()
                 platform.Sets(set)
                 platform.DraftType(draft.get())
+                platform.OS(self.operating_system)
                 if platform.StartDate(start.get()) == False:
                     result = False
                     result_string = "Invalid Start Date (YYYY-MM-DD)"
