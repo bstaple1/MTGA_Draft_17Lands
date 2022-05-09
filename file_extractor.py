@@ -15,7 +15,7 @@ from urllib.parse import quote as urlencode
 #https://www.17lands.com/card_ratings/data?expansion=MID&format=PremierDraft&colors=W&start_date=2021-01-01&end_date=2021-09-27&colors=WUB
 
 LOCAL_DATA_FOLDER_PATH_PC = "/Wizards of the Coast/MTGA/MTGA_Data/Downloads/Data/"
-LOCAL_DATA_LOCATION_MAC = "/AppData/LocalLow/Wizards Of The Coast/MTGA/"
+LOCAL_DATA_FOLDER_PATH_MAC = "/Library/Application Support/com.wizards.mtga/Downloads/Data/"
 
 LOCAL_DATA_DIRECTORY_PREFIX_PC = "Program Files"
 LOCAL_DATA_DIRECTORY_PREFIX_MAC = "Users/"
@@ -25,7 +25,7 @@ LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
 
 local_data_folder_path_dict = {
     "PC" : LOCAL_DATA_FOLDER_PATH_PC,
-    "MAC" : LOCAL_DATA_LOCATION_MAC,
+    "MAC" : LOCAL_DATA_FOLDER_PATH_MAC,
 }
 
 class Result(Enum):
