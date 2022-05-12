@@ -134,10 +134,11 @@ def RetrieveLocalCardName(file_location, arena_data, scryfall_data):
                     
                     for key in keys:
                         try:
-                            if "raw" in key:
-                                processed_data[key["raw"]] = arena_data[key["id"]]
-                            else:
-                                processed_data[key["text"]] = arena_data[key["id"]]
+                            if key["id"] in arena_data:
+                                if "raw" in key:
+                                    processed_data[key["raw"]] = arena_data[key["id"]]
+                                else:
+                                    processed_data[key["text"]] = arena_data[key["id"]]
                         except Exception as error:
                             print(error)
                        
@@ -326,7 +327,6 @@ class DataPlatform:
         self.card_list = []
         result_string = "Couldn't Retrieve Card Data"
         for set in self.sets:
-            print(set)
             if set == "dbl":
                 continue
             retry = 5
@@ -363,11 +363,27 @@ class DataPlatform:
                     retry -= 1
                     time.sleep(5)
         return result, result_string
+
+    def InitializeCardRatings(self):
+        self.card_ratings = {}
+
+        for card in self.card_list:
+            card_name = card["name"].split(" // ") [0]
+            self.card_ratings[card_name] = []
+            for color in self.deck_colors:
+                self.card_ratings[card_name].append({color : {"gihwr" : 0.0, "iwd" : 0.0, "alsa" : 0.0}})
+
+        #Add in basic lands
+        lands = ["Mountain","Swamp","Plains","Forest","Island"]
+        for land in lands:
+            self.card_ratings[land] = []
+            for color in self.deck_colors:
+                self.card_ratings[land].append({color : {"gihwr" : 0.0, "iwd" : 0.0, "alsa" : 0.0}})
         
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
         result = False
-        self.card_ratings = {}
+        self.InitializeCardRatings()
         for set in self.sets:
             if set == "dbl":
                 continue
@@ -381,26 +397,19 @@ class DataPlatform:
                         
                         if color != "All Decks":
                             url += "&colors=" + color
-                            
+                        print(url)    
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         
                         set_json_data = json.loads(url_data)
-                        if self.RetrieveCardRatingsUrl(color, set_json_data):
-                            result = True
-                            break
-                        else:
-                            retry -= 1
-                            
-                            #if set == "dbl":
-                            #    break
-                                
-                        time.sleep(5)
-                    
+                        self.RetrieveCardRatingsUrl(color, set_json_data)
+                        result = True
+                        break
                     except Exception as error:
                         error_string = "SessionCardRating Error: %s" % error
                         print(error_string)     
                         LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
                         time.sleep(15)
+                        retry -= 1
                         
                 if result:
                     current_progress += 3 / len(self.sets)
@@ -457,16 +466,6 @@ class DataPlatform:
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
     def RetrieveCardRatingsUrl(self, colors, cards):  
         result = True
-        
-        #if len(cards) == 0:
-        #    result = False
-        if len(cards) == 0:
-            #Fill in incomplete data sets as long as some data was collected
-            if len(self.card_ratings) != 0:
-                for card in self.card_ratings:
-                    self.card_ratings[card].append({colors : {"gihwr" : 0, "iwd" : 0, "alsa" : 0}})
-            else:
-                result = False
 
         for card in cards:
             try:
@@ -499,11 +498,6 @@ class DataPlatform:
                 print("RetrieveCardRatingsUrl Error: %s" % error)
                 result = False
                 
-        #Add in basic lands
-        lands = ["Mountain","Swamp","Plains","Forest","Island"]
-        for land in lands:
-            self.card_ratings[land] = []
-            self.card_ratings[land].append({colors : {"gihwr" : 0, "iwd" : 0, "alsa" : 0}})
         return result  
         
     def RetrieveColorRatings(self, colors):
@@ -579,7 +573,6 @@ class DataPlatform:
                 
                 if arena_id == 0:
                     try:
-                        #card["arena_id"] = card_data["arena_id"]
                         card["arena_id"] = card_data["arena_id"]
                     except Exception as error:
                         local_check = True

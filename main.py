@@ -796,15 +796,22 @@ class WindowUI:
     def SetViewPopup(self):
         popup = Toplevel()
         popup.wm_title("Set Data")
-        
+        Grid.rowconfigure(popup, 1, weight = 1)
         try:
             DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
             sets = DP.SessionSets()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
-            list_box = Treeview(popup, columns = column_headers, show = 'headings')
+            list_box_frame = Frame(popup)
+            list_box_scrollbar = Scrollbar(list_box_frame, orient=VERTICAL)
+            list_box_scrollbar.pack(side=RIGHT, fill=Y)
+            
+            list_box = Treeview(list_box_frame, columns = column_headers, show = 'headings')
             list_box.tag_configure('gray', background='#cccccc')
             list_box.tag_configure('bold', font=('Arial Bold', 10))
+            
+            list_box.config(yscrollcommand=list_box_scrollbar.set)
+            list_box_scrollbar.config(command=list_box.yview)
             
             notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.", font='Helvetica 9', anchor="c")
             set_label = Label(popup, text="Set:")
@@ -863,7 +870,7 @@ class WindowUI:
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
         notice_label.grid(row=0, column=0, columnspan=8, sticky = 'nsew')
-        list_box.grid(row=1, column=0, columnspan=8, sticky = 'nsew')
+        list_box_frame.grid(row=1, column=0, columnspan=8, sticky = 'nsew')
         set_label.grid(row=2, column=0, sticky = 'nsew')
         set_entry.grid(row=2, column=1, sticky = 'nsew')
         start_label.grid(row=2, column=2, sticky = 'nsew')
@@ -878,6 +885,8 @@ class WindowUI:
         color_checkbox.grid(row=3, column=3, sticky = 'nsew')
         add_button.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
         progress.grid(row=5, column=0, columnspan=8, sticky = 'nsew')
+        
+        list_box.pack(expand = True, fill = "both")
 
         self.DataViewUpdate(list_box, sets)
         
