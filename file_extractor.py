@@ -23,6 +23,8 @@ LOCAL_DATA_DIRECTORY_PREFIX_MAC = "Users/"
 LOCAL_DATA_FILE_PREFIX_CARDS = "Data_cards_"
 LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
 
+DEFAULT_GIHWR_AVERAGE = 50.0
+
 local_data_folder_path_dict = {
     "PC" : LOCAL_DATA_FOLDER_PATH_PC,
     "MAC" : LOCAL_DATA_FOLDER_PATH_MAC,
@@ -371,7 +373,7 @@ class DataPlatform:
             card_name = card["name"].split(" // ") [0]
             self.card_ratings[card_name] = []
             for color in self.deck_colors:
-                self.card_ratings[card_name].append({color : {"gihwr" : 0.0, "iwd" : 0.0, "alsa" : 0.0}})
+                self.card_ratings[card_name].append({color : {"gihwr" : DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0}})
 
         #Add in basic lands
         lands = ["Mountain","Swamp","Plains","Forest","Island"]
@@ -393,7 +395,7 @@ class DataPlatform:
                 while retry:
                     
                     try:
-                        url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (set, self.draft, self.start_date, self.end_date)
+                        url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (set.upper(), self.draft, self.start_date, self.end_date)
                         
                         if color != "All Decks":
                             url += "&colors=" + color
@@ -483,7 +485,7 @@ class DataPlatform:
                 gihwr = gihwr if gihwr != None else "0.0"
                 
                 win_count = float(gihwr) * int(card["ever_drawn_game_count"])
-                gihwr = 100.0*(win_count + 10)/ ( int(card["ever_drawn_game_count"]) + 20) #Bayesian average
+                gihwr = 100.0*(win_count + 10)/ ( int(card["ever_drawn_game_count"]) + 20) #Bayesian average calculation
 
                 gihwr = round(gihwr, 2)
                 iwd = round(float(card["drawn_improvement_win_rate"]) * 100, 2)

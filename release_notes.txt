@@ -1,3 +1,10 @@
+===================== RELEASE NOTES 2.83 =====================
+- New Feature: If Scryfall doesn't have the card Arena IDs, then the tool will retrieve the IDs from local Arena files
+
+- Modified Feature: The tool will fill out incomplete data sets from 17Lands (Issue #6)
+
+- Modified Feature: Scrollbar added to Set Data window
+
 ===================== RELEASE NOTES 2.82 =====================
 - New Feature: Using Bayesian average for small data sets
 
