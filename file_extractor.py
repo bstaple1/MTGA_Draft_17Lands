@@ -1,12 +1,12 @@
-import getopt
 import sys
 import os
 import time
-import re
 import json
 import urllib.request
 import datetime
 import ssl
+import getpass
+import itertools
 from enum import Enum
 import log_scanner as LS
 from datetime import date
@@ -14,42 +14,62 @@ from urllib.parse import quote as urlencode
 
 #https://www.17lands.com/card_ratings/data?expansion=MID&format=PremierDraft&colors=W&start_date=2021-01-01&end_date=2021-09-27&colors=WUB
 
-LOCAL_DATA_FOLDER_PATH_PC = "/Wizards of the Coast/MTGA/MTGA_Data/Downloads/Data/"
-LOCAL_DATA_FOLDER_PATH_MAC = "/Library/Application Support/com.wizards.mtga/Downloads/Data/"
-
-LOCAL_DATA_DIRECTORY_PREFIX_PC = "Program Files"
-LOCAL_DATA_DIRECTORY_PREFIX_MAC = "Users/"
+LOCAL_DATA_FOLDER_PATH_WINDOWS = "Wizards of the Coast/MTGA/MTGA_Data/Downloads/Data/"
+LOCAL_DATA_FOLDER_PATH_OSX = "Library/Application Support/com.wizards.mtga/Downloads/Data/"
 
 LOCAL_DATA_FILE_PREFIX_CARDS = "Data_cards_"
 LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
 
+PLATFORM_ID_OSX = "darwin"
+PLATFORM_ID_WINDOWS = "win32"
+
+LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(), "AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log")
+LOG_LOCATION_OSX = "Library/Logs/Wizards of the Coast/MTGA/Player.log"
+
 DEFAULT_GIHWR_AVERAGE = 50.0
 
-local_data_folder_path_dict = {
-    "PC" : LOCAL_DATA_FOLDER_PATH_PC,
-    "MAC" : LOCAL_DATA_FOLDER_PATH_MAC,
+WINDOWS_DRIVES = ["C:/","D:/","E:/","F:/"]
+WINDOWS_PROGRAM_FILES = ["Program Files","Program Files (x86)"]
+
+platform_log_dict = {
+    PLATFORM_ID_OSX     : LOG_LOCATION_OSX,
+    PLATFORM_ID_WINDOWS : LOG_LOCATION_WINDOWS,
 }
+LOCAL_DATA_FOLDER_PATH_WINDOWS
 
 class Result(Enum):
     VALID = 0
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
     
-def RetrieveLocalArenaData(operating_system, card_data, card_set):
+def ArenaLogLocation():
+    file_location = ""
+    try:
+        if sys.platform == PLATFORM_ID_OSX:
+            paths = [os.path.join(os.path.expanduser('~'), LOG_LOCATION_OSX)]
+        else:
+            path_list = [WINDOWS_DRIVES, [LOG_LOCATION_WINDOWS]]
+            paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
+            
+        for file_path in paths:
+            if os.path.exists(file_path):
+                file_location = file_path
+                break
+                
+    except Exception as error:
+        print("ArenaLogLocation Error: %s" % error)
+    return file_location
+    
+def RetrieveLocalArenaData(card_data, card_set):
     result_string = "Arena IDs Unavailable"
     result = False
     
     while(1):
         try:       
-            #Identify the locations of local arena files
-            arena_cards_location = LocalFileLocation(operating_system, LOCAL_DATA_FILE_PREFIX_CARDS)
-            
-            if len(arena_cards_location) == 0:
-                break
-            
-            arena_text_location = LocalFileLocation(operating_system, LOCAL_DATA_FILE_PREFIX_TEXT)
-            
-            if len(arena_text_location) == 0:
+            arena_cards_location = LocalFileLocation(LOCAL_DATA_FILE_PREFIX_CARDS)
+            arena_text_location = LocalFileLocation(LOCAL_DATA_FILE_PREFIX_TEXT)
+
+            if (len(arena_cards_location) == 0) or (len(arena_text_location) == 0):
                 break
                 
             #Retrieve the arena IDs without card names
@@ -66,36 +86,22 @@ def RetrieveLocalArenaData(operating_system, card_data, card_set):
         break
     return result, result_string
  
-def LocalFileLocation(operating_system, file_prefix):
+def LocalFileLocation(file_prefix):
     file_location = ""
     try:
-        computer_root = os.path.abspath(os.sep)
-        
-        for root, dirs, files in os.walk(computer_root):
-            path = root
-            try:
-                if operating_system == "MAC":
-                    path += LOCAL_DATA_DIRECTORY_PREFIX_MAC
-                    folders = os.listdir(path)
-                else:
-                    folders = [folder_name for folder_name in os.listdir(path) if folder_name.startswith(LOCAL_DATA_DIRECTORY_PREFIX_PC)]
-                folder_path = local_data_folder_path_dict[operating_system]
-                for folder in folders:
-                    file_path = path + folder + folder_path
-                    
-                    try:
-                        if os.path.exists(file_path):
-                            file = [filename for filename in os.listdir(file_path) if filename.startswith(file_prefix)][0]
-                            
-                            file_location = file_path + file
-                            return file_location
-
-                    except Exception as error:
-                        print(error)
-                        
-            except Exception as error:
-                print(error)
-                    
+        if sys.platform == PLATFORM_ID_OSX:
+            paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
+        else:
+            path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
+            paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
+            
+        for file_path in paths:
+            if os.path.exists(file_path):
+                file = [filename for filename in os.listdir(file_path) if filename.startswith(file_prefix)][0]
+                
+                file_location = os.path.join(file_path, file)
+                return file_location
+    
     except Exception as error:
         print(error)
                     
@@ -256,7 +262,6 @@ class DataPlatform:
         self.end_date = ""
         self.context = ssl.SSLContext()
         self.id = id
-        self.operating_system = "PC"
         self.card_ratings = {}
         self.combined_data = {}
         self.card_list = []
@@ -264,9 +269,7 @@ class DataPlatform:
         #self.driver = webdriver.Firefox(executable_path = self.driver_path)
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
         self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
-    def OS(self, operating_system):
-        self.operating_system = operating_system
-    
+
     def Sets(self, sets):
         self.sets = sets
         
@@ -350,7 +353,7 @@ class DataPlatform:
                     
                     #Collect arena IDs from local files
                     if local_check:
-                        result, result_string = RetrieveLocalArenaData(self.operating_system, self.card_list, set.upper())
+                        result, result_string = RetrieveLocalArenaData(self.card_list, set.upper())
                     
                     if result == True:
                         break

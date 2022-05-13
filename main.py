@@ -113,35 +113,6 @@ def FixedMap(style, option):
     # be future-safe
     return [elm for elm in style.map("Treeview", query_opt=option)
             if elm[:2] != ("!disabled", "!selected")]
-    
-def NavigateFileLocation(os_type):
-    file_location = ""
-    try:
-        computer_root = os.path.abspath(os.sep)
-        
-        for root, dirs, files in os.walk(computer_root):
-            for path in root:
-                try:
-                    user_directory = path + "Users/"
-                    for directories in os.walk(user_directory):
-                        users = directories[1]
-                        
-                        for user in users:
-                            file_path = user_directory + user + LS.os_log_dict[os_type]
-                            
-                            try:
-                                if os.path.exists(file_path):
-                                    file_location = file_path
-                            except Exception as error:
-                                print(error)
-                        break
-                    
-                except Exception as error:
-                    print (error)
-            break
-    except Exception as error:
-        print("NavigateFileLocation Error: %s" % error)
-    return file_location
 
 def TableFilterOptions(table, filter_a, filter_b, filter_c):
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
@@ -194,14 +165,13 @@ def CopyClipboard(copy):
     return 
         
 class WindowUI:
-    def __init__(self, root, filename, step_through, diag_log_enabled, operating_system, configuration):
+    def __init__(self, root, filename, step_through, diag_log_enabled, configuration):
         self.root = root
         self.images_enabled = configuration.images_enabled
         self.filename = filename
         self.step_through = step_through
         self.diag_log_enabled = diag_log_enabled
-        self.operating_system = operating_system
-        self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled, self.operating_system)
+        self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled)
         self.diag_log_file = self.draft.diag_log_file
         self.diag_log_enabled = self.draft.diag_log_enabled
         self.table_width = configuration.table_width
@@ -1151,7 +1121,6 @@ class WindowUI:
                 self.root.update()
                 platform.Sets(set)
                 platform.DraftType(draft.get())
-                platform.OS(self.operating_system)
                 if platform.StartDate(start.get()) == False:
                     result = False
                     result_string = "Invalid Start Date (YYYY-MM-DD)"
@@ -1275,7 +1244,6 @@ class WindowUI:
                                                            color_dict,
                                                            card["image"],
                                                            self.images_enabled,
-                                                           self.operating_system,
                                                            include_bonuses)
                     except Exception as error:
                         tooltip = CreateCardToolTip(table, event,
@@ -1283,7 +1251,6 @@ class WindowUI:
                                                            color_dict,
                                                            card["image"],
                                                            self.images_enabled,
-                                                           self.operating_system,
                                                            include_bonuses)
                     break
     def FileOpen(self):
@@ -1333,7 +1300,7 @@ class WindowUI:
     def VersionCheck(self):
         #Version Check
         update_flag = False
-        if self.operating_system == "PC":
+        if sys.platform == FE.PLATFORM_ID_WINDOWS:
             try:
                 import win32api
                 DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
@@ -1385,7 +1352,7 @@ class WindowUI:
             self.missing_table_frame.grid(row = 9, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, operating_system, include_bonuses):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, include_bonuses):
         self.waittime = 1     #miliseconds
         self.wraplength = 180   #pixels
         self.widget = widget
@@ -1393,7 +1360,6 @@ class CreateCardToolTip(object):
         self.color_dict = color_dict
         self.include_bonuses = include_bonuses
         self.image = image
-        self.operating_system = operating_system
         self.images_enabled = images_enabled
         self.widget.bind("<Leave>", self.Leave)
         self.widget.bind("<ButtonPress>", self.Leave)
@@ -1429,7 +1395,7 @@ class CreateCardToolTip(object):
             self.tw = Toplevel(self.widget)
             # Leaves only the label and removes the app window
             self.tw.wm_overrideredirect(True)
-            if self.operating_system == "MAC":
+            if sys.platform == FE.PLATFORM_ID_OSX:
                self.tw.wm_overrideredirect(False) 
             self.tw.wm_geometry("+%d+%d" % (x, y))
    
@@ -1509,7 +1475,6 @@ def Startup(argv):
     file_location = ""
     step_through = False
     diag_log_enabled = True
-    operating_system = "PC"
     try:
         opts, args = getopt.getopt(argv, "f:",["step","disablediag","os="])
     except Exception as error:
@@ -1522,27 +1487,23 @@ def Startup(argv):
             elif opt in "--step":
                 step_through = True
             elif opt in "--disablediag":
-                diag_log_enabled = False
-            elif opt in "--os=":
-                operating_system = arg                
+                diag_log_enabled = False      
     except Exception as error:
         print(error)
-    
-    print(operating_system)
     
     window = Tk()
     window.title("Magic Draft %.2f" % __version__)
     window.resizable(width = True, height = True)
     
     if file_location == "":
-        file_location = NavigateFileLocation(operating_system);
+        file_location = FE.ArenaLogLocation();
         
     config = CL.ReadConfig()
     
-    if operating_system == "MAC":
+    if sys.platform == FE.PLATFORM_ID_OSX:
         config.hotkey_enabled = False
     
-    ui = WindowUI(window, file_location, step_through, diag_log_enabled, operating_system, config)
+    ui = WindowUI(window, file_location, step_through, diag_log_enabled, config)
     
     if config.hotkey_enabled:
         KeyListener(ui)    

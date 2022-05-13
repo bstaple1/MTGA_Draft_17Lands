@@ -13,10 +13,6 @@ LIMITED_TYPE_DRAFT_TRADITIONAL  = 4
 LIMITED_TYPE_SEALED             = 5
 LIMITED_TYPE_SEALED_TRADITIONAL = 6
 
-## Location of the MTGA player log.
-LOG_LOCATION_PC = "\\AppData\\LocalLow\\Wizards Of The Coast\\MTGA\\Player.log"
-LOG_LOCATION_MAC = "/Library/Logs/Wizards of the Coast/MTGA/Player.log"
-
 #Dictionaries
 ## Used to identify the limited type based on log string
 limited_types_dict = {
@@ -26,12 +22,6 @@ limited_types_dict = {
     "BotDraft"         : LIMITED_TYPE_DRAFT_QUICK,
     "Sealed"           : LIMITED_TYPE_SEALED,
     "TradSealed"       : LIMITED_TYPE_SEALED_TRADITIONAL,
-}
-
-## Used to identify OS type based on CLI string
-os_log_dict = {
-    "MAC" : LOG_LOCATION_MAC,
-    "PC"  : LOG_LOCATION_PC,
 }
 
 def LogEntry(log_name, entry_text, diag_log_enabled):
@@ -44,11 +34,10 @@ def LogEntry(log_name, entry_text, diag_log_enabled):
 
 
 class LogScanner:
-    def __init__(self,log_file, step_through, diag_log_enabled, os):
-        self.os = os
+    def __init__(self,log_file, step_through, diag_log_enabled):
         self.log_file = log_file
         self.step_through = step_through
-        directory = "Logs\\" if self.os == "PC" else "Logs/"
+        directory = "Logs/"
         self.diag_log_file = directory + "DraftLog_%s.log" % (str(time.time()))
         self.diag_log_enabled = diag_log_enabled
         self.set_data = None
@@ -166,9 +155,7 @@ class LogScanner:
                 
                         self.draft_type = limited_types_dict[event_type]
                         self.draft_set = event_set.upper()
-                        directory = "Logs\\"
-                        if self.os == "MAC":
-                            directory = "Logs/"
+                        directory = "Logs/"
                         self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                         break
         except Exception as error:
@@ -190,9 +177,7 @@ class LogScanner:
                 if event_type in limited_types_dict.keys():
                     self.draft_type = limited_types_dict[event_type]
                     self.draft_set = event_set.upper()
-                    directory = "Logs\\"
-                    if self.os == "MAC":
-                        directory = "Logs/"
+                    directory = "Logs/"
                     self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                     #LogEntry(self.diag_log_file, event_data, self.diag_log_enabled)
                                 
