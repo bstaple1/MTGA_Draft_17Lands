@@ -26,7 +26,7 @@ PLATFORM_ID_WINDOWS = "win32"
 LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(), "AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log")
 LOG_LOCATION_OSX = "Library/Logs/Wizards of the Coast/MTGA/Player.log"
 
-DEFAULT_GIHWR_AVERAGE = 50.0
+DEFAULT_GIHWR_AVERAGE = 0.0
 
 WINDOWS_DRIVES = ["C:/","D:/","E:/","F:/"]
 WINDOWS_PROGRAM_FILES = ["Program Files","Program Files (x86)"]
@@ -376,14 +376,14 @@ class DataPlatform:
             card_name = card["name"].split(" // ") [0]
             self.card_ratings[card_name] = []
             for color in self.deck_colors:
-                self.card_ratings[card_name].append({color : {"gihwr" : DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0}})
+                self.card_ratings[card_name].append({color : {"gihwr" : DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}})
 
         #Add in basic lands
         lands = ["Mountain","Swamp","Plains","Forest","Island"]
         for land in lands:
             self.card_ratings[land] = []
             for color in self.deck_colors:
-                self.card_ratings[land].append({color : {"gihwr" : 0.0, "iwd" : 0.0, "alsa" : 0.0}})
+                self.card_ratings[land].append({color : {"gihwr" : 0.0, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}})
         
     def SessionCardRating(self, root, progress, initial_progress):
         current_progress = 0
@@ -484,20 +484,22 @@ class DataPlatform:
                 gihwr = card["ever_drawn_win_rate"]
                 iwd = card["drawn_improvement_win_rate"]
                 alsa = card["avg_seen"]
+                gih = int(card["ever_drawn_game_count"])
                 
                 gihwr = gihwr if gihwr != None else "0.0"
                 
-                win_count = float(gihwr) * int(card["ever_drawn_game_count"])
-                gihwr = 100.0*(win_count + 10)/ ( int(card["ever_drawn_game_count"]) + 20) #Bayesian average calculation
-
-                gihwr = round(gihwr, 2)
+                #win_count = float(gihwr) * int(gih)
+                #gihwr = 100.0*(win_count + 10)/ ( int(gih) + 20) #Bayesian average calculation
+                #gihwr = round(gihwr, 2)
+                gihwr = round(float(gihwr) * 100.0, 2)
+                
                 iwd = round(float(card["drawn_improvement_win_rate"]) * 100, 2)
                 alsa = round(float(card["avg_seen"]), 2)
                 try:
-                    self.card_ratings[card_name].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa}})
+                    self.card_ratings[card_name].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa, "gih" : gih}})
                 except Exception as error:
                     self.card_ratings[card_name] = []
-                    self.card_ratings[card_name].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa}}) 
+                    self.card_ratings[card_name].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa, "gih" : gih}}) 
                 self.card_ratings[card_name]
             except Exception as error:
                 print("RetrieveCardRatingsUrl Error: %s" % error)
@@ -640,7 +642,8 @@ class DataPlatform:
                     for key, value in deck_color.items():
                         self.combined_data["card_ratings"][card_id]["deck_colors"][key] = {"gihwr" :  value["gihwr"], 
                                                                                            "alsa" : value["alsa"],
-                                                                                           "iwd" : value["iwd"]}
+                                                                                           "iwd" : value["iwd"],
+                                                                                           "gih" : value["gih"]}
             
         except Exception as error:
             print(error)

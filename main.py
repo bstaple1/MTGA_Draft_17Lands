@@ -70,9 +70,7 @@ from pynput.keyboard import Key, Listener, KeyCode
 from datetime import date
 import tkinter.messagebox as MessageBox
 import urllib
-import json
 import os
-import time 
 import getopt
 import sys
 import io
@@ -226,6 +224,7 @@ class WindowUI:
         self.auto_average_checkbox_value = IntVar(self.root)
         self.curve_bonus_checkbox_value = IntVar(self.root)
         self.color_bonus_checkbox_value = IntVar(self.root)
+        self.bayesian_average_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.draft.deck_colors
         self.column_3_selection = StringVar(self.root)
@@ -241,6 +240,7 @@ class WindowUI:
            self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
            self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
            self.color_bonus_checkbox_value.set(configuration.color_bonus_disabled)
+           self.bayesian_average_checkbox_value.set(configuration.bayesian_average_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -250,6 +250,7 @@ class WindowUI:
            self.auto_average_checkbox_value.set(False)
            self.curve_bonus_checkbox_value.set(False)
            self.color_bonus_checkbox_value.set(False)
+           self.bayesian_average_checkbox_value.set(False)
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -397,7 +398,7 @@ class WindowUI:
                 row_tag = CL.RowColorTag(card["colors"])
                 
                 self.pack_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-            self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_c, include_bonuses=True))
+            self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdatePackTable Error: %s" % error
             print(error_string)
@@ -441,7 +442,7 @@ class WindowUI:
                         card_name = "*" + card["name"] if card["name"] in picked_cards else card["name"]
                         
                         self.missing_table.insert("",index = count, iid = count, values = (card_name, card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-                    self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_c, include_bonuses=False))
+                    self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdateMissingTable Error: %s" % error
             print(error_string)
@@ -479,7 +480,7 @@ class WindowUI:
             for count, card in enumerate(filtered_list):
                 row_tag = CL.RowColorTag(card["colors"])
                 compare_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-            compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_c, include_bonuses=True))
+            compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdateCompareTable Error: %s" % error
             print(error_string)
@@ -508,7 +509,7 @@ class WindowUI:
             for count, card in enumerate(filtered_list):
                 row_tag = CL.RowColorTag(card["colors"])
                 taken_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
-            taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_c, include_bonuses=False))
+            taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdateTakenTable Error: %s" % error
             print(error_string)
@@ -529,7 +530,7 @@ class WindowUI:
                                                                  card["colors"],
                                                                  card["cmc"],
                                                                  card["types"]), tag = (row_tag,))
-            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color], include_bonuses=False))
+            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
     
         except Exception as error:
             error_string = "UpdateSuggestTable Error: %s" % error
@@ -658,6 +659,7 @@ class WindowUI:
            self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
            self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
            self.color_bonus_checkbox_value.set(configuration.color_bonus_disabled)
+           self.bayesian_average_checkbox_value.set(configuration.bayesian_average_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -667,6 +669,7 @@ class WindowUI:
            self.auto_average_checkbox_value.set(False)
            self.curve_bonus_checkbox_value.set(False)
            self.color_bonus_checkbox_value.set(False)
+           self.bayesian_average_checkbox_value.set(False)
     def UpdateSettingsCallback(self, *args):
         configuration = CL.Config()
         
@@ -679,6 +682,7 @@ class WindowUI:
         configuration.auto_average_disabled = True if self.auto_average_checkbox_value.get() else False
         configuration.curve_bonus_disabled = True if self.curve_bonus_checkbox_value.get() else False
         configuration.color_bonus_disabled = True if self.color_bonus_checkbox_value.get() else False
+        configuration.bayesian_average_disabled = True if self.bayesian_average_checkbox_value.get() else False
         CL.WriteConfig(configuration)
         self.UpdateCallback(False)
         
@@ -1070,7 +1074,12 @@ class WindowUI:
             color_bonus_checkbox = Checkbutton(popup,
                                                  variable=self.color_bonus_checkbox_value,
                                                  onvalue=1,
-                                                 offvalue=0)                                                 
+                                                 offvalue=0)     
+            bayesian_average_label = Label(popup, text="Disable Bayesian Average:", font='Helvetica 9 bold', anchor="w")
+            bayesian_average_checkbox = Checkbutton(popup,
+                                                 variable=self.bayesian_average_checkbox_value,
+                                                 onvalue=1,
+                                                 offvalue=0)                                                  
             optionsStyle = Style()
             optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
             
@@ -1101,7 +1110,9 @@ class WindowUI:
             curve_bonus_checkbox.grid(row=6, column=1, columnspan=1, sticky="nsew", padx=(5,))
             color_bonus_label.grid(row=7, column=0, columnspan=1, sticky="nsew", padx=(10,))
             color_bonus_checkbox.grid(row=7, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=8, column=0, columnspan=2, sticky="nsew")
+            bayesian_average_label.grid(row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            bayesian_average_checkbox.grid(row=8, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=9, column=0, columnspan=2, sticky="nsew")
             
             self.ControlTrace(True)
             
@@ -1200,7 +1211,7 @@ class WindowUI:
             
             break
             
-    def OnClickTable(self, event, table, card_list, selected_color, include_bonuses):
+    def OnClickTable(self, event, table, card_list, selected_color):
         color_dict = {}
         for item in table.selection():
             card_name = table.item(item, "value")[0]
@@ -1215,43 +1226,41 @@ class WindowUI:
                             color_list = selected_color
                         for count, color in enumerate(color_list):
                             try:
-                                curve_bonus = 0
-                                color_bonus = 0
-                                if "curve_bonus" not in card.keys() or len(card["curve_bonus"]) == 0:
-                                    include_bonuses = False
-                                else:
-                                    curve_bonus = card["curve_bonus"][count]
-
-                                if "color_bonus" not in card.keys() or len(card["color_bonus"]) == 0:
-                                    include_bonuses = False
-                                else:
-                                    color_bonus = card["color_bonus"][count]
-
-                                color_dict[color] = {"alsa" : card["deck_colors"][color]["alsa"],
-                                                     "iwd" : card["deck_colors"][color]["iwd"],
-                                                     "gihwr" : card["deck_colors"][color]["gihwr"],
-                                                     "curve_bonus" : curve_bonus,
-                                                     "color_bonus" : color_bonus}                 
+                                color_dict[color] = {}
+                                
+                                gihwr = card["deck_colors"][color]["gihwr"]
+                                
+                                if "gih" in card["deck_colors"][color]:
+                                    gih = card["deck_colors"][color]["gih"]
+                                    gihwr = CL.CalculateWinRate(gihwr, gih, self.bayesian_average_checkbox_value.get())
+                                    color_dict[color]["gih"] = gih
+                                
+                                color_dict[color]["alsa"] = card["deck_colors"][color]["alsa"]
+                                color_dict[color]["iwd"] = card["deck_colors"][color]["iwd"]
+                                color_dict[color]["gihwr"] = gihwr
+                                
+                                if "curve_bonus" in card.keys() and len(card["curve_bonus"]):
+                                    color_dict[color]["curve_bonus"] = card["curve_bonus"][count]
+                                    
+                                if "color_bonus" in card.keys()  and len(card["color_bonus"]):
+                                    color_dict[color]["color_bonus"] = card["color_bonus"][count]
+                                    
                             except Exception as error:
                                 color_dict[color] = {"alsa" : 0,
                                                      "iwd" : 0,
-                                                     "gihwr" : 0,
-                                                     "curve_bonus" : 0,
-                                                     "color_bonus" : 0}
+                                                     "gihwr" : 0}
                             
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
                                                            color_dict,
                                                            card["image"],
-                                                           self.images_enabled,
-                                                           include_bonuses)
+                                                           self.images_enabled)
                     except Exception as error:
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
                                                            color_dict,
                                                            card["image"],
-                                                           self.images_enabled,
-                                                           include_bonuses)
+                                                           self.images_enabled)
                     break
     def FileOpen(self):
         filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),
@@ -1284,6 +1293,7 @@ class WindowUI:
             self.trace_ids.append(self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
             self.trace_ids.append(self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
             self.trace_ids.append(self.color_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
+            self.trace_ids.append(self.bayesian_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
         else:
            self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
            self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
@@ -1293,6 +1303,7 @@ class WindowUI:
            self.auto_average_checkbox_value.trace_vdelete("w", self.trace_ids[5])
            self.curve_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[6])
            self.color_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[7])
+           self.bayesian_average_checkbox_value.trace_vdelete("w", self.trace_ids[8])
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
         #self.deck_colors_options_list = []
@@ -1352,13 +1363,12 @@ class WindowUI:
             self.missing_table_frame.grid(row = 9, column = 0, columnspan = 2, sticky = 'nsew')
     
 class CreateCardToolTip(object):
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, include_bonuses):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled):
         self.waittime = 1     #miliseconds
         self.wraplength = 180   #pixels
         self.widget = widget
         self.card_name = card_name
         self.color_dict = color_dict
-        self.include_bonuses = include_bonuses
         self.image = image
         self.images_enabled = images_enabled
         self.widget.bind("<Leave>", self.Leave)
@@ -1414,7 +1424,7 @@ class CreateCardToolTip(object):
                     image = ImageTk.PhotoImage(im)
                     image_label = Label(tt_frame, image=image)
                     columnspan = 1 if len(self.image) == 2 else 2
-                    image_label.grid(column=count, row=7, columnspan=columnspan)
+                    image_label.grid(column=count, row=8, columnspan=columnspan)
                     self.images.append(image)
             
 
@@ -1435,14 +1445,27 @@ class CreateCardToolTip(object):
             gihwr_label = Label(tt_frame, text="Games In Hand Win Rate:", font=("Consolas", 10, "bold"))
             gihwr_value = Label(tt_frame, text="/".join(gihwr_values)+ "%", font=("Consolas", 10))
             
-            curve_bonus_values = [str(x['curve_bonus']) for x in self.color_dict.values()]
-            curve_bonus_label = Label(tt_frame, text="Curve Bonus:", font=("Consolas", 10, "bold"))
-            curve_bonus_value = Label(tt_frame, text="+" + "/".join(curve_bonus_values), font=("Consolas", 10))
+            if any("gih" in x for x in self.color_dict.values()):
+                gih_values = [str(x['gih']) for x in self.color_dict.values()]
+                gih_label = Label(tt_frame, text="Number of Games In Hand:", font=("Consolas", 10, "bold"))
+                gih_value = Label(tt_frame, text="/".join(gih_values), font=("Consolas", 10))    
+                gih_label.grid(column=0, row=5, columnspan=1)
+                gih_value.grid(column=1, row=5, columnspan=1)
             
-            color_bonus_values = [str(x['color_bonus']) for x in self.color_dict.values()]
-            color_bonus_label = Label(tt_frame, text="Color Bonus:", font=("Consolas", 10, "bold"))
-            color_bonus_value = Label(tt_frame, text="+" + "/".join(color_bonus_values), font=("Consolas", 10))
-            
+            if any("curve_bonus" in x for x in self.color_dict.values()):
+                curve_bonus_values = [str(x['curve_bonus']) for x in self.color_dict.values()]
+                curve_bonus_label = Label(tt_frame, text="Curve Bonus:", font=("Consolas", 10, "bold"))
+                curve_bonus_value = Label(tt_frame, text="+" + "/".join(curve_bonus_values), font=("Consolas", 10))
+                curve_bonus_label.grid(column=0, row=6, columnspan=1)
+                curve_bonus_value.grid(column=1, row=6, columnspan=1)
+                
+            if any("color_bonus" in x for x in self.color_dict.values()):
+                color_bonus_values = [str(x['color_bonus']) for x in self.color_dict.values()]
+                color_bonus_label = Label(tt_frame, text="Color Bonus:", font=("Consolas", 10, "bold"))
+                color_bonus_value = Label(tt_frame, text="+" + "/".join(color_bonus_values), font=("Consolas", 10))
+                color_bonus_label.grid(column=0, row=7, columnspan=1)
+                color_bonus_value.grid(column=1, row=7, columnspan=1)
+                
             card_label.grid(column=0, row=0, columnspan=2)
             filter_label.grid(column=0, row=1, columnspan=1)
             filter_value.grid(column=1, row=1, columnspan=1)
@@ -1452,11 +1475,6 @@ class CreateCardToolTip(object):
             iwd_value.grid(column=1, row=3, columnspan=1)
             gihwr_label.grid(column=0, row=4, columnspan=1)
             gihwr_value.grid(column=1, row=4, columnspan=1)
-            if self.include_bonuses:
-                curve_bonus_label.grid(column=0, row=5, columnspan=1)
-                curve_bonus_value.grid(column=1, row=5, columnspan=1)
-                color_bonus_label.grid(column=0, row=6, columnspan=1)
-                color_bonus_value.grid(column=1, row=6, columnspan=1)
             tt_frame.pack()
             
             
