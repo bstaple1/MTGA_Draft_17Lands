@@ -304,11 +304,7 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
             print("CalculateColorAffinity Error: %s" % error)
     return colors 
 
-def CardFilter(cards, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list, configuration, include_curve, include_color):   
-    filtered_cards = CardColorFilter(cards, tier_list, filter_a, filter_b, filter_c, limits, configuration, deck, color_options)
-    return filtered_cards
-    
-def CardColorFilter(card_list, tier_list, filter_a, filter_b, filter_c, limits, configuration, deck, color_options):
+def CardFilter(card_list, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list, configuration):
     filtered_list = []
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     ratings_filter_dict = {"rating_filter_a" : filter_a, "rating_filter_b" : filter_b, "rating_filter_c" : filter_c}
@@ -392,12 +388,12 @@ def RowColorTag(colors):
         row_tag = "greencard"
     return row_tag
     
-def DeckColorLimits(cards, color):
+def DeckColorLimits(cards, color, bayesian_disabled):
     upper_limit = 0
     lower_limit = 100
     for card in cards:
         try:
-            gihwr = CalculateWinRate(cards[card]["deck_colors"][color], True)
+            gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_disabled)
             if gihwr > upper_limit:
                 upper_limit = gihwr
             if gihwr < lower_limit and gihwr != 0:
@@ -427,14 +423,9 @@ def CalculateWinRate(card_data, bayesian_disabled):
 def CardRating(card_data, limits, configuration, filter, deck, deck_colors, disable_curve_bonus, disable_color_bonus):
     rating_data = {"rating" : 0}
     try:
-        #gihwr = card_data["deck_colors"][filter]["gihwr"]
         gihwr = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_disabled)
         upper_limit = limits[filter]["upper"]
         lower_limit = limits[filter]["lower"]
-        
-        #if "gih" in card_data["deck_colors"][filter]:
-        #    gih = card_data["deck_colors"][filter]["gih"]           
-        #    gihwr = CalculateWinRate(gihwr, gih, configuration.bayesian_average_disabled)
         
         if (gihwr != 0) and (upper_limit != lower_limit):
             #Curve bonus
@@ -455,8 +446,8 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors, disa
             if card_data["deck_colors"][filter]["iwd"] < 0:
                 iwd_penalty = (max(card_data["deck_colors"][filter]["iwd"], -10) / 10) * configuration.iwd_weight     
             
-            gihwr = min(gihwr, limits[filter]["upper"])
-            gihwr = max(gihwr, limits[filter]["lower"])
+            gihwr = min(gihwr, upper_limit)
+            gihwr = max(gihwr, lower_limit)
             
             rating_data["rating"] = ((gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0
             
@@ -745,8 +736,7 @@ def SuggestDeck(taken_cards, color_options, limits, configuration):
     try:
         deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Calculate the base ratings
-        filtered_cards = CardColorFilter(taken_cards, None, ["All Decks"],["All Decks"],["All Decks"], limits, configuration, taken_cards, color_options)
-        
+        filtered_cards = CardFilter(taken_cards, taken_cards, ["All Decks"],["All Decks"],["All Decks"], color_options, limits, None, configuration)
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max, configuration)
         colors = colors.keys()
@@ -795,7 +785,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardColorFilter(cards, None, [color], [color], [color], limits, configuration, cards, color_options)
+        filtered_cards = CardFilter(cards, cards, [color], [color], [color], color_options, limits, None, configuration)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color, configuration))

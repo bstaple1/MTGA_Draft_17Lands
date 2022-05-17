@@ -81,7 +81,6 @@ import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
 __version__= 2.83
-
     
 def CheckVersion(platform, version):
     return_value = False
@@ -174,6 +173,11 @@ class WindowUI:
         self.diag_log_enabled = self.draft.diag_log_enabled
         self.trace_ids = []
         
+        self.deck_limits = {}
+        self.tier_data = {}
+        self.deck_colors = self.draft.RetrieveColorWinRate()
+        self.data_sources = self.draft.RetrieveDataSources()
+        
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
         Grid.columnconfigure(self.root, 1, weight = 1)
@@ -210,14 +214,13 @@ class WindowUI:
         data_source_label_frame = Frame(self.root)
         self.data_source_label = Label(data_source_label_frame, text="Data Source:", font='Helvetica 9 bold', anchor="e")
         
-        data_source_value_frame = Frame(self.root)
-        self.data_source_value_label = Label(data_source_value_frame, text="", font='Helvetica 9', anchor="w")
-        
         deck_colors_label_frame = Frame(self.root)
         self.deck_colors_label = Label(deck_colors_label_frame, text="Deck Filter:", font='Helvetica 9 bold', anchor="e")
         
-        #self.deck_colors_options_selection = StringVar(self.root)
-        #self.deck_colors_options_list = []
+        self.data_source_selection = StringVar(self.root)
+        self.data_source_list = self.data_sources
+        self.data_source_selection.trace("w", self.UpdateSourceCallback)
+        
         self.deck_stats_checkbox_value = IntVar(self.root)
         self.missing_cards_checkbox_value = IntVar(self.root)
         self.auto_average_checkbox_value = IntVar(self.root)
@@ -225,11 +228,11 @@ class WindowUI:
         self.color_bonus_checkbox_value = IntVar(self.root)
         self.bayesian_average_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
-        self.column_2_list = self.draft.deck_colors
+        self.column_2_list = self.deck_colors
         self.column_3_selection = StringVar(self.root)
-        self.column_3_list = self.draft.deck_colors
+        self.column_3_list = self.deck_colors
         self.column_4_selection = StringVar(self.root)
-        self.column_4_list = self.draft.deck_colors
+        self.column_4_list = self.deck_colors
         try:
            self.column_2_selection.set(self.configuration.column_2) 
            self.column_3_selection.set(self.configuration.column_3)
@@ -253,9 +256,11 @@ class WindowUI:
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
+        data_source_option_frame = Frame(self.root)
+        self.data_source_options = OptionMenu(data_source_option_frame, self.data_source_selection, self.data_source_selection.get(), *self.data_source_list, style="my.TMenubutton")
+        
         deck_colors_option_frame = Frame(self.root)
         self.deck_colors_options = OptionMenu(deck_colors_option_frame, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
-        #self.deck_colors_options.config(width=10)
         
         self.refresh_button_frame = Frame(self.root)
         self.refresh_button = Button(self.refresh_button_frame, command= lambda : self.UpdateCallback(True), text="Refresh");
@@ -305,7 +310,7 @@ class WindowUI:
         current_draft_label_frame.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
         current_draft_value_frame.grid(row = 1, column = 1, columnspan = 1, sticky = 'nsew')
         data_source_label_frame.grid(row = 2, column = 0, columnspan = 1, sticky = 'nsew')
-        data_source_value_frame.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsew')
+        data_source_option_frame.grid(row = 2, column = 1, columnspan = 1, sticky = 'nsew')
         deck_colors_label_frame.grid(row = 3, column = 0, columnspan = 1, sticky = 'nsew')
         deck_colors_option_frame.grid(row = 3, column = 1, columnspan = 1, sticky = 'nsw')
         hotkey_label.grid(row = 4, column = 0, columnspan = 2) 
@@ -327,10 +332,9 @@ class WindowUI:
         self.current_draft_label.pack(expand = True, fill = None, anchor="e")
         self.current_draft_value_label.pack(expand = True, fill = None, anchor="w")
         self.data_source_label.pack(expand = True, fill = None, anchor="e")
-        self.data_source_value_label.pack(expand = True, fill = None, anchor="w")
+        self.data_source_options.pack(expand = True, fill = None, anchor="w")
         self.deck_colors_label.pack(expand = False, fill = None, anchor="e")
         self.deck_colors_options.pack(expand = False, fill = None, anchor="w")
-        #self.draft.DraftSearch()
         self.check_timestamp = 0
         self.previous_timestamp = 0
         
@@ -373,10 +377,8 @@ class WindowUI:
                                           filtered_c,
                                           color_options,
                                           limits,
-                                          self.draft.tier_data,
-                                          self.configuration,
-                                          True,
-                                          True)
+                                          self.tier_data,
+                                          self.configuration)
                                           
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             # clear the previous rows
@@ -425,6 +427,9 @@ class WindowUI:
                     self.missing_table.config(height=1) 
                 
                 if list_length:
+                    configuration = self.configuration
+                    configuration.curve_bonus_disabled = True
+                    configuration.color_bonus_disabled = True
                     filtered_list = CL.CardFilter(missing_cards,
                                                   taken_cards,
                                                   filtered_a,
@@ -432,10 +437,8 @@ class WindowUI:
                                                   filtered_c,
                                                   color_options,
                                                   limits,
-                                                  self.draft.tier_data,
-                                                  self.configuration,
-                                                  False,
-                                                  False)
+                                                  self.tier_data,
+                                                  configuration)
                     
                     filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
@@ -468,10 +471,8 @@ class WindowUI:
                                           filtered_c,
                                           color_options,
                                           limits,
-                                          self.draft.tier_data,
-                                          self.configuration,
-                                          True,
-                                          True)
+                                          self.tier_data,
+                                          self.configuration)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             compare_table.delete(*compare_table.get_children())
@@ -490,7 +491,9 @@ class WindowUI:
 
     def UpdateTakenTable(self, taken_table, taken_cards, filtered_a, filtered_b, filtered_c, color_options,limits):
         try:
-            
+            configuration = self.configuration
+            configuration.curve_bonus_disabled = True
+            configuration.color_bonus_disabled = True
             filtered_list = CL.CardFilter(taken_cards,
                                           taken_cards,
                                           filtered_a,
@@ -498,10 +501,8 @@ class WindowUI:
                                           filtered_c,
                                           color_options,
                                           limits,
-                                          self.draft.tier_data,
-                                          self.configuration,
-                                          False,
-                                          False)
+                                          self.tier_data,
+                                          configuration)
                     
             filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             list_length = len(filtered_list)
@@ -603,7 +604,7 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)   
      
-    def UpdateCurrentDraft(self, set, draft_type, data_source):
+    def UpdateCurrentDraft(self, set, draft_type):
         try: 
             draft_type_string = ''
             
@@ -613,19 +614,43 @@ class WindowUI:
                     
             new_label = "%s %s" % (set, draft_type_string)
             self.current_draft_value_label.config(text = new_label)
-            self.data_source_value_label.config(text = data_source)
         except Exception as error:
             error_string = "UpdateCurrentDraft Error: %s" % error
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+     
+    def UpdateSourceOptions(self, new_list):
+        try:
+            if new_list:
+                self.data_source_selection.set(next(iter(self.data_sources)))
+                menu = self.data_source_options["menu"]
+                menu.delete(0, "end")
+
+                self.data_source_list = []
+
+                for key, data in self.data_sources.items():
+                    menu.add_command(label=key, 
+                                    command=lambda value=key: self.data_source_selection.set(value))
+                    self.data_source_list.append(key)
+
+            elif self.data_source_selection.get() not in self.data_sources.keys():
+                self.data_source_selection.set(next(iter(self.data_sources)))
+
+
+
+        except Exception as error:
+            error_string = "UpdateSourceOptions Error: %s" % error
+            print(error_string)
+            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
             
-    def UpdateOptions(self, options_list):
+     
+    def UpdateFilterOptions(self):
         try: 
-            if self.column_2_selection.get() not in options_list.values():
+            if self.column_2_selection.get() not in self.deck_colors.values():
                 self.column_2_selection.set("All ALSA")
-            if self.column_3_selection.get() not in options_list.values():
+            if self.column_3_selection.get() not in self.deck_colors.values():
                 self.column_3_selection.set("All Decks")
-            if self.column_4_selection.get() not in options_list.values():
+            if self.column_4_selection.get() not in self.deck_colors.values():
                 self.column_4_selection.set("Auto")
             
             menu = self.deck_colors_options["menu"]
@@ -634,7 +659,7 @@ class WindowUI:
             self.column_3_list = []
             self.column_4_list = []
 
-            for key, data in options_list.items():
+            for key, data in self.deck_colors.items():
                 if len(data):
                     menu.add_command(label=data, 
                                     command=lambda value=data: self.column_4_selection.set(value))
@@ -644,7 +669,7 @@ class WindowUI:
                     self.column_4_list.append(data)
                 
         except Exception as error:
-            error_string = "UpdateOptions Error: %s" % error
+            error_string = "UpdateFilterOptions Error: %s" % error
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
             
@@ -673,6 +698,14 @@ class WindowUI:
            self.curve_bonus_checkbox_value.set(False)
            self.color_bonus_checkbox_value.set(False)
            self.bayesian_average_checkbox_value.set(False)
+
+    def UpdateSourceCallback(self, *args):
+
+        self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
+        self.deck_limits = self.draft.RetrieveColorLimits(True)
+        self.deck_colors = self.draft.RetrieveColorWinRate()
+        self.UpdateCallback(False)
+
     def UpdateSettingsCallback(self, *args):
         self.configuration.column_2 = self.column_2_selection.get()
         self.configuration.column_3 = self.column_3_selection.get()
@@ -685,47 +718,61 @@ class WindowUI:
         self.configuration.color_bonus_disabled = True if self.color_bonus_checkbox_value.get() else False
         self.configuration.bayesian_average_disabled = True if self.bayesian_average_checkbox_value.get() else False
         CL.WriteConfig(self.configuration)
-        self.UpdateCallback(False)
         
+        self.deck_limits = self.draft.RetrieveColorLimits(True)
+        self.UpdateCallback(False)        
+
+    def UpdateDraftData(self):
+        if self.draft.DraftStartSearch():
+            self.data_sources = self.draft.RetrieveDataSources()
+            #self.tier_data = self.draft.RetrieveTierData()
+            self.UpdateSourceOptions(True)
+            self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
+
+            self.deck_limits = self.draft.RetrieveColorLimits(True)
+            self.deck_colors = self.draft.RetrieveColorWinRate()
+
+        self.draft.DraftDataSearch()        
     def UpdateCallback(self, enable_draft_search):
         if enable_draft_search:
-            self.draft.DraftSearch()
+            self.UpdateDraftData()
         
-        self.UpdateOptions(self.draft.deck_colors)
+        self.UpdateSourceOptions(False)
+        self.UpdateFilterOptions()
         
         self.HideDeckStates(self.deck_stats_checkbox_value.get())
         self.HideMissingCards(self.missing_cards_checkbox_value.get())
                 
-        filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.configuration)
-        filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.configuration)
-        filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.configuration)
+        filtered_a = CL.ColorFilter(self.draft.TakenCards(), self.column_2_selection.get(), self.deck_colors, self.configuration)
+        filtered_b = CL.ColorFilter(self.draft.TakenCards(), self.column_3_selection.get(), self.deck_colors, self.configuration)
+        filtered_c = CL.ColorFilter(self.draft.TakenCards(), self.column_4_selection.get(), self.deck_colors, self.configuration)
 
-        self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type, self.draft.data_source)
+        self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
 
-        self.UpdatePackTable(self.draft.pack_cards[pack_index], 
-                             self.draft.taken_cards,
+        self.UpdatePackTable(self.draft.PackCards(pack_index), 
+                             self.draft.TakenCards(),
                              filtered_a,
                              filtered_b,
                              filtered_c,
-                             self.draft.deck_colors,
-                             self.draft.deck_limits)
+                             self.deck_colors,
+                             self.deck_limits)
                              
-        self.UpdateMissingTable(self.draft.pack_cards[pack_index],
-                                self.draft.initial_pack[pack_index],
-                                self.draft.picked_cards[pack_index],
-                                self.draft.taken_cards,
+        self.UpdateMissingTable(self.draft.PackCards(pack_index),
+                                self.draft.InitialPackCards(pack_index),
+                                self.draft.PickedCards(pack_index),
+                                self.draft.TakenCards(),
                                 filtered_a,
                                 filtered_b,
                                 filtered_c,
-                                self.draft.deck_colors,
-                                self.draft.deck_limits)   
+                                self.deck_colors,
+                                self.deck_limits)   
                                 
         self.UpdateDeckStatsCallback()
 
     def UpdateDeckStatsCallback(self, *args):
-        self.UpdateDeckStatsTable(self.draft.taken_cards, self.stat_options_selection.get())
+        self.UpdateDeckStatsTable(self.draft.TakenCards(), self.stat_options_selection.get())
 
     def UpdateUI(self):
         try:
@@ -877,9 +924,9 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
-            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.configuration)
-            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.configuration)
-            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.configuration)
+            filtered_a = CL.ColorFilter(self.draft.TakenCards(), self.column_2_selection.get(), self.deck_colors, self.configuration)
+            filtered_b = CL.ColorFilter(self.draft.TakenCards(), self.column_3_selection.get(), self.deck_colors, self.configuration)
+            filtered_c = CL.ColorFilter(self.draft.TakenCards(), self.column_4_selection.get(), self.deck_colors, self.configuration)
             
             matching_cards = []
             
@@ -918,8 +965,8 @@ class WindowUI:
                                                                               filtered_a,
                                                                               filtered_b,
                                                                               filtered_c,
-                                                                              self.draft.deck_colors,
-                                                                              self.draft.deck_limits))
+                                                                              self.deck_colors,
+                                                                              self.deck_limits))
             
             popup.attributes("-topmost", True)
         except Exception as error:
@@ -935,11 +982,11 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
-            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.configuration)
-            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.configuration)
-            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.configuration)
+            filtered_a = CL.ColorFilter(self.draft.TakenCards(), self.column_2_selection.get(), self.deck_colors, self.configuration)
+            filtered_b = CL.ColorFilter(self.draft.TakenCards(), self.column_3_selection.get(), self.deck_colors, self.configuration)
+            filtered_c = CL.ColorFilter(self.draft.TakenCards(), self.column_4_selection.get(), self.deck_colors, self.configuration)
             
-            copy_button = Button(popup, command=lambda:CopyTaken(self.draft.taken_cards,
+            copy_button = Button(popup, command=lambda:CopyTaken(self.draft.TakenCards(),
                                                                  self.draft.set_data,
                                                                  self.draft.draft_set,
                                                                  filtered_c),
@@ -962,12 +1009,12 @@ class WindowUI:
             
             
             self.UpdateTakenTable(taken_table,
-                                  self.draft.taken_cards,
+                                  self.draft.TakenCards(),
                                   filtered_a,
                                   filtered_b,
                                   filtered_c,
-                                  self.draft.deck_colors,
-                                  self.draft.deck_limits)
+                                  self.deck_colors,
+                                  self.deck_limits)
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "TakenCards Error: %s" % error
@@ -981,7 +1028,7 @@ class WindowUI:
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             
-            suggested_decks = CL.SuggestDeck(self.draft.taken_cards, self.draft.deck_colors, self.draft.deck_limits, self.configuration)
+            suggested_decks = CL.SuggestDeck(self.draft.TakenCards(), self.deck_colors, self.deck_limits, self.configuration)
             
             choices = ["None"]
             deck_color_options = {}

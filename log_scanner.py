@@ -3,6 +3,8 @@ import time
 import json
 import card_logic as CL
 import file_extractor as FE
+from collections import OrderedDict
+
 # Global Constants
 ## The different types of draft.
 LIMITED_TYPE_UNKNOWN            = 0
@@ -12,6 +14,13 @@ LIMITED_TYPE_DRAFT_QUICK        = 3
 LIMITED_TYPE_DRAFT_TRADITIONAL  = 4
 LIMITED_TYPE_SEALED             = 5
 LIMITED_TYPE_SEALED_TRADITIONAL = 6
+
+DECK_FILTERS = ["All Decks","Auto", "All GIHWR", "All IWD", "All ALSA",  "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
+
+SET_FILE_SUFFIX = "Data.json"
+TIER_FILE_PREFIX = "Tier_"
+
+DATA_SOURCES_NONE = {"None" : ""}
 
 #Dictionaries
 ## Used to identify the limited type based on log string
@@ -41,11 +50,6 @@ class LogScanner:
         self.diag_log_file = directory + "DraftLog_%s.log" % (str(time.time()))
         self.diag_log_enabled = diag_log_enabled
         self.set_data = None
-        self.tier_data = None
-        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "",  "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
-        for deck_color in self.deck_colors.keys():
-            self.deck_colors[deck_color] = deck_color
-        self.deck_limits = {}
         self.draft_type = LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
@@ -67,9 +71,6 @@ class LogScanner:
             self.search_offset = 0
             self.file_size = 0
         self.set_data = None
-        self.tier_data = None
-        self.deck_colors = {"All Decks" : "","Auto" : "", "All GIHWR" : "", "All IWD" : "", "All ALSA" : "",  "W" : "","U" : "","B" : "","R" : "","G" : "","WU" : "","WB" : "","WR" : "","WG" : "","UB" : "","UR" : "","UG" : "","BR" : "","BG" : "","RG" : "","WUB" : "","WUR" : "","WUG" : "","WBR" : "","WBG" : "","WRG" : "","UBR" : "","UBG" : "","URG" : "","BRG" : ""}
-        self.deck_limits = {}
         self.draft_type = LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
@@ -86,6 +87,9 @@ class LogScanner:
         self.data_source = "None"
         
     def DraftStartSearch(self): 
+        update = False
+        set_dict = OrderedDict()
+        tier_list = []
         #Open the file
         switcher={
                 "[UnityCrossThreadLogger]==> Event_Join " : (lambda x, y: self.DraftStartSearchV1(x, y)),
@@ -124,13 +128,12 @@ class LogScanner:
                 (self.draft_set != previous_draft_set)):
                 self.pick_offset = self.search_offset 
                 self.pack_offset = self.search_offset
-                self.RetrieveSet()
-                self.RetrieveTier()
+                update = True
 
         except Exception as error:
             print("DraftStartSearch Error: %s" % error)
             
-    
+        return update
     def DraftStartSearchV1(self, event_data, offset):
         try:
             request_data = json.loads(event_data["request"])
@@ -185,10 +188,10 @@ class LogScanner:
             print("DraftStartSearchV2 Error: %s" % error)
             
     #Wrapper function for performing a search based on the draft type
-    def DraftSearch(self):
+    def DraftDataSearch(self):
         #if self.draft_set == None:
         #    self.ClearDraft(False)
-        self.DraftStartSearch()
+        #self.DraftStartSearch()
         
         if self.draft_type == LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
@@ -252,7 +255,7 @@ class LogScanner:
                                 if card_string in self.set_data["card_ratings"].keys():
                                     if len(self.set_data["card_ratings"][card_string]):
                                         parsed_cards.append(self.set_data["card_ratings"][card_string]["name"])
-                                        pack_cards.append(self.set_data["card_ratings"][card_string])
+                                        pack_cards.append(card_string)
                             
                             pack = card_data["PackNumber"]
                             pick = card_data["PickNumber"]
@@ -328,7 +331,7 @@ class LogScanner:
                                 self.picked_cards = [[] for i in range(8)]
                             
                             self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
-                            self.taken_cards.append(self.set_data["card_ratings"][card])
+                            self.taken_cards.append(card)
                             
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
@@ -382,7 +385,7 @@ class LogScanner:
                                 if card in self.set_data["card_ratings"].keys():
                                     if len(self.set_data["card_ratings"][card]):
                                         parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                        pack_cards.append(self.set_data["card_ratings"][card])
+                                        pack_cards.append(card)
                                         
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
@@ -450,7 +453,7 @@ class LogScanner:
                                 if card in self.set_data["card_ratings"].keys():
                                     if len(self.set_data["card_ratings"][card]):
                                         parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                        pack_cards.append(self.set_data["card_ratings"][card])
+                                        pack_cards.append(card)
                                         
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
@@ -523,7 +526,7 @@ class LogScanner:
                                 self.picked_cards = [[] for i in range(8)]
                                  
                             self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
-                            self.taken_cards.append(self.set_data["card_ratings"][card])
+                            self.taken_cards.append(card)
                             
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
@@ -583,7 +586,7 @@ class LogScanner:
                                     if card in self.set_data["card_ratings"].keys():
                                         if len(self.set_data["card_ratings"][card]):
                                             parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                            pack_cards.append(self.set_data["card_ratings"][card])
+                                            pack_cards.append(card)
                                             
                                 pack = payload_data["PackNumber"] + 1
                                 pick = payload_data["PickNumber"] + 1  
@@ -662,7 +665,7 @@ class LogScanner:
                             self.current_picked_pick = pick
                             
                             self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
-                            self.taken_cards.append(self.set_data["card_ratings"][card])
+                            self.taken_cards.append(card)
     
                             print("Picked - Pack: %u, Pick: %u, Cards: %s, offset: %u" % (pack, pick, self.picked_cards[pack_index], self.pack_offset))
                             
@@ -720,7 +723,7 @@ class LogScanner:
                                 if card_string in self.set_data["card_ratings"].keys():
                                     if len(self.set_data["card_ratings"][card_string]):
                                         parsed_cards.append(self.set_data["card_ratings"][card_string]["name"])
-                                        pack_cards.append(self.set_data["card_ratings"][card_string])
+                                        pack_cards.append(card_string)
                             
                             pack = card_data["PackNumber"]
                             pick = card_data["PickNumber"]
@@ -797,7 +800,7 @@ class LogScanner:
                                 self.picked_cards = [[] for i in range(8)]
                             
                             self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
-                            self.taken_cards.append(self.set_data["card_ratings"][card])
+                            self.taken_cards.append(card)
                             
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
@@ -851,7 +854,7 @@ class LogScanner:
                                 if card in self.set_data["card_ratings"].keys():
                                     if len(self.set_data["card_ratings"][card]):
                                         parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                        pack_cards.append(self.set_data["card_ratings"][card])
+                                        pack_cards.append(card)
                                         
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
@@ -918,8 +921,7 @@ class LogScanner:
                                     card_list_data = change["GrantedCards"]
                                     for card_data in card_list_data:
                                         card = str(card_data["GrpId"])
-                                        self.taken_cards.append(self.set_data["card_ratings"][card])
-                            #self.initial_pack = [[]] * 8
+                                        self.taken_cards.append(card)
                                                    
                         except Exception as error:
                             error_string = "SealedPackSearch Sub Error: %s" % error
@@ -931,60 +933,166 @@ class LogScanner:
             print(error_string)
             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         return pack_cards
-            
-    def RetrieveSet(self):
-        ratings_location = ''
-        draft_list = [x for x in limited_types_dict.keys() if limited_types_dict[x] == self.draft_type]
-        if self.draft_type == LIMITED_TYPE_SEALED or self.draft_type == LIMITED_TYPE_SEALED_TRADITIONAL:
-            draft_list.extend(["Sealed", "TradSealed"])
-        draft_list.extend(list(limited_types_dict.keys()))
-        self.set_data = None
-        self.data_source = "None"
-        data_source = "None"
-        result = FE.Result.ERROR_MISSING_FILE
-        json_data = {}
+        
+    def RetrieveDataSources(self):
+        data_sources = OrderedDict()
+        
         try:
-            #Retrieve card ratings
-            for type in draft_list:
-                root = os.getcwd()
-                for files in os.listdir(root):
-                    set_case = [self.draft_set.upper(), self.draft_set.lower()]
-                    for case in set_case:
-                        filename = case + "_" + type + "_Data.json"
-                        if filename == files:
-                            ratings_location = os.path.join(root, filename)
-                            data_source = type
-                            result, json_data = FE.FileIntegrityCheck(ratings_location)
-                            if result == FE.Result.VALID:
-                                print("File Found: %s" % ratings_location)
-                                break                           
-                if result == FE.Result.VALID:
-                    break
-                    
-            if result == FE.Result.VALID:
-                self.data_source = data_source
-                self.set_data = json_data
-                try:
-                    #Identify the upper and lower limits of the gihwr for each set color combination
-                    for color in self.deck_colors.keys():
-                        upper_limit, lower_limit = CL.DeckColorLimits(self.set_data["card_ratings"], color)
-                        self.deck_limits[color] = {"upper" : upper_limit, "lower" : lower_limit}
-                    #Identify the win percentages for the deck colors
-                    for deck_color in self.deck_colors.keys():
-                        self.deck_colors[deck_color] = deck_color
-                    for colors in self.set_data["color_ratings"].keys():
-                        for deck_color in self.deck_colors.keys():
-                            if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
-                                ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
-                                self.deck_colors[deck_color] = ratings_string
-                except Exception as error:
-                    print("RetrieveSet Sub Error: %s" % error)
-                    for deck_color in self.deck_colors.keys():
-                        self.deck_colors[deck_color] = deck_color
-
+            if self.draft_type != LIMITED_TYPE_UNKNOWN:
+                draft_list = list(limited_types_dict.keys())
+                draft_type = [x for x in draft_list if limited_types_dict[x] == self.draft_type][0]
+                draft_list.insert(0, draft_list.pop(draft_list.index(draft_type)))
+                
+                #Search for the set files
+                for type in draft_list:
+                    file_name = "_".join((self.draft_set.upper(),type,SET_FILE_SUFFIX))
+                    file = FE.SearchLocalFiles([os.getcwd()], [file_name])
+                    if len(file):
+                        result, json_data = FE.FileIntegrityCheck(file[0])
+                        
+                        if result == FE.Result.VALID:
+                            data_sources[type] = file[0]
+        
         except Exception as error:
-            print("RetrieveSet Error: %s" % error)   
-        return
+            print("RetrieveDataSources Error: %s" % error)
+    
+        if len(data_sources) == 0:
+            data_sources = DATA_SOURCES_NONE
+
+        return data_sources
+        
+    def RetrieveSetData(self, file):
+        result = FE.Result.ERROR_MISSING_FILE
+        self.set_data = None
+        
+        try:
+            result, json_data = FE.FileIntegrityCheck(file)
+            
+            if result == FE.Result.VALID:
+                self.set_data = json_data
+        
+        except Exception as error:
+            print("RetrieveSetData Error: %s" % error)
+            
+        return result
+        
+    def RetrieveColorLimits(self, bayesian_disabled):
+        deck_limits = {}
+        
+        try:
+            for color in DECK_FILTERS:
+                upper_limit, lower_limit = CL.DeckColorLimits(self.set_data["card_ratings"], color, bayesian_disabled)
+                deck_limits[color] = {"upper" : upper_limit, "lower" : lower_limit}
+        except Exception as error:
+            print("RetrieveColorLimits Error: %s" % error)
+        return deck_limits
+        
+    def RetrieveColorWinRate(self):
+        deck_colors = OrderedDict()
+        for colors in DECK_FILTERS:
+            deck_colors[colors] = colors
+        
+        try:
+            if self.set_data:
+                for colors in self.set_data["color_ratings"].keys():
+                    for deck_color in deck_colors.keys():
+                        if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
+                            ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
+                            deck_colors[deck_color] = ratings_string
+        except Exception as error:
+            print("RetrieveColorWinRate Error: %s" % error)
+        return deck_colors
+       
+    def PickedCards(self, pack_index):
+        
+        return self.picked_cards[pack_index]
+
+    def InitialPackCards(self, pack_index):
+        pack_cards = []
+        
+        if pack_index < len(self.initial_pack):
+            for card in self.initial_pack[pack_index]:
+                try:
+                    pack_cards.append(self.set_data["card_ratings"][card])
+                except Exception as error:
+                    print("PackCards Error: %s" % error)
+        
+        return pack_cards        
+        
+    def PackCards(self, pack_index):
+        pack_cards = []
+        
+        if pack_index < len(self.pack_cards):
+            for card in self.pack_cards[pack_index]:
+                try:
+                    pack_cards.append(self.set_data["card_ratings"][card])
+                except Exception as error:
+                    print("PackCards Error: %s" % error)
+        
+        return pack_cards
+        
+    def TakenCards(self):
+        taken_cards = []
+        
+        for card in self.taken_cards:
+            try:
+                taken_cards.append(self.set_data["card_ratings"][card])
+            except Exception as error:
+                print("TakenCards Error: %s" % error)
+        
+        return taken_cards
+        
+    #def RetrieveSet(self):
+    #    ratings_location = ''
+    #    draft_list = [x for x in limited_types_dict.keys() if limited_types_dict[x] == self.draft_type]
+    #    if self.draft_type == LIMITED_TYPE_SEALED or self.draft_type == LIMITED_TYPE_SEALED_TRADITIONAL:
+    #        draft_list.extend(["Sealed", "TradSealed"])
+    #    draft_list.extend(list(limited_types_dict.keys()))
+    #    self.set_data = None
+    #    self.data_source = "None"
+    #    data_source = "None"
+    #    result = FE.Result.ERROR_MISSING_FILE
+    #    json_data = {}
+    #    for deck_color in self.deck_colors.keys():
+    #        self.deck_colors[deck_color] = deck_color
+    #    try:
+    #        #Retrieve card ratings
+    #        for type in draft_list:
+    #            root = os.getcwd()
+    #            for files in os.listdir(root):
+    #                set_case = [self.draft_set.upper(), self.draft_set.lower()]
+    #                for case in set_case:
+    #                    filename = case + "_" + type + "_Data.json"
+    #                    if filename == files:
+    #                        ratings_location = os.path.join(root, filename)
+    #                        data_source = type
+    #                        result, json_data = FE.FileIntegrityCheck(ratings_location)
+    #                        if result == FE.Result.VALID:
+    #                            print("File Found: %s" % ratings_location)
+    #                            break                           
+    #            if result == FE.Result.VALID:
+    #                break
+    #                
+    #        if result == FE.Result.VALID:
+    #            self.data_source = data_source
+    #            self.set_data = json_data
+    #            try:
+    #                #Identify the upper and lower limits of the gihwr for each set color combination
+    #                for color in self.deck_colors.keys():
+    #                    upper_limit, lower_limit = CL.DeckColorLimits(self.set_data["card_ratings"], color)
+    #                    self.deck_limits[color] = {"upper" : upper_limit, "lower" : lower_limit}
+    #                #Identify the win percentages for the deck colors
+    #                for colors in self.set_data["color_ratings"].keys():
+    #                    for deck_color in self.deck_colors.keys():
+    #                        if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
+    #                            ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
+    #                            self.deck_colors[deck_color] = ratings_string
+    #            except Exception as error:
+    #                print("RetrieveSet Sub Error: %s" % error)
+    #
+    #    except Exception as error:
+    #        print("RetrieveSet Error: %s" % error)   
+    #    return
         
     def RetrieveTier(self):
         tier_location = ''

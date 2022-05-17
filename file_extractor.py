@@ -35,7 +35,6 @@ platform_log_dict = {
     PLATFORM_ID_OSX     : LOG_LOCATION_OSX,
     PLATFORM_ID_WINDOWS : LOG_LOCATION_WINDOWS,
 }
-LOCAL_DATA_FOLDER_PATH_WINDOWS
 
 class Result(Enum):
     VALID = 0
@@ -65,47 +64,49 @@ def RetrieveLocalArenaData(card_data, card_set):
     result = False
     
     while(1):
-        try:       
-            arena_cards_location = LocalFileLocation(LOCAL_DATA_FILE_PREFIX_CARDS)
-            arena_text_location = LocalFileLocation(LOCAL_DATA_FILE_PREFIX_TEXT)
+        try:
+            if sys.platform == PLATFORM_ID_OSX:
+                paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
+            else:
+                path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
+                paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
+        
+            arena_cards_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_CARDS])
+            arena_text_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_TEXT])
 
-            if (len(arena_cards_location) == 0) or (len(arena_text_location) == 0):
+            if (len(arena_cards_locations) == 0) or (len(arena_text_locations) == 0):
                 break
                 
             #Retrieve the arena IDs without card names
-            result, arena_data = RetrieveLocalArenaId(arena_cards_location, card_set)
+            result, arena_data = RetrieveLocalArenaId(arena_cards_locations[0], card_set)
             
             if result == False:
                 break
                 
             #Retrieve the card names for each arena ID
-            result = RetrieveLocalCardName(arena_text_location, arena_data, card_data)
+            result = RetrieveLocalCardName(arena_text_locations[0], arena_data, card_data)
             
         except Exception as error:
             print("RetrieveLocalArenaData Error: %s" % error)
         break
     return result, result_string
  
-def LocalFileLocation(file_prefix):
-    file_location = ""
-    try:
-        if sys.platform == PLATFORM_ID_OSX:
-            paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
-        else:
-            path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
-            paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
-            
+def SearchLocalFiles(paths, file_prefixes):
+    file_locations = []
+    try:           
         for file_path in paths:
             if os.path.exists(file_path):
-                file = [filename for filename in os.listdir(file_path) if filename.startswith(file_prefix)][0]
-                
-                file_location = os.path.join(file_path, file)
-                return file_location
+                for prefix in file_prefixes:
+                    files = [filename for filename in os.listdir(file_path) if filename.startswith(prefix)]
+                    
+                    for file in files:
+                        file_location = os.path.join(file_path, file)
+                        file_locations.append(file_location)
     
     except Exception as error:
         print(error)
                     
-    return file_location
+    return file_locations
     
 def RetrieveLocalArenaId(file_location, card_set):
     arena_data = {}
