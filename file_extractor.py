@@ -369,7 +369,7 @@ class DataPlatform:
                     time.sleep(5)
         return result, result_string
 
-    def InitializeCardRatings(self):
+    def Initialize17LandsData(self):
         self.card_ratings = {}
 
         for card in self.card_list:
@@ -385,10 +385,10 @@ class DataPlatform:
             for color in self.deck_colors:
                 self.card_ratings[land].append({color : {"gihwr" : 0.0, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}})
         
-    def SessionCardRating(self, root, progress, initial_progress):
+    def Session17Lands(self, root, progress, initial_progress):
         current_progress = 0
         result = False
-        self.InitializeCardRatings()
+        self.Initialize17LandsData()
         for set in self.sets:
             if set == "dbl":
                 continue
@@ -406,11 +406,11 @@ class DataPlatform:
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         
                         set_json_data = json.loads(url_data)
-                        self.RetrieveCardRatingsUrl(color, set_json_data)
+                        self.Retrieve17Lands(color, set_json_data)
                         result = True
                         break
                     except Exception as error:
-                        error_string = "SessionCardRating Error: %s" % error
+                        error_string = "Session17Lands Error: %s" % error
                         print(error_string)     
                         LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
                         time.sleep(15)
@@ -469,7 +469,7 @@ class DataPlatform:
             error_string = "SessionColorRatings Error: %s" % error
             print(error_string)     
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
-    def RetrieveCardRatingsUrl(self, colors, cards):  
+    def Retrieve17Lands(self, colors, cards):  
         result = True
 
         for card in cards:
@@ -502,7 +502,7 @@ class DataPlatform:
                     self.card_ratings[card_name].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa, "gih" : gih}}) 
                 self.card_ratings[card_name]
             except Exception as error:
-                print("RetrieveCardRatingsUrl Error: %s" % error)
+                print("Retrieve17Lands Error: %s" % error)
                 result = False
                 
         return result  

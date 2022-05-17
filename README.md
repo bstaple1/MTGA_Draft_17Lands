@@ -30,25 +30,17 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 4: Install the python package installer Pip by opening the Mac terminal and entering "python3.10 -m ensurepip --upgrade".
 
-- Step 5: Install the python image library Pillow by opening the Mac terminal and entering "python3.10 -m pip install --upgrade Pillow".
+- Step 5: Open the Mac terminal and enter "pip install -r requirements.txt"
 
-- Step 6: Install the python input monitoring library Pynput by opening the Mac terminal and entering "python3.10 -m pip install --upgrade pynput".
+- Step 6: Install web certificates by going to "/Applications/Python 3.10/" and double-clicking the file "Install Certificates.command".
 
-- Step 7: Install web certificates by going to "/Applications/Python 3.10/" and double-clicking the file "Install Certificates.command".
+- Step 7: Start the application by opening the Mac terminal and entering "python3.10 main.py".
 
-- Step 8: Open the config.json file in a text editor and change the "hotkey_enabled" field from "true" to "false".
+- Step 8: Set Arena to window mode.
 
-- Step 9: Decrease the table width by setting the "table_width" field to 220 in the config.json file.
+- Step 9: Download the sets that you plan on using (Data->View Sets).
 
-- Step 10: Install the python widget library by opening the Mac terminal and entering "python3.10 -m pip install --upgrade ttkwidgets".
-
-- Step 11: Start the application by opening the Mac terminal and entering "python3.10 main.py --os=MAC".
-
-- Step 12: Set Arena to window mode.
-
-- Step 13: Download the sets that you plan on using (Data->View Sets).
-
-- Step 14: Start the draft in Arena.
+- Step 10: Start the draft in Arena.
 
 ## UI Features
 

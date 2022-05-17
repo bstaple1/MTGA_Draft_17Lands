@@ -165,14 +165,13 @@ def CopyClipboard(copy):
 class WindowUI:
     def __init__(self, root, filename, step_through, diag_log_enabled, configuration):
         self.root = root
-        self.images_enabled = configuration.images_enabled
+        self.configuration = configuration
         self.filename = filename
         self.step_through = step_through
         self.diag_log_enabled = diag_log_enabled
         self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled)
         self.diag_log_file = self.draft.diag_log_file
         self.diag_log_enabled = self.draft.diag_log_enabled
-        self.table_width = configuration.table_width
         self.trace_ids = []
         
         Grid.rowconfigure(self.root, 8, weight = 1)
@@ -232,15 +231,15 @@ class WindowUI:
         self.column_4_selection = StringVar(self.root)
         self.column_4_list = self.draft.deck_colors
         try:
-           self.column_2_selection.set(configuration.column_2) 
-           self.column_3_selection.set(configuration.column_3)
-           self.column_4_selection.set(configuration.column_4)
-           self.deck_stats_checkbox_value.set(configuration.hide_stats)
-           self.missing_cards_checkbox_value.set(configuration.hide_missing)
-           self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
-           self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
-           self.color_bonus_checkbox_value.set(configuration.color_bonus_disabled)
-           self.bayesian_average_checkbox_value.set(configuration.bayesian_average_disabled)
+           self.column_2_selection.set(self.configuration.column_2) 
+           self.column_3_selection.set(self.configuration.column_3)
+           self.column_4_selection.set(self.configuration.column_4)
+           self.deck_stats_checkbox_value.set(self.configuration.hide_stats)
+           self.missing_cards_checkbox_value.set(self.configuration.hide_missing)
+           self.auto_average_checkbox_value.set(self.configuration.auto_average_disabled)
+           self.curve_bonus_checkbox_value.set(self.configuration.curve_bonus_disabled)
+           self.color_bonus_checkbox_value.set(self.configuration.color_bonus_disabled)
+           self.bayesian_average_checkbox_value.set(self.configuration.bayesian_average_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -270,14 +269,14 @@ class WindowUI:
                   "FilterA"  : {"width" : .18, "anchor" : CENTER},
                   "FilterB"  : {"width" : .18, "anchor" : CENTER},
                   "FilterC"  : {"width" : .18, "anchor" : CENTER}}
-        self.pack_table = self.CreateHeader(self.pack_table_frame, 0, headers, self.table_width)
+        self.pack_table = self.CreateHeader(self.pack_table_frame, 0, headers, self.configuration.table_width)
         
         self.missing_frame = Frame(self.root)
         self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font='Helvetica 9 bold')
        
         self.missing_table_frame = Frame(self.root, width=10)
 
-        self.missing_table = self.CreateHeader(self.missing_table_frame, 0, headers, self.table_width)
+        self.missing_table = self.CreateHeader(self.missing_table_frame, 0, headers, self.configuration.table_width)
         
         self.stat_frame = Frame(self.root)
         stat_header = {"Colors"   : {"width" : .19, "anchor" : W},
@@ -288,7 +287,7 @@ class WindowUI:
                        "5"        : {"width" : .11, "anchor" : CENTER},
                        "6+"       : {"width" : .11, "anchor" : CENTER},
                        "Total"    : {"width" : .15, "anchor" : CENTER}}
-        self.stat_table = self.CreateHeader(self.root, 0, stat_header, self.table_width)
+        self.stat_table = self.CreateHeader(self.root, 0, stat_header, self.configuration.table_width)
         self.stat_label = Label(self.stat_frame, text = "Deck Stats:", font='Helvetica 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
@@ -375,6 +374,7 @@ class WindowUI:
                                           color_options,
                                           limits,
                                           self.draft.tier_data,
+                                          self.configuration,
                                           True,
                                           True)
                                           
@@ -433,6 +433,7 @@ class WindowUI:
                                                   color_options,
                                                   limits,
                                                   self.draft.tier_data,
+                                                  self.configuration,
                                                   False,
                                                   False)
                     
@@ -452,7 +453,7 @@ class WindowUI:
         matching_cards.clear()
         compare_table.delete(*compare_table.get_children())
 
-    def UpdateCompareTable(self, compare_table, matching_cards, entry_box, card_list, filtered_a, filtered_b, filtered_c, color_options,limits):
+    def UpdateCompareTable(self, compare_table, matching_cards, entry_box, card_list, filtered_a, filtered_b, filtered_c, color_options, limits):
         try:
             added_card = entry_box.get()
             if len(added_card):
@@ -468,6 +469,7 @@ class WindowUI:
                                           color_options,
                                           limits,
                                           self.draft.tier_data,
+                                          self.configuration,
                                           True,
                                           True)
                     
@@ -497,6 +499,7 @@ class WindowUI:
                                           color_options,
                                           limits,
                                           self.draft.tier_data,
+                                          self.configuration,
                                           False,
                                           False)
                     
@@ -648,18 +651,18 @@ class WindowUI:
     def DefaultSettingsCallback(self, *args):
         CL.ResetConfig()
         
-        configuration = CL.ReadConfig()
+        self.configuration = CL.ReadConfig()
         
         try:
-           self.column_2_selection.set(configuration.column_2) 
-           self.column_3_selection.set(configuration.column_3)
-           self.column_4_selection.set(configuration.column_4)
-           self.deck_stats_checkbox_value.set(configuration.hide_stats)
-           self.missing_cards_checkbox_value.set(configuration.hide_missing)
-           self.auto_average_checkbox_value.set(configuration.auto_average_disabled)
-           self.curve_bonus_checkbox_value.set(configuration.curve_bonus_disabled)
-           self.color_bonus_checkbox_value.set(configuration.color_bonus_disabled)
-           self.bayesian_average_checkbox_value.set(configuration.bayesian_average_disabled)
+           self.column_2_selection.set(self.configuration.column_2) 
+           self.column_3_selection.set(self.configuration.column_3)
+           self.column_4_selection.set(self.configuration.column_4)
+           self.deck_stats_checkbox_value.set(self.configuration.hide_stats)
+           self.missing_cards_checkbox_value.set(self.configuration.hide_missing)
+           self.auto_average_checkbox_value.set(self.configuration.auto_average_disabled)
+           self.curve_bonus_checkbox_value.set(self.configuration.curve_bonus_disabled)
+           self.color_bonus_checkbox_value.set(self.configuration.color_bonus_disabled)
+           self.bayesian_average_checkbox_value.set(self.configuration.bayesian_average_disabled)
         except Exception as error:
            self.column_2_selection.set("All ALSA") 
            self.column_3_selection.set("All Decks")
@@ -671,19 +674,17 @@ class WindowUI:
            self.color_bonus_checkbox_value.set(False)
            self.bayesian_average_checkbox_value.set(False)
     def UpdateSettingsCallback(self, *args):
-        configuration = CL.Config()
+        self.configuration.column_2 = self.column_2_selection.get()
+        self.configuration.column_3 = self.column_3_selection.get()
+        self.configuration.column_4 = self.column_4_selection.get()
         
-        configuration.column_2 = self.column_2_selection.get()
-        configuration.column_3 = self.column_3_selection.get()
-        configuration.column_4 = self.column_4_selection.get()
-        
-        configuration.hide_missing = True if self.missing_cards_checkbox_value.get() else False
-        configuration.hide_stats = True if self.deck_stats_checkbox_value.get() else False
-        configuration.auto_average_disabled = True if self.auto_average_checkbox_value.get() else False
-        configuration.curve_bonus_disabled = True if self.curve_bonus_checkbox_value.get() else False
-        configuration.color_bonus_disabled = True if self.color_bonus_checkbox_value.get() else False
-        configuration.bayesian_average_disabled = True if self.bayesian_average_checkbox_value.get() else False
-        CL.WriteConfig(configuration)
+        self.configuration.hide_missing = True if self.missing_cards_checkbox_value.get() else False
+        self.configuration.hide_stats = True if self.deck_stats_checkbox_value.get() else False
+        self.configuration.auto_average_disabled = True if self.auto_average_checkbox_value.get() else False
+        self.configuration.curve_bonus_disabled = True if self.curve_bonus_checkbox_value.get() else False
+        self.configuration.color_bonus_disabled = True if self.color_bonus_checkbox_value.get() else False
+        self.configuration.bayesian_average_disabled = True if self.bayesian_average_checkbox_value.get() else False
+        CL.WriteConfig(self.configuration)
         self.UpdateCallback(False)
         
     def UpdateCallback(self, enable_draft_search):
@@ -695,9 +696,9 @@ class WindowUI:
         self.HideDeckStates(self.deck_stats_checkbox_value.get())
         self.HideMissingCards(self.missing_cards_checkbox_value.get())
                 
-        filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
-        filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
-        filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+        filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.configuration)
+        filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.configuration)
+        filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.configuration)
 
         self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type, self.draft.data_source)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
@@ -838,33 +839,35 @@ class WindowUI:
             for count, column in enumerate(column_headers):
                 list_box.column(column, anchor = CENTER, stretch = YES, width = 100)
                 list_box.heading(column, text = column, anchor = CENTER)
+                
+            notice_label.grid(row=0, column=0, columnspan=8, sticky = 'nsew')
+            list_box_frame.grid(row=1, column=0, columnspan=8, sticky = 'nsew')
+            set_label.grid(row=2, column=0, sticky = 'nsew')
+            set_entry.grid(row=2, column=1, sticky = 'nsew')
+            start_label.grid(row=2, column=2, sticky = 'nsew')
+            start_entry.grid(row=2, column=3, sticky = 'nsew')
+            end_label.grid(row=2, column=4, sticky = 'nsew')
+            end_entry.grid(row=2, column=5, sticky = 'nsew')
+            draft_label.grid(row=2, column=6, sticky = 'nsew')
+            draft_entry.grid(row=2, column=7, sticky = 'nsew')
+            id_label.grid(row=3, column=0, sticky = 'nsew')
+            id_entry.grid(row=3, column=1, sticky = 'nsew')
+            color_label.grid(row=3, column=2, sticky = 'nsew')
+            color_checkbox.grid(row=3, column=3, sticky = 'nsew')
+            add_button.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
+            progress.grid(row=5, column=0, columnspan=8, sticky = 'nsew')
+            
+            list_box.pack(expand = True, fill = "both")
+    
+            self.DataViewUpdate(list_box, sets)
+            
+            popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "SetViewPopup Error: %s" % error
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
         
-        notice_label.grid(row=0, column=0, columnspan=8, sticky = 'nsew')
-        list_box_frame.grid(row=1, column=0, columnspan=8, sticky = 'nsew')
-        set_label.grid(row=2, column=0, sticky = 'nsew')
-        set_entry.grid(row=2, column=1, sticky = 'nsew')
-        start_label.grid(row=2, column=2, sticky = 'nsew')
-        start_entry.grid(row=2, column=3, sticky = 'nsew')
-        end_label.grid(row=2, column=4, sticky = 'nsew')
-        end_entry.grid(row=2, column=5, sticky = 'nsew')
-        draft_label.grid(row=2, column=6, sticky = 'nsew')
-        draft_entry.grid(row=2, column=7, sticky = 'nsew')
-        id_label.grid(row=3, column=0, sticky = 'nsew')
-        id_entry.grid(row=3, column=1, sticky = 'nsew')
-        color_label.grid(row=3, column=2, sticky = 'nsew')
-        color_checkbox.grid(row=3, column=3, sticky = 'nsew')
-        add_button.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
-        progress.grid(row=5, column=0, columnspan=8, sticky = 'nsew')
-        
-        list_box.pack(expand = True, fill = "both")
 
-        self.DataViewUpdate(list_box, sets)
-        
-        popup.attributes("-topmost", True)
         
     def CardComparePopup(self):
         popup = Toplevel()
@@ -874,9 +877,9 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
-            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
-            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
-            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.configuration)
+            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.configuration)
+            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.configuration)
             
             matching_cards = []
             
@@ -895,7 +898,7 @@ class WindowUI:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = self.CreateHeader(compare_table_frame, 20, headers, self.table_width)
+            compare_table = self.CreateHeader(compare_table_frame, 20, headers, self.configuration.table_width)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -932,9 +935,9 @@ class WindowUI:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
-            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
-            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
-            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.auto_average_checkbox_value.get())
+            filtered_a = CL.ColorFilter(self.draft.taken_cards, self.column_2_selection.get(), self.draft.deck_colors, self.configuration)
+            filtered_b = CL.ColorFilter(self.draft.taken_cards, self.column_3_selection.get(), self.draft.deck_colors, self.configuration)
+            filtered_c = CL.ColorFilter(self.draft.taken_cards, self.column_4_selection.get(), self.draft.deck_colors, self.configuration)
             
             copy_button = Button(popup, command=lambda:CopyTaken(self.draft.taken_cards,
                                                                  self.draft.set_data,
@@ -949,7 +952,7 @@ class WindowUI:
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            taken_table = self.CreateHeader(taken_table_frame, 20, headers, self.table_width)
+            taken_table = self.CreateHeader(taken_table_frame, 20, headers, self.configuration.table_width)
             taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=taken_table.yview)
             
@@ -978,7 +981,7 @@ class WindowUI:
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             
-            suggested_decks = CL.SuggestDeck(self.draft.taken_cards, self.draft.deck_colors, self.draft.deck_limits)
+            suggested_decks = CL.SuggestDeck(self.draft.taken_cards, self.draft.deck_colors, self.draft.deck_limits, self.configuration)
             
             choices = ["None"]
             deck_color_options = {}
@@ -1152,7 +1155,7 @@ class WindowUI:
                     break
                 progress['value']=10
                 self.root.update()
-                if platform.SessionCardRating(self.root, progress, progress['value']) == False:
+                if platform.Session17Lands(self.root, progress, progress['value']) == False:
                     result = False
                     result_string = "Couldn't Collect Ratings Data"
                     break
@@ -1232,7 +1235,7 @@ class WindowUI:
                                 
                                 if "gih" in card["deck_colors"][color]:
                                     gih = card["deck_colors"][color]["gih"]
-                                    gihwr = CL.CalculateWinRate(gihwr, gih, self.bayesian_average_checkbox_value.get())
+                                    gihwr = CL.CalculateWinRate(card["deck_colors"][color], self.configuration.bayesian_average_disabled)
                                     color_dict[color]["gih"] = gih
                                 
                                 color_dict[color]["alsa"] = card["deck_colors"][color]["alsa"]
@@ -1254,13 +1257,13 @@ class WindowUI:
                                                            card["name"],
                                                            color_dict,
                                                            card["image"],
-                                                           self.images_enabled)
+                                                           self.configuration.images_enabled)
                     except Exception as error:
                         tooltip = CreateCardToolTip(table, event,
                                                            card["name"],
                                                            color_dict,
                                                            card["image"],
-                                                           self.images_enabled)
+                                                           self.configuration.images_enabled)
                     break
     def FileOpen(self):
         filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),

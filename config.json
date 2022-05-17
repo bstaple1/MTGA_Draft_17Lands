@@ -13,7 +13,7 @@
         "auto_average_disabled": false,
         "curve_bonus_disabled": true,
         "color_bonus_disabled": true,
-        "bayesian_average_disabled": true
+        "bayesian_average_disabled": false
     },
     "card_logic": {
         "alsa_weight": 0.25,
