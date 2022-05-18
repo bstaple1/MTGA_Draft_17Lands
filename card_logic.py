@@ -1,4 +1,5 @@
 import json
+import log_scanner as LS
 from itertools import combinations
 from dataclasses import dataclass, asdict
 
@@ -201,11 +202,10 @@ def ColorCmc(deck):
 def ColorFilter(deck, color_selection, color_list, configuration):
     color_data = color_selection
     filtered_color_list = [color_data]
-    non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     try:
         if color_data == "Auto":
             filtered_color_list = AutoColors(deck, color_list, 2, configuration)
-        elif color_data in non_color_options:
+        elif color_data in LS.NON_COLORS_OPTIONS:
             filtered_color_list = [color_data]
         else:
             filtered_color_list = [[key for key, value in color_list.items() if value == color_data][0]]
@@ -388,18 +388,22 @@ def RowColorTag(colors):
         row_tag = "greencard"
     return row_tag
     
-def DeckColorLimits(cards, color, bayesian_disabled):
+def RatingsLimits(cards, bayesian_disabled):
     upper_limit = 0
     lower_limit = 100
+    
     for card in cards:
-        try:
-            gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_disabled)
-            if gihwr > upper_limit:
-                upper_limit = gihwr
-            if gihwr < lower_limit and gihwr != 0:
-                lower_limit = gihwr
-        except Exception as error:
-            error_string = "DeckColorLimits Error: %s" % error
+        for color in LS.DECK_COLORS:
+            try:
+                if color in cards[card]["deck_colors"]:
+                    gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_disabled)
+                    if gihwr > upper_limit:
+                        upper_limit = gihwr
+                    if gihwr < lower_limit and gihwr != 0:
+                        lower_limit = gihwr
+            except Exception as error:
+                error_string = "DeckRatingLimits Error: %s" % error
+    
     return upper_limit, lower_limit
     
 def CalculateWinRate(card_data, bayesian_disabled):
@@ -424,8 +428,13 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors, disa
     rating_data = {"rating" : 0}
     try:
         gihwr = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_disabled)
-        upper_limit = limits[filter]["upper"]
-        lower_limit = limits[filter]["lower"]
+        upper_limit = 0
+        lower_limit = 0
+        if "upper" in limits:
+            upper_limit = limits["upper"]
+            
+        if "lower" in limits:
+            lower_limit = limits["lower"]
         
         if (gihwr != 0) and (upper_limit != lower_limit):
             #Curve bonus

@@ -266,10 +266,8 @@ class DataPlatform:
         self.card_ratings = {}
         self.combined_data = {}
         self.card_list = []
-        #self.driver_path = os.getcwd() + '\geckodriver.exe'
-        #self.driver = webdriver.Firefox(executable_path = self.driver_path)
         self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
-        self.deck_colors = ["All Decks", "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
+        self.deck_colors = LS.DECK_COLORS
 
     def Sets(self, sets):
         self.sets = sets

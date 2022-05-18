@@ -15,7 +15,9 @@ LIMITED_TYPE_DRAFT_TRADITIONAL  = 4
 LIMITED_TYPE_SEALED             = 5
 LIMITED_TYPE_SEALED_TRADITIONAL = 6
 
-DECK_FILTERS = ["All Decks","Auto", "All GIHWR", "All IWD", "All ALSA",  "W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
+NON_COLORS_OPTIONS = ["Auto", "All GIHWR", "All IWD", "All ALSA"]
+DECK_COLORS = ["All Decks","W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
+DECK_FILTERS = NON_COLORS_OPTIONS + DECK_COLORS
 
 SET_FILE_SUFFIX = "Data.json"
 TIER_FILE_PREFIX = "Tier_"
@@ -244,18 +246,13 @@ class LogScanner:
                         payload_data = json.loads(request_data)["Payload"]
                         
                         pack_cards = []
-                        parsed_cards = []
                         try:
 
                             card_data = json.loads(payload_data)
                             cards = card_data["CardsInPack"]
 
                             for card in cards:
-                                card_string = str(card)
-                                if card_string in self.set_data["card_ratings"].keys():
-                                    if len(self.set_data["card_ratings"][card_string]):
-                                        parsed_cards.append(self.set_data["card_ratings"][card_string]["name"])
-                                        pack_cards.append(card_string)
+                                pack_cards.append(str(card))
                             
                             pack = card_data["PackNumber"]
                             pick = card_data["PickNumber"]
@@ -281,7 +278,6 @@ class LogScanner:
                             error_string = "DraftPackSearchPremierP1P1 Sub Error: %s" % error
                             print(error_string)
                             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-                        print("Pack: %u, Pick: %u, Cards: %s" % (pack, pick, parsed_cards))
             if log.closed == False:
                 log.close() 
         except Exception as error:
@@ -330,7 +326,7 @@ class LogScanner:
                             if self.previous_picked_pack != pack:
                                 self.picked_cards = [[] for i in range(8)]
                             
-                            self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
+                            self.picked_cards[pack_index].append(card)
                             self.taken_cards.append(card)
                             
                             self.previous_picked_pack = pack
@@ -376,16 +372,12 @@ class LogScanner:
                         pack_cards = []
                         #Identify the pack
                         draft_data = json.loads(line[start_offset:])
-                        parsed_cards = []
                         try:
                                 
                             cards = draft_data["PackCards"].split(',') 
                                 
-                            for count, card in enumerate(cards):
-                                if card in self.set_data["card_ratings"].keys():
-                                    if len(self.set_data["card_ratings"][card]):
-                                        parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                        pack_cards.append(card)
+                            for card in cards:
+                                pack_cards.append(str(card))
                                         
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
@@ -410,7 +402,6 @@ class LogScanner:
                             error_string = "DraftPackSearchPremierV1 Sub Error: %s" % error
                             print(error_string)
                             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-                        print("Pack: %u, Pick: %u, Cards: %s" % (draft_data["SelfPack"], draft_data["SelfPick"], parsed_cards))
              
         except Exception as error:
             error_string = "DraftPackSearchPremierV1 Error: %s" % error
@@ -444,16 +435,12 @@ class LogScanner:
                         pack_cards = []
                         #Identify the pack
                         draft_data = json.loads(line[len(draft_string):])
-                        parsed_cards = []
                         try:
 
                             cards = draft_data["PackCards"].split(',') 
                                 
-                            for count, card in enumerate(cards):
-                                if card in self.set_data["card_ratings"].keys():
-                                    if len(self.set_data["card_ratings"][card]):
-                                        parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                        pack_cards.append(card)
+                            for card in cards:
+                                pack_cards.append(str(card))
                                         
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
@@ -525,7 +512,7 @@ class LogScanner:
                             if self.previous_picked_pack != pack:
                                 self.picked_cards = [[] for i in range(8)]
                                  
-                            self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
+                            self.picked_cards[pack_index].append(card)
                             self.taken_cards.append(card)
                             
                             self.previous_picked_pack = pack
@@ -577,16 +564,12 @@ class LogScanner:
                         
                         if draft_status == "PickNext":
                             pack_cards = []
-                            parsed_cards = []
                             try:
 
                                 cards = pack_data
                                 
-                                for count, card in enumerate(cards):
-                                    if card in self.set_data["card_ratings"].keys():
-                                        if len(self.set_data["card_ratings"][card]):
-                                            parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                            pack_cards.append(card)
+                                for card in cards:
+                                    pack_cards.append(str(card))
                                             
                                 pack = payload_data["PackNumber"] + 1
                                 pick = payload_data["PickNumber"] + 1  
@@ -610,7 +593,6 @@ class LogScanner:
                                 error_string = "DraftPackSearchQuick Sub Error: %s" % error
                                 print(error_string)
                                 LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-                            print("Pack: %u, Pick: %u, Cards: %s" % (pack, pick, parsed_cards))
             if log.closed == False:
                 log.close() 
         except Exception as error:
@@ -664,11 +646,9 @@ class LogScanner:
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
                             
-                            self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
+                            self.picked_cards[pack_index].append(card)
                             self.taken_cards.append(card)
     
-                            print("Picked - Pack: %u, Pick: %u, Cards: %s, offset: %u" % (pack, pick, self.picked_cards[pack_index], self.pack_offset))
-                            
                             if self.step_through:
                                 break
                             
@@ -712,18 +692,13 @@ class LogScanner:
                         payload_data = json.loads(request_data)["Payload"]
                         
                         pack_cards = []
-                        parsed_cards = []
                         try:
 
                             card_data = json.loads(payload_data)
                             cards = card_data["CardsInPack"]
 
                             for card in cards:
-                                card_string = str(card)
-                                if card_string in self.set_data["card_ratings"].keys():
-                                    if len(self.set_data["card_ratings"][card_string]):
-                                        parsed_cards.append(self.set_data["card_ratings"][card_string]["name"])
-                                        pack_cards.append(card_string)
+                                pack_cards.append(str(card))
                             
                             pack = card_data["PackNumber"]
                             pick = card_data["PickNumber"]
@@ -749,7 +724,6 @@ class LogScanner:
                             error_string = "DraftPackSearchTraditionalP1P1 Sub Error: %s" % error
                             print(error_string)
                             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-                        print("Pack: %u, Pick: %u, Cards: %s" % (pack, pick, parsed_cards))
             if log.closed == False:
                 log.close() 
         except Exception as error:
@@ -799,7 +773,7 @@ class LogScanner:
                             if self.previous_picked_pack != pack:
                                 self.picked_cards = [[] for i in range(8)]
                             
-                            self.picked_cards[pack_index].append(self.set_data["card_ratings"][card]["name"])
+                            self.picked_cards[pack_index].append(card)
                             self.taken_cards.append(card)
                             
                             self.previous_picked_pack = pack
@@ -845,16 +819,12 @@ class LogScanner:
                         pack_cards = []
                         #Identify the pack
                         draft_data = json.loads(line[start_offset:])
-                        parsed_cards = []
                         try:
                                 
                             cards = draft_data["PackCards"].split(',') 
                                 
-                            for count, card in enumerate(cards):
-                                if card in self.set_data["card_ratings"].keys():
-                                    if len(self.set_data["card_ratings"][card]):
-                                        parsed_cards.append(self.set_data["card_ratings"][card]["name"])
-                                        pack_cards.append(card)
+                            for card in cards:
+                                pack_cards.append(str(card))
                                         
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
@@ -879,7 +849,6 @@ class LogScanner:
                             error_string = "DraftPackSearchTraditional Sub Error: %s" % error
                             print(error_string)
                             LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-                        print("Pack: %u, Pick: %u, Cards: %s" % (draft_data["SelfPack"], draft_data["SelfPick"], parsed_cards))
              
         except Exception as error:
             error_string = "DraftPackSearchTraditional Error: %s" % error
@@ -961,6 +930,21 @@ class LogScanner:
 
         return data_sources
         
+    def RetrieveTierSource(self):
+        tier_source = ""
+        
+        try:
+            if self.draft_set != None:
+                file = FE.SearchLocalFiles([os.getcwd()], [TIER_FILE_PREFIX])
+                
+                if len(file):
+                    tier_source = file[0]
+        
+        except Exception as error:
+            print("RetrieveTierSource Error: %s" % error)
+
+        return tier_source
+        
     def RetrieveSetData(self, file):
         result = FE.Result.ERROR_MISSING_FILE
         self.set_data = None
@@ -980,9 +964,8 @@ class LogScanner:
         deck_limits = {}
         
         try:
-            for color in DECK_FILTERS:
-                upper_limit, lower_limit = CL.DeckColorLimits(self.set_data["card_ratings"], color, bayesian_disabled)
-                deck_limits[color] = {"upper" : upper_limit, "lower" : lower_limit}
+            upper_limit, lower_limit = CL.RatingsLimits(self.set_data["card_ratings"], bayesian_disabled)
+            deck_limits ={"upper" : upper_limit, "lower" : lower_limit}
         except Exception as error:
             print("RetrieveColorLimits Error: %s" % error)
         return deck_limits
@@ -1004,116 +987,66 @@ class LogScanner:
         return deck_colors
        
     def PickedCards(self, pack_index):
+        picked_cards = []
         
-        return self.picked_cards[pack_index]
+        if self.set_data != None:
+            if pack_index < len(self.picked_cards):
+                for card in self.picked_cards[pack_index]:
+                    try:
+                        picked_cards.append(self.set_data["card_ratings"][card]["name"])
+                    except Exception as error:
+                        print("PickedCards Error: %s" % error)
+            
+        return picked_cards  
 
     def InitialPackCards(self, pack_index):
         pack_cards = []
         
-        if pack_index < len(self.initial_pack):
-            for card in self.initial_pack[pack_index]:
-                try:
-                    pack_cards.append(self.set_data["card_ratings"][card])
-                except Exception as error:
-                    print("PackCards Error: %s" % error)
+        if self.set_data != None:
+            if pack_index < len(self.initial_pack):
+                for card in self.initial_pack[pack_index]:
+                    try:
+                        pack_cards.append(self.set_data["card_ratings"][card])
+                    except Exception as error:
+                        print("InitialPackCards Error: %s" % error)
         
         return pack_cards        
         
     def PackCards(self, pack_index):
         pack_cards = []
         
-        if pack_index < len(self.pack_cards):
-            for card in self.pack_cards[pack_index]:
-                try:
-                    pack_cards.append(self.set_data["card_ratings"][card])
-                except Exception as error:
-                    print("PackCards Error: %s" % error)
+        if self.set_data != None:
+            if pack_index < len(self.pack_cards):
+                for card in self.pack_cards[pack_index]:
+                    try:
+                        pack_cards.append(self.set_data["card_ratings"][card])
+                    except Exception as error:
+                        print("PackCards Error: %s" % error)
         
         return pack_cards
         
     def TakenCards(self):
         taken_cards = []
         
-        for card in self.taken_cards:
-            try:
-                taken_cards.append(self.set_data["card_ratings"][card])
-            except Exception as error:
-                print("TakenCards Error: %s" % error)
+        if self.set_data != None:
+            for card in self.taken_cards:
+                try:
+                    taken_cards.append(self.set_data["card_ratings"][card])
+                except Exception as error:
+                    print("TakenCards Error: %s" % error)
         
         return taken_cards
         
-    #def RetrieveSet(self):
-    #    ratings_location = ''
-    #    draft_list = [x for x in limited_types_dict.keys() if limited_types_dict[x] == self.draft_type]
-    #    if self.draft_type == LIMITED_TYPE_SEALED or self.draft_type == LIMITED_TYPE_SEALED_TRADITIONAL:
-    #        draft_list.extend(["Sealed", "TradSealed"])
-    #    draft_list.extend(list(limited_types_dict.keys()))
-    #    self.set_data = None
-    #    self.data_source = "None"
-    #    data_source = "None"
-    #    result = FE.Result.ERROR_MISSING_FILE
-    #    json_data = {}
-    #    for deck_color in self.deck_colors.keys():
-    #        self.deck_colors[deck_color] = deck_color
-    #    try:
-    #        #Retrieve card ratings
-    #        for type in draft_list:
-    #            root = os.getcwd()
-    #            for files in os.listdir(root):
-    #                set_case = [self.draft_set.upper(), self.draft_set.lower()]
-    #                for case in set_case:
-    #                    filename = case + "_" + type + "_Data.json"
-    #                    if filename == files:
-    #                        ratings_location = os.path.join(root, filename)
-    #                        data_source = type
-    #                        result, json_data = FE.FileIntegrityCheck(ratings_location)
-    #                        if result == FE.Result.VALID:
-    #                            print("File Found: %s" % ratings_location)
-    #                            break                           
-    #            if result == FE.Result.VALID:
-    #                break
-    #                
-    #        if result == FE.Result.VALID:
-    #            self.data_source = data_source
-    #            self.set_data = json_data
-    #            try:
-    #                #Identify the upper and lower limits of the gihwr for each set color combination
-    #                for color in self.deck_colors.keys():
-    #                    upper_limit, lower_limit = CL.DeckColorLimits(self.set_data["card_ratings"], color)
-    #                    self.deck_limits[color] = {"upper" : upper_limit, "lower" : lower_limit}
-    #                #Identify the win percentages for the deck colors
-    #                for colors in self.set_data["color_ratings"].keys():
-    #                    for deck_color in self.deck_colors.keys():
-    #                        if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
-    #                            ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
-    #                            self.deck_colors[deck_color] = ratings_string
-    #            except Exception as error:
-    #                print("RetrieveSet Sub Error: %s" % error)
-    #
-    #    except Exception as error:
-    #        print("RetrieveSet Error: %s" % error)   
-    #    return
-        
-    def RetrieveTier(self):
-        tier_location = ''
-        self.tier_data = None
+    def RetrieveTierData(self, file, deck_colors):
+        tier_data = {}
         try:
-
-            #Retrieve tier list
-            root = os.getcwd()
-            for files in os.listdir(root):
-                filename = "Tier_"
-                if filename in files:
-                    tier_location = os.path.join(root, files)
-                    with open(tier_location, 'r') as json_file:
-                        json_data = json_file.read()
-                    tier_data = json.loads(json_data)
-                    if tier_data["meta"]["set"] == self.draft_set.upper():
-                        self.tier_data = tier_data
-                        self.deck_colors["Tier"] = "Tier (%s)" % tier_data["meta"]["label"]
-                        break
-
+            if os.path.exists(file):
+                with open(file, 'r') as json_file:
+                    data = json.loads(json_file.read())
+                    if data["meta"]["set"] == self.draft_set.upper():
+                        tier_data = data
+                        deck_colors["Tier"] = "Tier (%s)" % data["meta"]["label"]
              
         except Exception as error:
-            print("RetrieveTier Error: %s" % error)   
-        return
+            print("RetrieveTierData Error: %s" % error)   
+        return tier_data

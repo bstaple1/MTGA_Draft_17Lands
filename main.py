@@ -177,6 +177,7 @@ class WindowUI:
         self.tier_data = {}
         self.deck_colors = self.draft.RetrieveColorWinRate()
         self.data_sources = self.draft.RetrieveDataSources()
+        self.tier_source = self.draft.RetrieveTierSource()
         
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -219,7 +220,6 @@ class WindowUI:
         
         self.data_source_selection = StringVar(self.root)
         self.data_source_list = self.data_sources
-        self.data_source_selection.trace("w", self.UpdateSourceCallback)
         
         self.deck_stats_checkbox_value = IntVar(self.root)
         self.missing_cards_checkbox_value = IntVar(self.root)
@@ -297,7 +297,6 @@ class WindowUI:
 
         self.stat_options_selection = StringVar(self.root)
         self.stat_options_list = ["Creatures","Noncreatures","All"]
-        self.stat_options_selection.trace("w", self.UpdateDeckStatsCallback)
         
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection, self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
         self.stat_options.config(width=11) 
@@ -337,7 +336,7 @@ class WindowUI:
         self.deck_colors_options.pack(expand = False, fill = None, anchor="w")
         self.check_timestamp = 0
         self.previous_timestamp = 0
-        
+
         self.root.attributes("-topmost", True)
 
         self.VersionCheck()
@@ -384,7 +383,6 @@ class WindowUI:
             # clear the previous rows
             for row in self.pack_table.get_children():
                 self.pack_table.delete(row)
-            self.root.update()
             
             list_length = len(filtered_list)
             
@@ -410,7 +408,6 @@ class WindowUI:
         try:
             for row in self.missing_table.get_children():
                 self.missing_table.delete(row)
-            self.root.update()
             
             #Update the filtered column header with the filtered colors
             TableFilterOptions(self.missing_table, filtered_a, filtered_b, filtered_c)
@@ -620,6 +617,7 @@ class WindowUI:
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
      
     def UpdateSourceOptions(self, new_list):
+        self.ControlTrace(False)
         try:
             if new_list:
                 self.data_source_selection.set(next(iter(self.data_sources)))
@@ -643,8 +641,10 @@ class WindowUI:
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
             
+        self.ControlTrace(True)
      
     def UpdateFilterOptions(self):
+        self.ControlTrace(False)
         try: 
             if self.column_2_selection.get() not in self.deck_colors.values():
                 self.column_2_selection.set("All ALSA")
@@ -672,12 +672,13 @@ class WindowUI:
             error_string = "UpdateFilterOptions Error: %s" % error
             print(error_string)
             LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
-            
+        self.ControlTrace(True)
+        
     def DefaultSettingsCallback(self, *args):
         CL.ResetConfig()
         
         self.configuration = CL.ReadConfig()
-        
+        self.ControlTrace(False)
         try:
            self.column_2_selection.set(self.configuration.column_2) 
            self.column_3_selection.set(self.configuration.column_3)
@@ -698,12 +699,15 @@ class WindowUI:
            self.curve_bonus_checkbox_value.set(False)
            self.color_bonus_checkbox_value.set(False)
            self.bayesian_average_checkbox_value.set(False)
+        self.ControlTrace(True)
+        self.UpdateSettingsCallback()      
 
     def UpdateSourceCallback(self, *args):
 
         self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
         self.deck_limits = self.draft.RetrieveColorLimits(True)
         self.deck_colors = self.draft.RetrieveColorWinRate()
+        self.tier_data = self.draft.RetrieveTierData(self.tier_source, self.deck_colors)
         self.UpdateCallback(False)
 
     def UpdateSettingsCallback(self, *args):
@@ -720,17 +724,19 @@ class WindowUI:
         CL.WriteConfig(self.configuration)
         
         self.deck_limits = self.draft.RetrieveColorLimits(True)
-        self.UpdateCallback(False)        
+        self.UpdateCallback(False)     
+        
 
     def UpdateDraftData(self):
         if self.draft.DraftStartSearch():
             self.data_sources = self.draft.RetrieveDataSources()
-            #self.tier_data = self.draft.RetrieveTierData()
+            self.tier_source = self.draft.RetrieveTierSource()
             self.UpdateSourceOptions(True)
             self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
 
             self.deck_limits = self.draft.RetrieveColorLimits(True)
             self.deck_colors = self.draft.RetrieveColorWinRate()
+            self.tier_data = self.draft.RetrieveTierData(self.tier_source, self.deck_colors)
 
         self.draft.DraftDataSearch()        
     def UpdateCallback(self, enable_draft_search):
@@ -784,7 +790,7 @@ class WindowUI:
                 previous_pick = self.draft.current_pick
                 previous_pack = self.draft.current_pack
                 
-                while(1):
+                while(True):
 
                     self.UpdateCallback(True)
                     print("previous pick: %u, current pick: %u" % (previous_pick, self.draft.current_pick))
@@ -1175,7 +1181,7 @@ class WindowUI:
     def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets, version):
         result = True
         result_string = ""
-        while(1):
+        while(True):
             try:
                 button['state'] = 'disabled'
                 progress['value'] = 0
@@ -1240,9 +1246,7 @@ class WindowUI:
                     if name_segments[1] in LS.limited_types_dict.keys():
                         #Retrieve the start and end dates
                         try:
-                            print(sets.values())
                             main_sets = [v[0] for k, v in sets.items()]
-                            print(main_sets)
                             set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
                             result, json_data = FE.FileIntegrityCheck(filename)
                             if result == FE.Result.VALID:
@@ -1334,17 +1338,19 @@ class WindowUI:
         
     def ControlTrace(self, enabled):
         if enabled:
-            self.trace_ids = []
-            self.trace_ids.append(self.column_2_selection.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.column_3_selection.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.column_4_selection.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.color_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
-            self.trace_ids.append(self.bayesian_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
-        else:
+            if len(self.trace_ids) == 0:
+                self.trace_ids.append(self.column_2_selection.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.column_3_selection.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.column_4_selection.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.auto_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.color_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.bayesian_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
+                self.trace_ids.append(self.data_source_selection.trace("w", self.UpdateSourceCallback))
+                self.trace_ids.append(self.stat_options_selection.trace("w", self.UpdateDeckStatsCallback))
+        elif len(self.trace_ids):
            self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
            self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
            self.column_4_selection.trace_vdelete("w", self.trace_ids[2])
@@ -1354,9 +1360,11 @@ class WindowUI:
            self.curve_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[6])
            self.color_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[7])
            self.bayesian_average_checkbox_value.trace_vdelete("w", self.trace_ids[8])
+           self.data_source_selection.trace_vdelete("w", self.trace_ids[9])
+           self.stat_options_selection.trace_vdelete("w", self.trace_ids[10])
+           self.trace_ids = []
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
-        #self.deck_colors_options_list = []
         
     def VersionCheck(self):
         #Version Check
@@ -1544,7 +1552,7 @@ def Startup(argv):
     step_through = False
     diag_log_enabled = True
     try:
-        opts, args = getopt.getopt(argv, "f:",["step","disablediag","os="])
+        opts, args = getopt.getopt(argv, "f:",["step","disablediag"])
     except Exception as error:
         print(error)
         
@@ -1561,15 +1569,17 @@ def Startup(argv):
     
     window = Tk()
     window.title("Magic Draft %.2f" % __version__)
-    window.resizable(width = True, height = True)
     
     if file_location == "":
-        file_location = FE.ArenaLogLocation();
+        file_location = FE.ArenaLogLocation()
         
     config = CL.ReadConfig()
     
     if sys.platform == FE.PLATFORM_ID_OSX:
         config.hotkey_enabled = False
+        window.resizable(width = True, height = True)
+    else:
+        window.resizable(False, False) 
     
     ui = WindowUI(window, file_location, step_through, diag_log_enabled, config)
     
