@@ -7,6 +7,7 @@ import datetime
 import ssl
 import getpass
 import itertools
+import logging
 from enum import Enum
 import log_scanner as LS
 from datetime import date
@@ -253,10 +254,9 @@ def FileIntegrityCheck(filename):
     return result, json_data
        
 class DataPlatform:
-    def __init__(self, diag_log_file, diag_log_enabled):
+    def __init__(self):
         self.sets = []
-        self.diag_log_file = diag_log_file
-        self.diag_log_enabled = diag_log_enabled
+        self.logger = logging.getLogger("mtgaTool")
         self.draft = ""
         self.session = ""
         self.start_date = ""
@@ -308,7 +308,7 @@ class DataPlatform:
             version = self.ProcessRepositoryVersionData(url_data)
                 
         except Exception as error:
-            print("SessionRepositoryVersion Error: %s" % error)
+            self.logger.info(f"SessionRepositoryVersion Error: {error}")
         return version
 
     def SessionRepositoryDownload(self, filename):
@@ -320,7 +320,7 @@ class DataPlatform:
             with open(filename,'wb') as file:
                 file.write(url_data)   
         except Exception as error:
-            print("SessionRepositoryDownload Error: %s" % error)
+            self.logger.info(f"SessionRepositoryDownload Error: {error}")
         return version  
 
 
@@ -358,10 +358,8 @@ class DataPlatform:
                         break
                         
                 except Exception as error:
-                    error_string = "SessionCardData Error: %s" % error
-                    result_string = error
-                    print(error_string)     
-                    LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                    self.logger.info(url)     
+                    self.logger.info(f"SessionCardData Error: {error}")
                 
                 if result == False:
                     retry -= 1
@@ -401,7 +399,6 @@ class DataPlatform:
                         
                         if color != "All Decks":
                             url += "&colors=" + color
-                        print(url)    
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         
                         set_json_data = json.loads(url_data)
@@ -409,9 +406,8 @@ class DataPlatform:
                         result = True
                         break
                     except Exception as error:
-                        error_string = "Session17Lands Error: %s" % error
-                        print(error_string)     
-                        LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                        self.logger.info(url) 
+                        self.logger.info(f"Session17Lands Error: {error}")   
                         time.sleep(15)
                         retry -= 1
                         
@@ -449,36 +445,25 @@ class DataPlatform:
                 
                 
         except Exception as error:
-            error_string = "SessionSets Error: %s" % error
-            print(error_string)     
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(f"SessionSets Error: {error}") 
         return sets   
     def SessionColorRatings(self):
         try:
             #https://www.17lands.com/color_ratings/data?expansion=VOW&event_type=QuickDraft&start_date=2019-1-1&end_date=2022-01-13&combine_splash=true
             url = "https://www.17lands.com/color_ratings/data?expansion=%s&event_type=%s&start_date=%s&end_date=%s&combine_splash=true" % (self.sets[0], self.draft, self.start_date, self.end_date)
-            print(url)
             url_data = urllib.request.urlopen(url, context=self.context).read()
             
             color_json_data = json.loads(url_data)
-            print(color_json_data)
             self.RetrieveColorRatings(color_json_data)
             
         except Exception as error:
-            error_string = "SessionColorRatings Error: %s" % error
-            print(error_string)     
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
+            self.logger.info(url) 
+            self.logger.info(f"SessionColorRatings Error: {error}") 
     def Retrieve17Lands(self, colors, cards):  
         result = True
 
         for card in cards:
             try:
-                print("Name: %s" % card["name"])
-                print("Color: %s" % colors)
-                print("GIHWR: %s" % card["ever_drawn_win_rate"])
-                print("EDWC: %s" % card["ever_drawn_game_count"])
-                print("ALSA: %s" % card["avg_seen"])
-                print("IWD: %s" % card["drawn_improvement_win_rate"])
                 card_name = card["name"]
                 gihwr = card["ever_drawn_win_rate"]
                 iwd = card["drawn_improvement_win_rate"]
@@ -486,10 +471,7 @@ class DataPlatform:
                 gih = int(card["ever_drawn_game_count"])
                 
                 gihwr = gihwr if gihwr != None else "0.0"
-                
-                #win_count = float(gihwr) * int(gih)
-                #gihwr = 100.0*(win_count + 10)/ ( int(gih) + 20) #Bayesian average calculation
-                #gihwr = round(gihwr, 2)
+
                 gihwr = round(float(gihwr) * 100.0, 2)
                 
                 iwd = round(float(card["drawn_improvement_win_rate"]) * 100, 2)
@@ -501,8 +483,8 @@ class DataPlatform:
                     self.card_ratings[card_name].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa, "gih" : gih}}) 
                 self.card_ratings[card_name]
             except Exception as error:
-                print("Retrieve17Lands Error: %s" % error)
                 result = False
+                self.logger.info(f"Retrieve17Lands Error: {error}")
                 
         return result  
         
@@ -557,7 +539,8 @@ class DataPlatform:
                             self.combined_data["color_ratings"][processed_colors] = winrate
             
         except Exception as error:
-            print("RetrieveColorRatings Error: %s" % error)
+            self.logger.info(f"RetrieveColorRatings Error: {error}")
+
           
     def ProcessCardData (self, data, arena_id):
         result = False
@@ -598,14 +581,13 @@ class DataPlatform:
                         card["mana_cost"] = card_data["mana_cost"]
                         card["image"] = [card_data["image_uris"]["normal"]]
                 except Exception as error:
-                    print(error)
                     card["mana_cost"] = "0"
                     card["image"] = []
                 self.card_list.append(card)
                 result = True
                 
             except Exception as error:
-                print("ProcessCardData Error: %s" % error)
+                self.logger.info(f"ProcessCardData Error: {error}")
                 result_string = error
         #print("combined_data: %s" % str(combined_data))
         return arena_id, result, result_string, local_check 
@@ -645,7 +627,7 @@ class DataPlatform:
                                                                                            "gih" : value["gih"]}
             
         except Exception as error:
-            print(error)
+            self.logger.info(f"ProcessCardRatings Error: {error}")
             
         #print("combined_data: %s" % str(combined_data))
         return
@@ -674,7 +656,7 @@ class DataPlatform:
                     if counter >= 15:
                         break
             except Exception as error:
-                print("ProcessSetData Error: %s" % error)
+                self.logger.info(f"ProcessSetData Error: {error}")
         
         return sets
         
@@ -697,7 +679,7 @@ class DataPlatform:
                 result = False
             
         except Exception as error:
-            print("ExportData Error: %s" % error)
+            self.logger.info(f"ExportData Error: {error}")
             result = False
             
         return result

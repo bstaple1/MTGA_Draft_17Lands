@@ -75,12 +75,15 @@ import getopt
 import sys
 import io
 import functools
+import logging
 import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
 __version__= 2.83
+
+DEBUG_LOG_FILE = os.path.join(os.getcwd(), "debug.log")
     
 def CheckVersion(platform, version):
     return_value = False
@@ -134,7 +137,8 @@ def CopySuggested(deck_colors, deck, set_data, color_options, set):
         deck_string = CL.CopyDeck(deck[colors]["deck_cards"],deck[colors]["sideboard_cards"],set_data["card_ratings"], set)
         CopyClipboard(deck_string)
     except Exception as error:
-        print("CopySuggested Error: %s" % error)
+        print(f"CopySuggested Error: {error}")
+        #self.logger.info(f"CopySuggested Error: {error}")
     return 
     
 def CopyTaken(taken_cards, set_data, set, color):
@@ -145,7 +149,8 @@ def CopyTaken(taken_cards, set_data, set, color):
         CopyClipboard(deck_string)
 
     except Exception as error:
-        print("CopyTaken Error: %s" % error)
+        print(f"CopyTaken Error: {error}")
+        #self.logger.info(f"CopyTaken Error: {error}")
     return 
     
 def CopyClipboard(copy):
@@ -158,19 +163,29 @@ def CopyClipboard(copy):
         clip.update()
         clip.destroy()
     except Exception as error:
-        print("CopyClipboard Error: %s" % error)
+        print(f"CopyClipboard Error: {error}")
+        #self.logger.info(f"CopyClipboard Error: {error}")
     return 
         
 class WindowUI:
-    def __init__(self, root, filename, step_through, diag_log_enabled, configuration):
+    def __init__(self, root, filename, step_through, configuration):
         self.root = root
         self.configuration = configuration
         self.filename = filename
         self.step_through = step_through
-        self.diag_log_enabled = diag_log_enabled
-        self.draft = LS.LogScanner(self.filename, self.step_through, self.diag_log_enabled)
-        self.diag_log_file = self.draft.diag_log_file
-        self.diag_log_enabled = self.draft.diag_log_enabled
+        
+        self.logger = logging.getLogger("mtgaTool")
+        self.logger.setLevel(logging.INFO)
+        handlers = {
+            logging.FileHandler(DEBUG_LOG_FILE),
+            logging.StreamHandler(sys.stdout),
+        }
+        formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%m/%d/%Y %H:%M:%S>')
+        for handler in handlers:
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+        
+        self.draft = LS.ArenaScanner(self.filename, self.step_through)
         self.trace_ids = []
         
         self.deck_limits = {}
@@ -189,9 +204,7 @@ class WindowUI:
         self.datamenu = Menu(self.menubar, tearoff=0)
         self.datamenu.add_command(label="View Sets", command=self.SetViewPopup)
         self.datamenu.add_command(label="Settings", command=self.SettingsPopup)
-        log_value_string = "Disable Log" if self.diag_log_enabled else "Enable Log"
 
-        self.datamenu.add_command(label=log_value_string, command=self.ToggleLog)
         self.cardmenu = Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(label="Taken Cards", command=self.TakenCardsPopup)
         self.cardmenu.add_command(label="Suggest Decks", command=self.SuggestDeckPopup)
@@ -363,8 +376,8 @@ class WindowUI:
             list_box["show"] = "headings"  # use after setting column's size
         except Exception as error:
             error_string = "CreateHeader Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
         return list_box
 
     def UpdatePackTable(self, card_list, taken_cards, filtered_a, filtered_b, filtered_c, color_options, limits):
@@ -401,8 +414,8 @@ class WindowUI:
             self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdatePackTable Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def UpdateMissingTable(self, current_pack, previous_pack, picked_cards, taken_cards, filtered_a, filtered_b, filtered_c, color_options, limits):
         try:
@@ -446,8 +459,8 @@ class WindowUI:
                     self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdateMissingTable Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
 
     def ClearCompareTable(self, compare_table, matching_cards):
         matching_cards.clear()
@@ -483,8 +496,8 @@ class WindowUI:
             compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdateCompareTable Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
+            
+            self.logger.info(error_string) 
 
     def UpdateTakenTable(self, taken_table, taken_cards, filtered_a, filtered_b, filtered_c, color_options,limits):
         try:
@@ -513,8 +526,8 @@ class WindowUI:
             taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_c))
         except Exception as error:
             error_string = "UpdateTakenTable Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def UpdateSuggestDeckTable(self, suggest_table, selected_color, suggested_decks, color_options):
         try:             
@@ -535,8 +548,8 @@ class WindowUI:
     
         except Exception as error:
             error_string = "UpdateSuggestTable Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def UpdateDeckStatsTable(self, taken_cards, filter_type):
         try:             
@@ -573,7 +586,6 @@ class WindowUI:
             else:
                 self.stat_table.config(height=1)
             
-            print(colors_filtered)
             count = 0
             for color,values in colors_filtered.items():
                 row_tag = CL.RowColorTag(values["symbol"])
@@ -588,8 +600,8 @@ class WindowUI:
                 count += 1
         except Exception as error:
             error_string = "UpdateDeckStats Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def UpdatePackPick(self, pack, pick):
         try:
@@ -598,8 +610,8 @@ class WindowUI:
         
         except Exception as error:
             error_string = "UpdatePackPick Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)   
+            
+            self.logger.info(error_string)   
      
     def UpdateCurrentDraft(self, set, draft_type):
         try: 
@@ -609,12 +621,12 @@ class WindowUI:
                 if LS.limited_types_dict[key] == draft_type:
                     draft_type_string = key
                     
-            new_label = "%s %s" % (set, draft_type_string)
+            new_label = " %s %s" % (set, draft_type_string)
             self.current_draft_value_label.config(text = new_label)
         except Exception as error:
             error_string = "UpdateCurrentDraft Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
      
     def UpdateSourceOptions(self, new_list):
         self.ControlTrace(False)
@@ -638,8 +650,8 @@ class WindowUI:
 
         except Exception as error:
             error_string = "UpdateSourceOptions Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
         self.ControlTrace(True)
      
@@ -670,8 +682,8 @@ class WindowUI:
                 
         except Exception as error:
             error_string = "UpdateFilterOptions Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
         self.ControlTrace(True)
         
     def DefaultSettingsCallback(self, *args):
@@ -793,22 +805,20 @@ class WindowUI:
                 while(True):
 
                     self.UpdateCallback(True)
-                    print("previous pick: %u, current pick: %u" % (previous_pick, self.draft.current_pick))
                     if self.draft.current_pack < previous_pack:
                         self.DraftReset(True)
                         self.UpdateCallback(True)
                     if self.draft.step_through and (previous_pick != self.draft.current_pick):
                         input("Continue?")
                     else:
-                        print("Exiting Step Loop")
                         break
                         
                     previous_pick = self.draft.current_pick
                     previous_pack = self.draft.current_pack
         except Exception as error:
             error_string = "UpdateUI Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
         self.root.after(1000, self.UpdateUI)
         
@@ -826,7 +836,7 @@ class WindowUI:
         popup.wm_title("Set Data")
         Grid.rowconfigure(popup, 1, weight = 1)
         try:
-            DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
+            DP = FE.DataPlatform()
             sets = DP.SessionSets()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
@@ -917,8 +927,8 @@ class WindowUI:
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "SetViewPopup Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
         
 
         
@@ -977,8 +987,8 @@ class WindowUI:
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "CardComparePopup Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def TakenCardsPopup(self):
         popup = Toplevel()
@@ -1024,8 +1034,8 @@ class WindowUI:
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "TakenCards Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def SuggestDeckPopup(self):
         popup = Toplevel()
@@ -1088,8 +1098,8 @@ class WindowUI:
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "SuggestDeckPopup Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            
+            self.logger.info(error_string)
             
     def SettingsPopup(self):
         popup = Toplevel()
@@ -1175,8 +1185,8 @@ class WindowUI:
             popup.attributes("-topmost", True)
         except Exception as error:
             error_string = "ConfigPopup Error: %s" % error
-            print(error_string)
-            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled) 
+            
+            self.logger.info(error_string) 
         
     def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets, version):
         result = True
@@ -1251,7 +1261,6 @@ class WindowUI:
                             result, json_data = FE.FileIntegrityCheck(filename)
                             if result == FE.Result.VALID:
                                 if json_data["meta"]["version"] == 1:
-                                    print(json_data["meta"]["date_range"])
                                     start_date, end_date = json_data["meta"]["date_range"].split("->")
                                     list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
                                 elif json_data["meta"]["version"] == 2:
@@ -1260,8 +1269,8 @@ class WindowUI:
                                     list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
                         except Exception as error:
                             error_string = "DataViewUpdate Error: %s" % error
-                            print(error_string)
-                            LS.LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            
+                            self.logger.info(error_string)
             
             break
             
@@ -1323,18 +1332,10 @@ class WindowUI:
         if filename:
             self.filename = filename
             self.DraftReset(True)
-            self.draft.log_file = filename
+            self.draft.ArenaFile(filename)
+            self.draft.LogSuspend(True)
             self.UpdateCallback(True)
-            
-    def ToggleLog(self):
-        
-        if self.diag_log_enabled:
-            log_value_string = "Enable Log"
-            self.diag_log_enabled = False
-        else:
-            log_value_string = "Disable Log"
-            self.diag_log_enabled = True 
-        self.datamenu.entryconfigure(2, label=log_value_string)
+            self.draft.LogSuspend(False)
         
     def ControlTrace(self, enabled):
         if enabled:
@@ -1372,7 +1373,7 @@ class WindowUI:
         if sys.platform == FE.PLATFORM_ID_WINDOWS:
             try:
                 import win32api
-                DP = FE.DataPlatform(self.diag_log_file, self.diag_log_enabled)
+                DP = FE.DataPlatform()
                 
                 new_version_found, new_version = CheckVersion(DP, __version__)
                 if new_version_found:
@@ -1550,9 +1551,8 @@ class CreateCardToolTip(object):
 def Startup(argv):
     file_location = ""
     step_through = False
-    diag_log_enabled = True
     try:
-        opts, args = getopt.getopt(argv, "f:",["step","disablediag"])
+        opts, args = getopt.getopt(argv, "f:",["step"])
     except Exception as error:
         print(error)
         
@@ -1561,9 +1561,7 @@ def Startup(argv):
             if opt in "-f":
                 file_location = arg
             elif opt in "--step":
-                step_through = True
-            elif opt in "--disablediag":
-                diag_log_enabled = False      
+                step_through = True      
     except Exception as error:
         print(error)
     
@@ -1581,7 +1579,7 @@ def Startup(argv):
     else:
         window.resizable(False, False) 
     
-    ui = WindowUI(window, file_location, step_through, diag_log_enabled, config)
+    ui = WindowUI(window, file_location, step_through, config)
     
     if config.hotkey_enabled:
         KeyListener(ui)    

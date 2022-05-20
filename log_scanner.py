@@ -1,6 +1,8 @@
 import os
 import time
 import json
+import logging
+import sys
 import card_logic as CL
 import file_extractor as FE
 from collections import OrderedDict
@@ -19,6 +21,8 @@ NON_COLORS_OPTIONS = ["Auto", "All GIHWR", "All IWD", "All ALSA"]
 DECK_COLORS = ["All Decks","W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
 DECK_FILTERS = NON_COLORS_OPTIONS + DECK_COLORS
 
+DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "./Logs")
+
 SET_FILE_SUFFIX = "Data.json"
 TIER_FILE_PREFIX = "Tier_"
 
@@ -35,22 +39,16 @@ limited_types_dict = {
     "TradSealed"       : LIMITED_TYPE_SEALED_TRADITIONAL,
 }
 
-def LogEntry(log_name, entry_text, diag_log_enabled):
-    if diag_log_enabled:
-        try:
-            with open(log_name, "a") as log_file:
-                log_file.write("<%s>%s\n" % (time.strftime('%X %x'), entry_text))
-        except Exception as error:
-            print("LogEntry Error:  %s" % error)
-
-
-class LogScanner:
-    def __init__(self,log_file, step_through, diag_log_enabled):
-        self.log_file = log_file
+class ArenaScanner:
+    def __init__(self, filename, step_through):
+        self.arena_file = filename
+        
+        self.logger = logging.getLogger("draftLog")
+        self.logger.setLevel(logging.INFO)
+        
+        self.logging_enabled = True
+        
         self.step_through = step_through
-        directory = "Logs/"
-        self.diag_log_file = directory + "DraftLog_%s.log" % (str(time.time()))
-        self.diag_log_enabled = diag_log_enabled
         self.set_data = None
         self.draft_type = LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
@@ -68,6 +66,30 @@ class LogScanner:
         self.current_picked_pick = 0
         self.file_size = 0
         self.data_source = "None"
+
+    def ArenaFile(self, filename):
+        self.arena_file = filename
+
+    def LogEnable(self, enable):
+        self.logging_enabled = enable
+
+    def LogSuspend(self, suspended):
+        if suspended:
+            self.logger.setLevel(logging.CRITICAL)
+        elif self.logging_enabled:
+            self.logger.setLevel(logging.INFO)
+
+    def NewLog(self, set, event):
+        log_name = f"DraftLog_{set}_{event}_{int(time.time())}.log"
+        log_path = os.path.join(DRAFT_LOG_FOLDER, log_name)
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.FileHandler):
+                self.logger.removeHandler(handler)
+        formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%d%m%Y %H:%M:%S>')
+        new_handler = logging.FileHandler(log_path, delay=True)
+        new_handler.setFormatter(formatter)
+        self.logger.addHandler(new_handler)
+
     def ClearDraft(self, full_clear):
         if full_clear:
             self.search_offset = 0
@@ -90,8 +112,6 @@ class LogScanner:
         
     def DraftStartSearch(self): 
         update = False
-        set_dict = OrderedDict()
-        tier_list = []
         #Open the file
         switcher={
                 "[UnityCrossThreadLogger]==> Event_Join " : (lambda x, y: self.DraftStartSearchV1(x, y)),
@@ -102,13 +122,13 @@ class LogScanner:
         
         try:
             #Check if a new player.log was created (e.g. application was started before Arena was started)
-            if self.file_size > os.path.getsize(self.log_file):
+            if self.file_size > os.path.getsize(self.arena_file):
                 self.ClearDraft(True)
-            self.file_size = os.path.getsize(self.log_file)
+            self.file_size = os.path.getsize(self.arena_file)
             offset = self.search_offset
             previous_draft_type = self.draft_type
             previous_draft_set = self.draft_set
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
                 while(True):
                     line = log.readline()
@@ -122,7 +142,7 @@ class LogScanner:
                             start_parser = switcher.get(search_string, lambda: None)
                             event_data = json.loads(line[string_offset + len(search_string):])
                             start_parser(event_data, offset)
-                            LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                            self.logger.info(line)
                             break
                                 
             if (self.draft_type != LIMITED_TYPE_UNKNOWN) and \
@@ -160,8 +180,9 @@ class LogScanner:
                 
                         self.draft_type = limited_types_dict[event_type]
                         self.draft_set = event_set.upper()
-                        directory = "Logs/"
-                        self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
+                        self.NewLog(event_set, event_type)
+                        #directory = "Logs/"
+                        #self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                         break
         except Exception as error:
             print("DraftStartSearchV1 Error: %s" % error)
@@ -182,9 +203,10 @@ class LogScanner:
                 if event_type in limited_types_dict.keys():
                     self.draft_type = limited_types_dict[event_type]
                     self.draft_set = event_set.upper()
-                    directory = "Logs/"
-                    self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
-                    #LogEntry(self.diag_log_file, event_data, self.diag_log_enabled)
+                    self.NewLog(event_set, event_type)
+                    #directory = "Logs/"
+                    #self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
+                    self.logger.info(event_data)
                                 
         except Exception as error:
             print("DraftStartSearchV2 Error: %s" % error)
@@ -226,7 +248,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -240,7 +262,7 @@ class LogScanner:
                     if string_offset != -1:
                         #Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"id\":")                       
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         draft_data = json.loads(line[start_offset:])
                         request_data = draft_data["request"]
                         payload_data = json.loads(request_data)["Payload"]
@@ -277,13 +299,13 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPackSearchPremierP1P1 Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
             if log.closed == False:
                 log.close() 
         except Exception as error:
             error_string = "DraftPackSearchPremierP1P1 Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string,  self.diag_log_enabled)
+            self.logger.info(error_string)
         
         return pack_cards
     def DraftPickedSearchPremierV1(self):
@@ -294,7 +316,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -308,7 +330,7 @@ class LogScanner:
                     if string_offset != -1:
                         self.pick_offset = offset
                         start_offset = line.find("{\"id\"")
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
 
                         try:
                             #Identify the pack
@@ -338,11 +360,11 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPickedSearchPremierV1 Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)         
+                            self.logger.info(error_string)         
         except Exception as error:
             error_string = "DraftPickedSearchPremierV1 Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
 
         
     def DraftPackSearchPremierV1(self):
@@ -354,7 +376,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -368,7 +390,7 @@ class LogScanner:
                     if string_offset != -1:
                         self.pack_offset = offset
                         start_offset = line.find("{\"draftId\"")
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         pack_cards = []
                         #Identify the pack
                         draft_data = json.loads(line[start_offset:])
@@ -401,12 +423,12 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPackSearchPremierV1 Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
              
         except Exception as error:
             error_string = "DraftPackSearchPremierV1 Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
         return pack_cards
         
     def DraftPackSearchPremierV2(self):
@@ -418,7 +440,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -431,7 +453,7 @@ class LogScanner:
                     
                     if string_offset != -1:
                         self.pack_offset = offset
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         pack_cards = []
                         #Identify the pack
                         draft_data = json.loads(line[len(draft_string):])
@@ -464,12 +486,12 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPackSearchPremierV2 Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
              
         except Exception as error:
             error_string = "DraftPackSearchPremierV2 Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
         return pack_cards
 
     
@@ -481,7 +503,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -494,7 +516,7 @@ class LogScanner:
                     
                     if string_offset != -1:
                         #print(line)
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         self.pick_offset = offset
                         try:
                             #Identify the pack
@@ -525,12 +547,12 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPickedSearchPremierV2 Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
           
         except Exception as error:
             error_string = "DraftPickedSearchPremierV2 Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
     
     def DraftPackSearchQuick(self):
         offset = self.pack_offset
@@ -541,7 +563,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -556,7 +578,7 @@ class LogScanner:
                         self.pack_offset = offset
                         #Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"CurrentModule\"")                       
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         draft_data = json.loads(line[start_offset:])
                         payload_data = json.loads(draft_data["Payload"])
                         pack_data = payload_data["DraftPack"]
@@ -592,13 +614,13 @@ class LogScanner:
                             except Exception as error:
                                 error_string = "DraftPackSearchQuick Sub Error: %s" % error
                                 print(error_string)
-                                LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                                self.logger.info(error_string)
             if log.closed == False:
                 log.close() 
         except Exception as error:
             error_string = "DraftPackSearchQuick Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
         
         return pack_cards
         
@@ -610,7 +632,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -622,7 +644,7 @@ class LogScanner:
                     string_offset = line.find(draft_string)
                     
                     if string_offset != -1:
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         self.pick_offset = offset
                         try:
                             #Identify the pack
@@ -655,13 +677,13 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPickedSearchQuick Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
             if log.closed == False:
                 log.close()      
         except Exception as error:
             error_string = "DraftPickedSearchQuick Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string)
+            self.logger.info(error_string)
             
     def DraftPackSearchTraditionalP1P1(self):
         offset = self.pack_offset
@@ -672,7 +694,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -686,7 +708,7 @@ class LogScanner:
                     if string_offset != -1:
                         #Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"id\":")                       
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         draft_data = json.loads(line[start_offset:])
                         request_data = draft_data["request"]
                         payload_data = json.loads(request_data)["Payload"]
@@ -723,13 +745,13 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPackSearchTraditionalP1P1 Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
             if log.closed == False:
                 log.close() 
         except Exception as error:
             error_string = "DraftPackSearchTraditionalP1P1 Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string,  self.diag_log_enabled)
+            self.logger.info(error_string)
         
         return pack_cards
         
@@ -741,7 +763,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -755,7 +777,7 @@ class LogScanner:
                     if string_offset != -1:
                         self.pick_offset = offset
                         start_offset = line.find("{\"id\"")
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
 
                         try:
                             #Identify the pack
@@ -785,11 +807,11 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPickedSearchPremierV1 Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)         
+                            self.logger.info(error_string)         
         except Exception as error:
             error_string = "DraftPickedSearchTraditional Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
 
         
     def DraftPackSearchTraditional(self):
@@ -801,7 +823,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -815,7 +837,7 @@ class LogScanner:
                     if string_offset != -1:
                         self.pack_offset = offset
                         start_offset = line.find("{\"draftId\"")
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         pack_cards = []
                         #Identify the pack
                         draft_data = json.loads(line[start_offset:])
@@ -848,12 +870,12 @@ class LogScanner:
                         except Exception as error:
                             error_string = "DraftPackSearchTraditional Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
              
         except Exception as error:
             error_string = "DraftPackSearchTraditional Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
         return pack_cards
 
     def SealedPackSearch(self):
@@ -865,7 +887,7 @@ class LogScanner:
         pick = 0
         #Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.log_file, 'r') as log:
+            with open(self.arena_file, 'r') as log:
                 log.seek(offset)
 
                 while(True):
@@ -879,7 +901,7 @@ class LogScanner:
                     if string_offset != -1:
                         self.pack_offset = offset
                         start_offset = line.find("{\"CurrentModule\"")
-                        LogEntry(self.diag_log_file, line, self.diag_log_enabled)
+                        self.logger.info(line)
                         #Identify the pack
                         draft_data = json.loads(line[start_offset:])
                         payload_data = json.loads(draft_data["Payload"])
@@ -895,12 +917,12 @@ class LogScanner:
                         except Exception as error:
                             error_string = "SealedPackSearch Sub Error: %s" % error
                             print(error_string)
-                            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+                            self.logger.info(error_string)
              
         except Exception as error:
             error_string = "SealedPackSearch Error: %s" % error
             print(error_string)
-            LogEntry(self.diag_log_file, error_string, self.diag_log_enabled)
+            self.logger.info(error_string)
         return pack_cards
         
     def RetrieveDataSources(self):
