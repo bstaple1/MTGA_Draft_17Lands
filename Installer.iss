@@ -26,4 +26,6 @@ Name: "{group}\MtgaDraftTool"; Filename: "{app}\MTGA_Draft_Tool.exe"
 
 [Dirs]
 Name: {app}\Logs
+Name: {app}\Debug
+Name: {app}\Sets
 Name: {app}\Tools\TierScraper17Lands

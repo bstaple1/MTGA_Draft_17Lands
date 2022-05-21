@@ -1,7 +1,10 @@
 import json
+import logging
 import log_scanner as LS
 from itertools import combinations
 from dataclasses import dataclass, asdict
+
+logic_logger = logging.getLogger("mtgaTool")
 
 @dataclass 
 class DeckType:
@@ -43,7 +46,7 @@ def CompareRatings(a, b):
         else:
             return b["rating_filter_c"] - a["rating_filter_c"]
     except Exception as error:
-        print("CompareRatings Error: %s" % error)
+        logic_logger.info(f"CompareRatings Error: {error}")
     return 0
 
 def ColorAffinity(colors, card):
@@ -85,7 +88,7 @@ def ColorBonus (deck, deck_colors, card, bayesian_enabled):
         color_bonus_level = min(color_bonus_level, 1)
         
     except Exception as error:
-        print(error)
+        logic_logger.info(f"ColorBonus Error: {error}")
     
     return round(color_bonus_factor * color_bonus_level,1)
     
@@ -129,7 +132,7 @@ def CurveBonus(deck, card, pick_number, color_filter, configuration):
                         else:
                             curve_bonus_factor = 0.25
     except Exception as error:
-        print("CurveBonus Error: %s" % error)
+        logic_logger.info(f"CurveBonus Error: {error}")
         
     return curve_bonus * curve_bonus_factor
     
@@ -175,7 +178,7 @@ def DeckColorSearch(deck, search_colors, card_types, include_types, include_colo
                     #if search_colors in card["deck_colors"].keys(): 
                     combined_cards.append(card)
         except Exception as error:
-            print("DeckColorSearch Error: %s" % error)
+            logic_logger.info(f"DeckColorSearch Error: {error}")
 
     for color in card_color_sorted:
         if color in search_colors:
@@ -196,7 +199,7 @@ def ColorCmc(deck):
             distribution[index] += 1
     
     except Exception as error:
-        print("ColorCmc Error: %s" % error)
+        logic_logger.info(f"ColorCmc Error: {error}")
     
     return cmc_total, count, distribution
     
@@ -211,7 +214,7 @@ def ColorFilter(deck, color_selection, color_list, configuration):
         else:
             filtered_color_list = [[key for key, value in color_list.items() if value == color_data][0]]
     except Exception as error:
-        print("ColorFilter Error: %s" % error)
+        logic_logger.info(f"ColorFilter Error: {error}")
     return filtered_color_list
     
 def DeckColors(deck, color_options, colors_max, configuration):
@@ -262,7 +265,7 @@ def DeckColors(deck, color_options, colors_max, configuration):
         deck_colors = dict(sorted(deck_colors.items(), key=lambda item: item[1], reverse=True))
         
     except Exception as error:
-        print("DeckColors Error: %s" % error)
+        logic_logger.info(f"DeckColors Error: {error}")
     
     return deck_colors
     
@@ -283,7 +286,7 @@ def AutoColors(deck, color_options, colors_max, configuration):
                 deck_colors_list = colors[0:2]
 
     except Exception as error:
-        print("AutoColors Error: %s" % error)
+        logic_logger.info(f"AutoColors Error: {error}")
     
     return deck_colors_list
 
@@ -300,7 +303,7 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
                         colors[color] = 0
                     colors[color] += (gihwr - threshold)
         except Exception as error:
-            print("CalculateColorAffinity Error: %s" % error)
+            logic_logger.info(f"CalculateColorAffinity Error: {error}")
     return colors 
 
 def CardFilter(card_list, deck, filtered, color_options, limits, tier_list, configuration, curve_bonus, color_bonus):
@@ -367,7 +370,7 @@ def CardFilter(card_list, deck, filtered, color_options, limits, tier_list, conf
                         #selected_card[key] = round(sum(rated_colors)/float(len(rated_colors)), 1) #Find the average of all of the ratings
             filtered_list.append(selected_card)
         except Exception as error:
-            print("CardColorFilter Error: %s" % error)
+            logic_logger.info(f"CardFilter Error: {error}")
 
     return filtered_list
 
@@ -420,7 +423,7 @@ def CalculateWinRate(card_data, bayesian_enabled):
                 if gih < 200:
                     winrate = 0.0
     except Exception as error:
-        print("CalculateWinRate Error: %s" % error)
+        logic_logger.info(f"CalculateWinRate Error: {error}")
     return winrate
 
 def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
@@ -474,7 +477,7 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enab
             rating_data["rating"] = max(rating_data["rating"], 0)
             
     except Exception as error:
-        print("CardRating Error: %s" % error)
+        logic_logger.info(f"CardRating Error: {error}")
     return rating_data
     
 def DeckColorStats(deck, color):
@@ -489,7 +492,7 @@ def DeckColorStats(deck, color):
         noncreature_count = len(noncreature_cards)
         
     except Exception as error:
-        print("DeckColorStats Error: %s" % error)
+        logic_logger.info(f"DeckColorStats Error: {error}")
     
     return creature_count, noncreature_count
     
@@ -523,7 +526,7 @@ def CardCmcSearch(deck, offset, starting_cmc, cmc_limit, remaining_count):
             else: 
                 unused.append(card)
     except Exception as error:
-        print("CardCmcSearch Error: %s" % error)
+        logic_logger.info(f"CardCmcSearch Error: {error}")
     
     return cards, unused
     
@@ -570,7 +573,7 @@ def DeckRating(deck, deck_type, color):
                 rating -= 100
                 
     except Exception as error:
-        print("DeckRating Error: %s" % error)
+        logic_logger.info(f"DeckRating Error: {error}")
     
     return rating
     
@@ -613,7 +616,7 @@ def CopyDeck(deck, sideboard, set_cards, set):
                         break
         
     except Exception as error:
-        print("CopyDeck Error: %s" % error)
+        logic_logger.info(f"CopyDeck Error: {error}")
         
     return deck_copy
    
@@ -636,7 +639,7 @@ def StackCards(cards, color):
             else:
                 deck[name]["count"] += 1
         except Exception as error:
-            print("StackCards Error: %s" % error)    
+            logic_logger.info(f"StackCards Error: {error}")   
     #Convert to list format
     for card in deck:
         deck_list.append(deck[card])
@@ -685,7 +688,7 @@ def ColorSplash(cards, colors, configuration):
         if len(filtered_colors):
             splash_color = filtered_colors[0]["color"]
     except Exception as error:
-        print("ColorSplash Error: %s" % error)   
+        logic_logger.info(f"ColorSplash Error: {error}")   
     return splash_color
     
 
@@ -732,8 +735,7 @@ def ManaBase(deck):
                 combined_deck.append(card) 
             
     except Exception as error:
-        print("ManaBase Error: %s" % error)
-    #print(combined_deck)
+        logic_logger.info(f"ManaBase Error: {error}")
     return combined_deck
     
 def SuggestDeck(taken_cards, color_options, limits, configuration):
@@ -744,7 +746,8 @@ def SuggestDeck(taken_cards, color_options, limits, configuration):
     try:
         deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Calculate the base ratings
-        filtered_cards = CardFilter(taken_cards, taken_cards, ["All Decks"],["All Decks"],["All Decks"], color_options, limits, None, configuration, False, False)
+        filtered = {"filtered_a" : ["All Decks"], "filtered_b" : ["All Decks"], "filtered_c" : ["All Decks"]}
+        filtered_cards = CardFilter(taken_cards, taken_cards, filtered, color_options, limits, None, configuration, False, False)
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max, configuration)
         colors = colors.keys()
@@ -772,14 +775,13 @@ def SuggestDeck(taken_cards, color_options, limits, configuration):
                         decks[color]["sideboard_cards"] = StackCards(sideboard_cards, color)
                         decks[color]["rating"] = rating
                         decks[color]["type"] = type
-                        print("Color: %s, Rating: %s" % (color, decks[color]["rating"]))
                         decks[color]["deck_cards"].extend(ManaBase(deck))
         
         sorted_colors  = sorted(decks, key=lambda x: decks[x]["rating"], reverse=True)
         for color in sorted_colors:
             sorted_decks[color] = decks[color]
     except Exception as error:
-        print("SuggestDeck Error: %s" % error)
+        logic_logger.info(f"SuggestDeck Error: {error}")
 
     return sorted_decks
     
@@ -793,7 +795,8 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardFilter(cards, cards, [color], [color], [color], color_options, limits, None, configuration, False, False)
+        filtered = {"filtered_a" : [color], "filtered_b" : [color], "filtered_c" : [color]}
+        filtered_cards = CardFilter(cards, cards, filtered, color_options, limits, None, configuration, False, False)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color, configuration))
@@ -878,8 +881,9 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
                 sideboard_list.remove(card)
             except Exception as error:
                 print("%s error: %s" % (card["name"], error))
+                logic_logger.info(f"Sideboard {card['name']} Error: {error}")
     except Exception as error:
-        print("BuildDeck Error: %s" % error)
+        logic_logger.info(f"BuildDeck Error: {error}")
     return used_list, sideboard_list
     
 def ReadConfig():
@@ -902,7 +906,7 @@ def ReadConfig():
         config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
         config.draft_log_enabled = config_data["settings"]["draft_log_enabled"]
     except Exception as error:
-        print("ReadConfig Error: %s" % error)
+        logic_logger.info(f"ReadConfig Error: {error}")
     return config
 
 def WriteConfig(config):
@@ -926,7 +930,7 @@ def WriteConfig(config):
             json.dump(config_data, file, ensure_ascii=False, indent=4)
     
     except Exception as error:
-        print("WriteConfig Error: %s" % error)
+        logic_logger.info(f"WriteConfig Error: {error}")
 
 def ResetConfig():
     config = Config()
@@ -968,4 +972,4 @@ def ResetConfig():
         with open('config.json', 'w', encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
     except Exception as error:
-        print("ResetConfig Error: %s" % error)
+        logic_logger.info(f"ResetConfig Error: {error}")

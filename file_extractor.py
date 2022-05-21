@@ -10,16 +10,18 @@ import itertools
 import logging
 from enum import Enum
 import log_scanner as LS
-from datetime import date
 from urllib.parse import quote as urlencode
-
-#https://www.17lands.com/card_ratings/data?expansion=MID&format=PremierDraft&colors=W&start_date=2021-01-01&end_date=2021-09-27&colors=WUB
-
 LOCAL_DATA_FOLDER_PATH_WINDOWS = "Wizards of the Coast/MTGA/MTGA_Data/Downloads/Data/"
 LOCAL_DATA_FOLDER_PATH_OSX = "Library/Application Support/com.wizards.mtga/Downloads/Data/"
 
 LOCAL_DATA_FILE_PREFIX_CARDS = "Data_cards_"
 LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
+
+SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
+SET_FILE_SUFFIX = "Data.json"
+
+if not os.path.exists(SETS_FOLDER):
+    os.makedirs(SETS_FOLDER)
 
 PLATFORM_ID_OSX = "darwin"
 PLATFORM_ID_WINDOWS = "win32"
@@ -37,11 +39,38 @@ platform_log_dict = {
     PLATFORM_ID_WINDOWS : LOG_LOCATION_WINDOWS,
 }
 
+file_logger = logging.getLogger("mtgaTool")
+
 class Result(Enum):
     VALID = 0
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
     
+def RetrieveLocalSetList(sets):
+    file_list = []
+    main_sets = [v[0] for k, v in sets.items()]
+    for file in os.listdir(SETS_FOLDER):
+        try:
+            name_segments = file.split("_")
+            if len(name_segments) == 3:
+
+                if ((name_segments[0].lower() in main_sets) and 
+                    (name_segments[1] in LS.limited_types_dict.keys()) and 
+                    (name_segments[2] == SET_FILE_SUFFIX)):
+                    
+                    set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
+                    result, json_data = FileIntegrityCheck(file)
+                    if result == Result.VALID:
+                        if json_data["meta"]["version"] == 1:
+                            start_date, end_date = json_data["meta"]["date_range"].split("->")
+                        else:
+                            start_date = json_data["meta"]["start_date"] 
+                            end_date = json_data["meta"]["end_date"] 
+                        file_list.append((set_name, name_segments[1], start_date, end_date)) 
+        except Exception as error:
+            file_logger.info(f"RetrieveLocalSetList Error: {error}")
+    
+    return file_list
 def ArenaLogLocation():
     file_location = ""
     try:
@@ -57,14 +86,14 @@ def ArenaLogLocation():
                 break
                 
     except Exception as error:
-        print("ArenaLogLocation Error: %s" % error)
+        file_logger.info(f"ArenaLogLocation Error: {error}")
     return file_location
     
 def RetrieveLocalArenaData(card_data, card_set):
     result_string = "Arena IDs Unavailable"
     result = False
     
-    while(1):
+    while(True):
         try:
             if sys.platform == PLATFORM_ID_OSX:
                 paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
@@ -88,14 +117,15 @@ def RetrieveLocalArenaData(card_data, card_set):
             result = RetrieveLocalCardName(arena_text_locations[0], arena_data, card_data)
             
         except Exception as error:
-            print("RetrieveLocalArenaData Error: %s" % error)
+            file_logger.info(f"RetrieveLocalArenaData Error: {error}")
         break
     return result, result_string
  
 def SearchLocalFiles(paths, file_prefixes):
     file_locations = []
-    try:           
-        for file_path in paths:
+    for file_path in paths:
+        file_logger.info(f"Searching file path {file_path} for {file_prefixes}")
+        try:           
             if os.path.exists(file_path):
                 for prefix in file_prefixes:
                     files = [filename for filename in os.listdir(file_path) if filename.startswith(prefix)]
@@ -103,9 +133,9 @@ def SearchLocalFiles(paths, file_prefixes):
                     for file in files:
                         file_location = os.path.join(file_path, file)
                         file_locations.append(file_location)
-    
-    except Exception as error:
-        print(error)
+        
+        except Exception as error:
+            file_logger.info(f"SearchLocalFiles Error: {error}")
                     
     return file_locations
     
@@ -126,7 +156,7 @@ def RetrieveLocalArenaId(file_location, card_set):
                         result = True
     
     except Exception as error:
-        print("RetrieveLocalArenaId Error: %s" % error)
+        file_logger.info(f"RetrieveLocalArenaId Error: {error}")
         
     return result, arena_data
     
@@ -159,8 +189,8 @@ def RetrieveLocalCardName(file_location, arena_data, scryfall_data):
             card["arena_id"] = processed_data[card_name]    
         
     except Exception as error:
-        print("RetrieveLocalCardName Error: %s" % error)
         result = False
+        file_logger.info(f"RetrieveLocalCardName Error: {error}")
     
     return result
 
@@ -256,7 +286,6 @@ def FileIntegrityCheck(filename):
 class DataPlatform:
     def __init__(self):
         self.sets = []
-        self.logger = logging.getLogger("mtgaTool")
         self.draft = ""
         self.session = ""
         self.start_date = ""
@@ -308,7 +337,7 @@ class DataPlatform:
             version = self.ProcessRepositoryVersionData(url_data)
                 
         except Exception as error:
-            self.logger.info(f"SessionRepositoryVersion Error: {error}")
+            file_logger.info(f"SessionRepositoryVersion Error: {error}")
         return version
 
     def SessionRepositoryDownload(self, filename):
@@ -320,7 +349,7 @@ class DataPlatform:
             with open(filename,'wb') as file:
                 file.write(url_data)   
         except Exception as error:
-            self.logger.info(f"SessionRepositoryDownload Error: {error}")
+            file_logger.info(f"SessionRepositoryDownload Error: {error}")
         return version  
 
 
@@ -358,8 +387,8 @@ class DataPlatform:
                         break
                         
                 except Exception as error:
-                    self.logger.info(url)     
-                    self.logger.info(f"SessionCardData Error: {error}")
+                    file_logger.info(url)     
+                    file_logger.info(f"SessionCardData Error: {error}")
                 
                 if result == False:
                     retry -= 1
@@ -406,8 +435,8 @@ class DataPlatform:
                         result = True
                         break
                     except Exception as error:
-                        self.logger.info(url) 
-                        self.logger.info(f"Session17Lands Error: {error}")   
+                        file_logger.info(url) 
+                        file_logger.info(f"Session17Lands Error: {error}")   
                         time.sleep(15)
                         retry -= 1
                         
@@ -445,7 +474,7 @@ class DataPlatform:
                 
                 
         except Exception as error:
-            self.logger.info(f"SessionSets Error: {error}") 
+            file_logger.info(f"SessionSets Error: {error}") 
         return sets   
     def SessionColorRatings(self):
         try:
@@ -457,8 +486,8 @@ class DataPlatform:
             self.RetrieveColorRatings(color_json_data)
             
         except Exception as error:
-            self.logger.info(url) 
-            self.logger.info(f"SessionColorRatings Error: {error}") 
+            file_logger.info(url) 
+            file_logger.info(f"SessionColorRatings Error: {error}") 
     def Retrieve17Lands(self, colors, cards):  
         result = True
 
@@ -484,7 +513,7 @@ class DataPlatform:
                 self.card_ratings[card_name]
             except Exception as error:
                 result = False
-                self.logger.info(f"Retrieve17Lands Error: {error}")
+                file_logger.info(f"Retrieve17Lands Error: {error}")
                 
         return result  
         
@@ -539,7 +568,7 @@ class DataPlatform:
                             self.combined_data["color_ratings"][processed_colors] = winrate
             
         except Exception as error:
-            self.logger.info(f"RetrieveColorRatings Error: {error}")
+            file_logger.info(f"RetrieveColorRatings Error: {error}")
 
           
     def ProcessCardData (self, data, arena_id):
@@ -587,7 +616,7 @@ class DataPlatform:
                 result = True
                 
             except Exception as error:
-                self.logger.info(f"ProcessCardData Error: {error}")
+                file_logger.info(f"ProcessCardData Error: {error}")
                 result_string = error
         #print("combined_data: %s" % str(combined_data))
         return arena_id, result, result_string, local_check 
@@ -627,7 +656,7 @@ class DataPlatform:
                                                                                            "gih" : value["gih"]}
             
         except Exception as error:
-            self.logger.info(f"ProcessCardRatings Error: {error}")
+            file_logger.info(f"ProcessCardRatings Error: {error}")
             
         #print("combined_data: %s" % str(combined_data))
         return
@@ -656,7 +685,7 @@ class DataPlatform:
                     if counter >= 15:
                         break
             except Exception as error:
-                self.logger.info(f"ProcessSetData Error: {error}")
+                file_logger.info(f"ProcessSetData Error: {error}")
         
         return sets
         
@@ -667,19 +696,20 @@ class DataPlatform:
     def ExportData(self):
         result = True
         try:
-            output_file = self.sets[0].upper() + "_" + self.draft + "_Data.json"
+            output_file = "_".join((self.sets[0].upper(), self.draft, SET_FILE_SUFFIX))
+            location = os.path.join(SETS_FOLDER, output_file)
 
-            with open(output_file, 'w') as f:
+            with open(location, 'w') as f:
                 json.dump(self.combined_data, f)
                 
             #Verify that the file was written
-            write_result, write_data = FileIntegrityCheck(output_file)
+            write_result, write_data = FileIntegrityCheck(location)
             
             if write_result != Result.VALID:
                 result = False
             
         except Exception as error:
-            self.logger.info(f"ExportData Error: {error}")
+            file_logger.info(f"ExportData Error: {error}")
             result = False
             
         return result

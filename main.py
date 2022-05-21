@@ -76,6 +76,7 @@ import sys
 import io
 import functools
 import logging
+import logging.handlers
 import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
@@ -83,7 +84,23 @@ from ttkwidgets.autocomplete import AutocompleteEntry
 
 __version__= 2.83
 
-DEBUG_LOG_FILE = os.path.join(os.getcwd(), "debug.log")
+DEBUG_LOG_FOLDER = os.path.join(os.getcwd(), "Debug")
+DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
+
+if not os.path.exists(DEBUG_LOG_FOLDER):
+    os.makedirs(DEBUG_LOG_FOLDER)
+
+ui_logger = logging.getLogger("mtgaTool")
+ui_logger.setLevel(logging.INFO)
+handlers = {
+    logging.handlers.TimedRotatingFileHandler(DEBUG_LOG_FILE, when='D', interval=1, backupCount=7),
+    logging.StreamHandler(sys.stdout),
+}
+formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%m/%d/%Y %H:%M:%S>')
+for handler in handlers:
+    handler.setFormatter(formatter)
+    ui_logger.addHandler(handler)
+        
     
 def CheckVersion(platform, version):
     return_value = False
@@ -137,8 +154,7 @@ def CopySuggested(deck_colors, deck, set_data, color_options, set):
         deck_string = CL.CopyDeck(deck[colors]["deck_cards"],deck[colors]["sideboard_cards"],set_data["card_ratings"], set)
         CopyClipboard(deck_string)
     except Exception as error:
-        print(f"CopySuggested Error: {error}")
-        #self.logger.info(f"CopySuggested Error: {error}")
+        ui_logger.info(f"CopySuggested Error: {error}")
     return 
     
 def CopyTaken(taken_cards, set_data, set, color):
@@ -149,8 +165,7 @@ def CopyTaken(taken_cards, set_data, set, color):
         CopyClipboard(deck_string)
 
     except Exception as error:
-        print(f"CopyTaken Error: {error}")
-        #self.logger.info(f"CopyTaken Error: {error}")
+        ui_logger.info(f"CopyTaken Error: {error}")
     return 
     
 def CopyClipboard(copy):
@@ -163,8 +178,7 @@ def CopyClipboard(copy):
         clip.update()
         clip.destroy()
     except Exception as error:
-        print(f"CopyClipboard Error: {error}")
-        #self.logger.info(f"CopyClipboard Error: {error}")
+        ui_logger.info(f"CopyClipboard Error: {error}")
     return 
     
 
@@ -175,17 +189,6 @@ class WindowUI:
         self.configuration = configuration
         self.filename = filename
         self.step_through = step_through
-        
-        self.logger = logging.getLogger("mtgaTool")
-        self.logger.setLevel(logging.INFO)
-        handlers = {
-            logging.FileHandler(DEBUG_LOG_FILE),
-            logging.StreamHandler(sys.stdout),
-        }
-        formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%m/%d/%Y %H:%M:%S>')
-        for handler in handlers:
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
         
         self.draft = LS.ArenaScanner(self.filename, self.step_through)
         self.trace_ids = []
@@ -386,9 +389,7 @@ class WindowUI:
                 list_box.heading(column, text = column, anchor = CENTER)
             list_box["show"] = "headings"  # use after setting column's size
         except Exception as error:
-            error_string = "CreateHeader Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"CreateHeader Error: {error}")
         return list_box
 
     def UpdatePackTable(self, card_list, taken_cards, filtered):
@@ -424,9 +425,7 @@ class WindowUI:
                 self.pack_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
             self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered["filtered_c"]))
         except Exception as error:
-            error_string = "UpdatePackTable Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdatePackTable Error: {error}")
             
     def UpdateMissingTable(self, current_pack, previous_pack, picked_cards, taken_cards, filtered):
         try:
@@ -466,9 +465,7 @@ class WindowUI:
                         self.missing_table.insert("",index = count, iid = count, values = (card_name, card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
                     self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered["filtered_c"]))
         except Exception as error:
-            error_string = "UpdateMissingTable Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateMissingTable Error: {error}")
 
     def ClearCompareTable(self, compare_table, matching_cards):
         matching_cards.clear()
@@ -503,9 +500,7 @@ class WindowUI:
                 compare_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
             compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered["filtered_c"]))
         except Exception as error:
-            error_string = "UpdateCompareTable Error: %s" % error
-            
-            self.logger.info(error_string) 
+            ui_logger.info(f"UpdateCompareTable Error: {error}")
 
     def UpdateTakenTable(self, taken_table, taken_cards, filtered):
         try:
@@ -530,9 +525,7 @@ class WindowUI:
                 taken_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
             taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered["filtered_c"]))
         except Exception as error:
-            error_string = "UpdateTakenTable Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateTakenTable Error: {error}")
             
     def UpdateSuggestDeckTable(self, suggest_table, selected_color, suggested_decks, color_options):
         try:             
@@ -552,9 +545,7 @@ class WindowUI:
             suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
     
         except Exception as error:
-            error_string = "UpdateSuggestTable Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateSuggestTable Error: {error}")
             
     def UpdateDeckStatsTable(self, taken_cards, filter_type):
         try:             
@@ -604,9 +595,7 @@ class WindowUI:
                                                                     values["total"]), tag = (row_tag,))
                 count += 1
         except Exception as error:
-            error_string = "UpdateDeckStats Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateDeckStats Error: {error}")
             
     def UpdatePackPick(self, pack, pick):
         try:
@@ -614,9 +603,7 @@ class WindowUI:
             self.pack_pick_label.config(text = new_label)
         
         except Exception as error:
-            error_string = "UpdatePackPick Error: %s" % error
-            
-            self.logger.info(error_string)   
+            ui_logger.info(f"UpdatePackPick Error: {error}")
      
     def UpdateCurrentDraft(self, set, draft_type):
         try: 
@@ -629,9 +616,7 @@ class WindowUI:
             new_label = " %s %s" % (set, draft_type_string)
             self.current_draft_value_label.config(text = new_label)
         except Exception as error:
-            error_string = "UpdateCurrentDraft Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateCurrentDraft Error: {error}")
      
     def UpdateSourceOptions(self, new_list):
         self.ControlTrace(False)
@@ -654,9 +639,7 @@ class WindowUI:
 
 
         except Exception as error:
-            error_string = "UpdateSourceOptions Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateSourceOptions Error: {error}")
             
         self.ControlTrace(True)
      
@@ -686,9 +669,8 @@ class WindowUI:
                     self.column_4_list.append(data)
                 
         except Exception as error:
-            error_string = "UpdateFilterOptions Error: %s" % error
+            ui_logger.info(f"UpdateFilterOptions Error: {error}")
             
-            self.logger.info(error_string)
         self.ControlTrace(True)
         
     def DefaultSettingsCallback(self, *args):
@@ -850,9 +832,7 @@ class WindowUI:
                     previous_pick = self.draft.current_pick
                     previous_pack = self.draft.current_pack
         except Exception as error:
-            error_string = "UpdateUI Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"UpdateUI Error: {error}")
             
         self.root.after(1000, self.UpdateUI)
         
@@ -960,11 +940,7 @@ class WindowUI:
             
             popup.attributes("-topmost", True)
         except Exception as error:
-            error_string = "SetViewPopup Error: %s" % error
-            
-            self.logger.info(error_string)
-        
-
+            ui_logger.info(f"SetViewPopup Error: {error}")
         
     def CardComparePopup(self):
         popup = Toplevel()
@@ -1018,9 +994,7 @@ class WindowUI:
             
             popup.attributes("-topmost", True)
         except Exception as error:
-            error_string = "CardComparePopup Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"CardComparePopup Error: {error}")
             
     def TakenCardsPopup(self):
         popup = Toplevel()
@@ -1062,9 +1036,7 @@ class WindowUI:
                                   filtered)
             popup.attributes("-topmost", True)
         except Exception as error:
-            error_string = "TakenCards Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"TakenCardsPopup Error: {error}")
             
     def SuggestDeckPopup(self):
         popup = Toplevel()
@@ -1126,9 +1098,7 @@ class WindowUI:
             self.UpdateSuggestDeckTable(suggest_table, deck_colors_value, suggested_decks, deck_color_options)
             popup.attributes("-topmost", True)
         except Exception as error:
-            error_string = "SuggestDeckPopup Error: %s" % error
-            
-            self.logger.info(error_string)
+            ui_logger.info(f"SuggestDeckPopup Error: {error}")
             
     def SettingsPopup(self):
         popup = Toplevel()
@@ -1221,9 +1191,7 @@ class WindowUI:
             
             popup.attributes("-topmost", True)
         except Exception as error:
-            error_string = "ConfigPopup Error: %s" % error
-            
-            self.logger.info(error_string) 
+            ui_logger.info(f"SettingsPopup Error: {error}")
         
     def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets, version):
         result = True
@@ -1286,30 +1254,10 @@ class WindowUI:
         for row in list_box.get_children():
                 list_box.delete(row)
         self.root.update()
-        for directory, directory_names, filenames in os.walk(os.getcwd()):
-            for filename in filenames:
-                name_segments = filename.split("_")
-                if len(name_segments) == 3:
-                    if name_segments[1] in LS.limited_types_dict.keys():
-                        #Retrieve the start and end dates
-                        try:
-                            main_sets = [v[0] for k, v in sets.items()]
-                            set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
-                            result, json_data = FE.FileIntegrityCheck(filename)
-                            if result == FE.Result.VALID:
-                                if json_data["meta"]["version"] == 1:
-                                    start_date, end_date = json_data["meta"]["date_range"].split("->")
-                                    list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
-                                elif json_data["meta"]["version"] == 2:
-                                    start_date = json_data["meta"]["start_date"] 
-                                    end_date = json_data["meta"]["end_date"] 
-                                    list_box.insert("", index = 0, values = (set_name, name_segments[1], start_date, end_date))
-                        except Exception as error:
-                            error_string = "DataViewUpdate Error: %s" % error
-                            
-                            self.logger.info(error_string)
-            
-            break
+        file_list = FE.RetrieveLocalSetList(sets)
+        
+        for file in file_list:
+            list_box.insert("", index = 0, values = file)
             
     def OnClickTable(self, event, table, card_list, selected_color):
         color_dict = {}

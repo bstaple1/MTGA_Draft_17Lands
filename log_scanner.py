@@ -2,7 +2,6 @@ import os
 import time
 import json
 import logging
-import sys
 import card_logic as CL
 import file_extractor as FE
 from collections import OrderedDict
@@ -21,9 +20,11 @@ NON_COLORS_OPTIONS = ["Auto", "All GIHWR", "All IWD", "All ALSA"]
 DECK_COLORS = ["All Decks","W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
 DECK_FILTERS = NON_COLORS_OPTIONS + DECK_COLORS
 
-DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "./Logs")
+DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
 
-SET_FILE_SUFFIX = "Data.json"
+if not os.path.exists(DRAFT_LOG_FOLDER):
+    os.makedirs(DRAFT_LOG_FOLDER)
+
 TIER_FILE_PREFIX = "Tier_"
 
 DATA_SOURCES_NONE = {"None" : ""}
@@ -38,6 +39,8 @@ limited_types_dict = {
     "Sealed"           : LIMITED_TYPE_SEALED,
     "TradSealed"       : LIMITED_TYPE_SEALED_TRADITIONAL,
 }
+
+scanner_logger = logging.getLogger("mtgaTool")
 
 class ArenaScanner:
     def __init__(self, filename, step_through):
@@ -154,7 +157,7 @@ class ArenaScanner:
                 update = True
 
         except Exception as error:
-            print("DraftStartSearch Error: %s" % error)
+            scanner_logger.info(f"DraftStartSearch Error: {error}")
             
         return update
     def DraftStartSearchV1(self, event_data, offset):
@@ -186,7 +189,7 @@ class ArenaScanner:
                         #self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                         break
         except Exception as error:
-            print("DraftStartSearchV1 Error: %s" % error)
+            scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
             
     
     def DraftStartSearchV2(self, event_data, offset):
@@ -205,12 +208,10 @@ class ArenaScanner:
                     self.draft_type = limited_types_dict[event_type]
                     self.draft_set = event_set.upper()
                     self.NewLog(event_set, event_type)
-                    #directory = "Logs/"
-                    #self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                     self.logger.info(event_data)
                                 
         except Exception as error:
-            print("DraftStartSearchV2 Error: %s" % error)
+            scanner_logger.info(f"DraftStartSearchV2 Error: {error}")
             
     #Wrapper function for performing a search based on the draft type
     def DraftDataSearch(self):
@@ -298,15 +299,11 @@ class ArenaScanner:
                                 break
         
                         except Exception as error:
-                            error_string = "DraftPackSearchPremierP1P1 Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPackSearchPremierP1P1 Sub Error: {error}")
             if log.closed == False:
                 log.close() 
         except Exception as error:
-            error_string = "DraftPackSearchPremierP1P1 Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPackSearchPremierP1P1 Error: {error}")
         
         return pack_cards
     def DraftPickedSearchPremierV1(self):
@@ -359,13 +356,9 @@ class ArenaScanner:
                                 break; 
                             
                         except Exception as error:
-                            error_string = "DraftPickedSearchPremierV1 Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)         
+                            self.logger.info(f"DraftPickedSearchPremierV1 Error: {error}")         
         except Exception as error:
-            error_string = "DraftPickedSearchPremierV1 Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPickedSearchPremierV1 Error: {error}")
 
         
     def DraftPackSearchPremierV1(self):
@@ -422,14 +415,10 @@ class ArenaScanner:
                                 break
     
                         except Exception as error:
-                            error_string = "DraftPackSearchPremierV1 Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPackSearchPremierV1 Error: {error}")
              
         except Exception as error:
-            error_string = "DraftPackSearchPremierV1 Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPackSearchPremierV1 Error: {error}")
         return pack_cards
         
     def DraftPackSearchPremierV2(self):
@@ -485,14 +474,10 @@ class ArenaScanner:
                                 break
     
                         except Exception as error:
-                            error_string = "DraftPackSearchPremierV2 Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPackSearchPremierV2 Error: {error}")
              
         except Exception as error:
-            error_string = "DraftPackSearchPremierV2 Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPackSearchPremierV2 Error: {error}")
         return pack_cards
 
     
@@ -516,7 +501,6 @@ class ArenaScanner:
                     string_offset = line.find(draft_string)
                     
                     if string_offset != -1:
-                        #print(line)
                         self.logger.info(line)
                         self.pick_offset = offset
                         try:
@@ -546,14 +530,10 @@ class ArenaScanner:
                                 break; 
                             
                         except Exception as error:
-                            error_string = "DraftPickedSearchPremierV2 Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPickedSearchPremierV2 Error: {error}")
           
         except Exception as error:
-            error_string = "DraftPickedSearchPremierV2 Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPickedSearchPremierV2 Error: {error}")
     
     def DraftPackSearchQuick(self):
         offset = self.pack_offset
@@ -613,15 +593,11 @@ class ArenaScanner:
                                     break
         
                             except Exception as error:
-                                error_string = "DraftPackSearchQuick Sub Error: %s" % error
-                                print(error_string)
-                                self.logger.info(error_string)
+                                self.logger.info(f"DraftPackSearchQuick Error: {error}")
             if log.closed == False:
                 log.close() 
         except Exception as error:
-            error_string = "DraftPackSearchQuick Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPackSearchQuick Error: {error}")
         
         return pack_cards
         
@@ -653,9 +629,7 @@ class ArenaScanner:
                             
                             request_data = json.loads(draft_data["request"])
                             payload_data = json.loads(request_data["Payload"])
-                            print("payload_data: %s" % str(payload_data))
                             pick_data = payload_data["PickInfo"]
-                            print("pick_data: %s" % str(pick_data))
                             
                             pack = pick_data["PackNumber"] + 1
                             pick = pick_data["PickNumber"] + 1
@@ -676,15 +650,11 @@ class ArenaScanner:
                                 break
                             
                         except Exception as error:
-                            error_string = "DraftPickedSearchQuick Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPickedSearchQuick Error: {error}")
             if log.closed == False:
                 log.close()      
         except Exception as error:
-            error_string = "DraftPickedSearchQuick Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPickedSearchQuick Error: {error}")
             
     def DraftPackSearchTraditionalP1P1(self):
         offset = self.pack_offset
@@ -744,15 +714,11 @@ class ArenaScanner:
                                 break
         
                         except Exception as error:
-                            error_string = "DraftPackSearchTraditionalP1P1 Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPackSearchTraditionalP1P1 Error: {error}")
             if log.closed == False:
                 log.close() 
         except Exception as error:
-            error_string = "DraftPackSearchTraditionalP1P1 Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPackSearchTraditionalP1P1 Error: {error}")
         
         return pack_cards
         
@@ -806,13 +772,9 @@ class ArenaScanner:
                                 break; 
                             
                         except Exception as error:
-                            error_string = "DraftPickedSearchPremierV1 Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)         
+                            self.logger.info(f"DraftPickedSearchTraditional Error: {error}")       
         except Exception as error:
-            error_string = "DraftPickedSearchTraditional Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPickedSearchTraditional Error: {error}") 
 
         
     def DraftPackSearchTraditional(self):
@@ -869,14 +831,10 @@ class ArenaScanner:
                                 break
     
                         except Exception as error:
-                            error_string = "DraftPackSearchTraditional Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"DraftPackSearchTraditional Error: {error}") 
              
         except Exception as error:
-            error_string = "DraftPackSearchTraditional Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"DraftPackSearchTraditional Error: {error}") 
         return pack_cards
 
     def SealedPackSearch(self):
@@ -916,14 +874,10 @@ class ArenaScanner:
                                         self.taken_cards.append(card)
                                                    
                         except Exception as error:
-                            error_string = "SealedPackSearch Sub Error: %s" % error
-                            print(error_string)
-                            self.logger.info(error_string)
+                            self.logger.info(f"SealedPackSearch Error: {error}") 
              
         except Exception as error:
-            error_string = "SealedPackSearch Error: %s" % error
-            print(error_string)
-            self.logger.info(error_string)
+            self.logger.info(f"SealedPackSearch Error: {error}") 
         return pack_cards
         
     def RetrieveDataSources(self):
@@ -937,8 +891,8 @@ class ArenaScanner:
                 
                 #Search for the set files
                 for type in draft_list:
-                    file_name = "_".join((self.draft_set.upper(),type,SET_FILE_SUFFIX))
-                    file = FE.SearchLocalFiles([os.getcwd()], [file_name])
+                    file_name = "_".join((self.draft_set.upper(),type,FE.SET_FILE_SUFFIX))
+                    file = FE.SearchLocalFiles([FE.SETS_FOLDER], [file_name])
                     if len(file):
                         result, json_data = FE.FileIntegrityCheck(file[0])
                         
@@ -946,7 +900,7 @@ class ArenaScanner:
                             data_sources[type] = file[0]
         
         except Exception as error:
-            print("RetrieveDataSources Error: %s" % error)
+            scanner_logger.info(f"RetrieveDataSources Error: {error}")
     
         if len(data_sources) == 0:
             data_sources = DATA_SOURCES_NONE
@@ -964,7 +918,7 @@ class ArenaScanner:
                     tier_source = file[0]
         
         except Exception as error:
-            print("RetrieveTierSource Error: %s" % error)
+            scanner_logger.info(f"RetrieveTierSource Error: {error}")
 
         return tier_source
         
@@ -979,7 +933,7 @@ class ArenaScanner:
                 self.set_data = json_data
         
         except Exception as error:
-            print("RetrieveSetData Error: %s" % error)
+            scanner_logger.info(f"RetrieveSetData Error: {error}")
             
         return result
         
@@ -987,10 +941,11 @@ class ArenaScanner:
         deck_limits = {}
         
         try:
-            upper_limit, lower_limit = CL.RatingsLimits(self.set_data["card_ratings"], bayesian_enabled)
-            deck_limits ={"upper" : upper_limit, "lower" : lower_limit}
+            if self.set_data:
+                upper_limit, lower_limit = CL.RatingsLimits(self.set_data["card_ratings"], bayesian_enabled)
+                deck_limits ={"upper" : upper_limit, "lower" : lower_limit}
         except Exception as error:
-            print("RetrieveColorLimits Error: %s" % error)
+            scanner_logger.info(f"RetrieveColorLimits Error: {error}")
         return deck_limits
         
     def RetrieveColorWinRate(self):
@@ -1006,7 +961,7 @@ class ArenaScanner:
                             ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
                             deck_colors[deck_color] = ratings_string
         except Exception as error:
-            print("RetrieveColorWinRate Error: %s" % error)
+            scanner_logger.info(f"RetrieveColorWinRate Error: {error}")
         return deck_colors
        
     def PickedCards(self, pack_index):
@@ -1018,7 +973,7 @@ class ArenaScanner:
                     try:
                         picked_cards.append(self.set_data["card_ratings"][card]["name"])
                     except Exception as error:
-                        print("PickedCards Error: %s" % error)
+                        scanner_logger.info(f"PickedCards Error: {error}")
             
         return picked_cards  
 
@@ -1031,7 +986,7 @@ class ArenaScanner:
                     try:
                         pack_cards.append(self.set_data["card_ratings"][card])
                     except Exception as error:
-                        print("InitialPackCards Error: %s" % error)
+                        scanner_logger.info(f"InitialPackCards Error: {error}")
         
         return pack_cards        
         
@@ -1044,7 +999,7 @@ class ArenaScanner:
                     try:
                         pack_cards.append(self.set_data["card_ratings"][card])
                     except Exception as error:
-                        print("PackCards Error: %s" % error)
+                        scanner_logger.info(f"PackCards Error: {error}")
         
         return pack_cards
         
@@ -1056,7 +1011,7 @@ class ArenaScanner:
                 try:
                     taken_cards.append(self.set_data["card_ratings"][card])
                 except Exception as error:
-                    print("TakenCards Error: %s" % error)
+                    scanner_logger.info(f"TakenCards Error: {error}")
         
         return taken_cards
         
@@ -1071,5 +1026,5 @@ class ArenaScanner:
                         deck_colors["Tier"] = "Tier (%s)" % data["meta"]["label"]
              
         except Exception as error:
-            print("RetrieveTierData Error: %s" % error)   
+            scanner_logger.info(f"RetrieveTierData Error: {error}")  
         return tier_data
