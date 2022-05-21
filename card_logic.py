@@ -16,14 +16,15 @@ class Config:
     column_2 : str="All ALSA"
     column_3 : str="All Decks"
     column_4 : str="Auto"
-    hide_missing : bool=False
-    hide_stats : bool=False
+    missing_enabled : bool=True
+    stats_enabled : bool=True
     hotkey_enabled : bool=True
     images_enabled : bool=True
-    auto_average_disabled : bool=False
-    curve_bonus_disabled : bool=True
-    color_bonus_disabled : bool=True
-    bayesian_average_disabled : bool=True
+    auto_highest_enabled : bool=True
+    curve_bonus_enabled : bool=False
+    color_bonus_enabled : bool=False
+    bayesian_average_enabled : bool=False
+    draft_log_enabled: bool=True
     minimum_creatures : int=13
     minimum_noncreatures : int=6
     ratings_threshold : int=500
@@ -55,7 +56,7 @@ def ColorAffinity(colors, card):
         
     return colors 
   
-def ColorBonus (deck, deck_colors, card, bayesian_disabled):
+def ColorBonus (deck, deck_colors, card, bayesian_enabled):
 
     color_bonus_factor = 0.0
     color_bonus_level = 0.0
@@ -74,7 +75,7 @@ def ColorBonus (deck, deck_colors, card, bayesian_disabled):
 
         searched_cards = DeckColorSearch(deck, search_colors, ["Creature", "Planeswalker","Instant", "Sorcery","Enchantment","Artifact"], True, False, True)
         for card in searched_cards:
-            gihwr = CalculateWinRate(card["deck_colors"]["All Decks"], bayesian_disabled) 
+            gihwr = CalculateWinRate(card["deck_colors"]["All Decks"], bayesian_enabled) 
             if gihwr >= 65.0:
                 color_bonus_level += 0.3
             elif gihwr >= 60.0:
@@ -98,9 +99,7 @@ def CurveBonus(deck, card, pick_number, color_filter, configuration):
     index = max(pick_number - curve_start, 0)
     curve_bonus = 0.0
     curve_bonus_factor = 0.0
-    cmc_average = configuration.deck_mid.cmc_average
     minimum_creature_count = configuration.minimum_creatures
-    minimum_noncreature_count = configuration.minimum_noncreatures
     minimum_distribution = configuration.deck_mid.distribution
     
     try:
@@ -109,7 +108,9 @@ def CurveBonus(deck, card, pick_number, color_filter, configuration):
         if len(matching_colors) or len(card["colors"]) == 0:
             if any(x in card["types"] for x in ["Creature", "Planeswalker"]):
                 card_list = DeckColorSearch(deck, color_filter, ["Creature", "Planeswalker"], True, True, False)
-                card_list = [CalculateWinRate(x["deck_colors"][color_filter], configuration.bayesian_average_disabled) for x in card_list] 
+                for card in card_list:
+                    card["deck_colors"][color_filter]["gihwr"] = CalculateWinRate(card["deck_colors"][color_filter], configuration.bayesian_average_enabled)
+                #card_list = [CalculateWinRate(x["deck_colors"][color_filter], configuration.bayesian_average_enabled) for x in card_list] 
                 card_colors_sorted = sorted(card_list, key = lambda k: k["deck_colors"][color_filter]["gihwr"], reverse = True)
                 
                 cmc_total, count, distribution = ColorCmc(card_colors_sorted)
@@ -117,7 +118,7 @@ def CurveBonus(deck, card, pick_number, color_filter, configuration):
                 
                 curve_bonus_factor = 1
                 if(count > minimum_creature_count):
-                    card_gihwr = CalculateWinRate(card["deck_colors"][color_filter], configuration.bayesian_average_disabled)
+                    card_gihwr = CalculateWinRate(card["deck_colors"][color_filter], configuration.bayesian_average_enabled)
                     replaceable = [x for x in card_colors_sorted if (card["cmc"] <= x["cmc"] and (card_gihwr > x["deck_colors"][color_filter]["gihwr"]))]
                     curve_bonus_factor = 0
                     if len(replaceable):
@@ -267,20 +268,18 @@ def DeckColors(deck, color_options, colors_max, configuration):
     
 def AutoColors(deck, color_options, colors_max, configuration):
     try:
-        deck_colors_list = []
-        deck_colors_list.append(next(iter(color_options)))
+        deck_colors_list = ["All Decks"]
         colors_dict = {}
         deck_length = len(deck)
         if deck_length > 15:
             colors_dict = DeckColors(deck, color_options, colors_max, configuration)
             colors = list(colors_dict.keys())
-            print(colors_dict)
             auto_select_threshold = 30 - deck_length
             if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
                 deck_colors_list = colors[0:1]
             elif len(colors) == 1:
                 deck_colors_list = colors[0:1]
-            elif configuration.auto_average_disabled == False:
+            elif configuration.auto_highest_enabled == True:
                 deck_colors_list = colors[0:2]
 
     except Exception as error:
@@ -294,7 +293,7 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
     
     for card in deck_cards:
         try:
-            gihwr = CalculateWinRate(card["deck_colors"][color_filter], configuration.bayesian_average_disabled)
+            gihwr = CalculateWinRate(card["deck_colors"][color_filter], configuration.bayesian_average_enabled)
             if gihwr > threshold:
                 for color in card["colors"]:
                     if color not in colors:
@@ -304,10 +303,10 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
             print("CalculateColorAffinity Error: %s" % error)
     return colors 
 
-def CardFilter(card_list, deck, filter_a, filter_b, filter_c, color_options, limits, tier_list, configuration):
+def CardFilter(card_list, deck, filtered, color_options, limits, tier_list, configuration, curve_bonus, color_bonus):
     filtered_list = []
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
-    ratings_filter_dict = {"rating_filter_a" : filter_a, "rating_filter_b" : filter_b, "rating_filter_c" : filter_c}
+    ratings_filter_dict = {"rating_filter_a" : filtered["filtered_a"], "rating_filter_b" : filtered["filtered_b"], "rating_filter_c" : filtered["filtered_c"]}
     
     deck_colors = DeckColors(deck, color_options, 2, configuration)
     deck_colors = deck_colors.keys()
@@ -323,12 +322,12 @@ def CardFilter(card_list, deck, filter_a, filter_b, filter_c, color_options, lim
             selected_card["selected_color"] = ""
 
             for key, value in ratings_filter_dict.items():
-                disable_curve_bonus = True
-                disable_color_bonus = True
+                enable_curve_bonus = False
+                enable_color_bonus = False
                 #Only include the color and curve bonuses for filter c
                 if key == "rating_filter_c":
-                    disable_curve_bonus = configuration.curve_bonus_disabled
-                    disable_color_bonus = configuration.color_bonus_disabled
+                    enable_curve_bonus = curve_bonus
+                    enable_color_bonus = color_bonus
                 if len(value) == 1:
                     if value[0] in non_color_options:
                         color, type = value[0].split(" ")
@@ -339,7 +338,7 @@ def CardFilter(card_list, deck, filter_a, filter_b, filter_c, color_options, lim
                     else:
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == value[0]:
-                                rating_data = CardRating(card, limits, configuration, value[0], deck, deck_colors, disable_curve_bonus, disable_color_bonus)
+                                rating_data = CardRating(card, limits, configuration, value[0], deck, deck_colors, enable_curve_bonus, enable_color_bonus)
                                 selected_card[key] = rating_data["rating"]
                                 if key == "rating_filter_c":
                                     if "curve_bonus" in rating_data:
@@ -354,7 +353,7 @@ def CardFilter(card_list, deck, filter_a, filter_b, filter_c, color_options, lim
                         rating_data = {"rating" : 0}
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == colors:
-                                rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, disable_curve_bonus, disable_color_bonus)
+                                rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
                                 break
                         rated_colors.append(rating_data["rating"])
                         if key == "rating_filter_c":
@@ -388,7 +387,7 @@ def RowColorTag(colors):
         row_tag = "greencard"
     return row_tag
     
-def RatingsLimits(cards, bayesian_disabled):
+def RatingsLimits(cards, bayesian_enabled):
     upper_limit = 0
     lower_limit = 100
     
@@ -396,7 +395,7 @@ def RatingsLimits(cards, bayesian_disabled):
         for color in LS.DECK_COLORS:
             try:
                 if color in cards[card]["deck_colors"]:
-                    gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_disabled)
+                    gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_enabled)
                     if gihwr > upper_limit:
                         upper_limit = gihwr
                     if gihwr < lower_limit and gihwr != 0:
@@ -406,14 +405,14 @@ def RatingsLimits(cards, bayesian_disabled):
     
     return upper_limit, lower_limit
     
-def CalculateWinRate(card_data, bayesian_disabled):
+def CalculateWinRate(card_data, bayesian_enabled):
     winrate = 0.0
     try:
         winrate = card_data["gihwr"]
         
         if "gih" in card_data:
             gih = card_data["gih"]
-            if bayesian_disabled == False:
+            if bayesian_enabled == True:
                 win_count = winrate * gih
                 winrate = (win_count + 1000)/ ( gih + 20) #Bayesian average calculation
                 winrate = round(winrate, 2)
@@ -424,10 +423,10 @@ def CalculateWinRate(card_data, bayesian_disabled):
         print("CalculateWinRate Error: %s" % error)
     return winrate
 
-def CardRating(card_data, limits, configuration, filter, deck, deck_colors, disable_curve_bonus, disable_color_bonus):
+def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
     rating_data = {"rating" : 0}
     try:
-        gihwr = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_disabled)
+        gihwr = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_enabled)
         upper_limit = 0
         lower_limit = 0
         if "upper" in limits:
@@ -439,12 +438,12 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors, disa
         if (gihwr != 0) and (upper_limit != lower_limit):
             #Curve bonus
             pick_number = len(deck)
-            if (disable_curve_bonus == False) and (filter != "All Decks"):
+            if (enable_curve_bonus) and (filter != "All Decks"):
                 rating_data["curve_bonus"] = CurveBonus(deck, card_data, pick_number, filter, configuration)
                 
             #Color bonus
-            if (disable_color_bonus == False) and (filter == "All Decks"):
-                rating_data["color_bonus"] = ColorBonus(deck, deck_colors, card_data, configuration.bayesian_average_disabled)
+            if (enable_color_bonus) and (filter == "All Decks"):
+                rating_data["color_bonus"] = ColorBonus(deck, deck_colors, card_data, configuration.bayesian_average_enabled)
         
             #Calculate the ALSA bonus
             alsa_bonus = ((15 - card_data["deck_colors"][filter]["alsa"]) / 10) * configuration.alsa_weight
@@ -745,7 +744,7 @@ def SuggestDeck(taken_cards, color_options, limits, configuration):
     try:
         deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Calculate the base ratings
-        filtered_cards = CardFilter(taken_cards, taken_cards, ["All Decks"],["All Decks"],["All Decks"], color_options, limits, None, configuration)
+        filtered_cards = CardFilter(taken_cards, taken_cards, ["All Decks"],["All Decks"],["All Decks"], color_options, limits, None, configuration, False, False)
         #Identify the top color combinations
         colors = DeckColors(taken_cards, color_options, colors_max, configuration)
         colors = colors.keys()
@@ -794,7 +793,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered_cards = CardFilter(cards, cards, [color], [color], [color], color_options, limits, None, configuration)
+        filtered_cards = CardFilter(cards, cards, [color], [color], [color], color_options, limits, None, configuration, False, False)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color, configuration))
@@ -895,12 +894,13 @@ def ReadConfig():
         config.column_2 = config_data["settings"]["column_2"]
         config.column_3 = config_data["settings"]["column_3"]
         config.column_4 = config_data["settings"]["column_4"]
-        config.hide_missing = config_data["settings"]["hide_missing"]
-        config.hide_stats = config_data["settings"]["hide_stats"]
-        config.auto_average_disabled = config_data["settings"]["auto_average_disabled"]
-        config.curve_bonus_disabled = config_data["settings"]["curve_bonus_disabled"]
-        config.color_bonus_disabled = config_data["settings"]["color_bonus_disabled"]
-        config.bayesian_average_disabled = config_data["settings"]["bayesian_average_disabled"]
+        config.missing_enabled = config_data["settings"]["missing_enabled"]
+        config.stats_enabled = config_data["settings"]["stats_enabled"]
+        config.auto_highest_enabled = config_data["settings"]["auto_highest_enabled"]
+        config.curve_bonus_enabled = config_data["settings"]["curve_bonus_enabled"]
+        config.color_bonus_enabled = config_data["settings"]["color_bonus_enabled"]
+        config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
+        config.draft_log_enabled = config_data["settings"]["draft_log_enabled"]
     except Exception as error:
         print("ReadConfig Error: %s" % error)
     return config
@@ -914,12 +914,13 @@ def WriteConfig(config):
         config_data["settings"]["column_2"] = config.column_2
         config_data["settings"]["column_3"] = config.column_3
         config_data["settings"]["column_4"] = config.column_4
-        config_data["settings"]["hide_missing"] = config.hide_missing
-        config_data["settings"]["hide_stats"] = config.hide_stats
-        config_data["settings"]["auto_average_disabled"] = config.auto_average_disabled
-        config_data["settings"]["curve_bonus_disabled"] = config.curve_bonus_disabled
-        config_data["settings"]["color_bonus_disabled"] = config.color_bonus_disabled
-        config_data["settings"]["bayesian_average_disabled"] = config.bayesian_average_disabled
+        config_data["settings"]["missing_enabled"] = config.missing_enabled
+        config_data["settings"]["stats_enabled"] = config.stats_enabled
+        config_data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
+        config_data["settings"]["curve_bonus_enabled"] = config.curve_bonus_enabled
+        config_data["settings"]["color_bonus_enabled"] = config.color_bonus_enabled
+        config_data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
+        config_data["settings"]["draft_log_enabled"] = config.draft_log_enabled
         
         with open('config.json', 'w', encoding='utf-8') as file:
             json.dump(config_data, file, ensure_ascii=False, indent=4)
@@ -942,12 +943,13 @@ def ResetConfig():
         data["settings"]["column_2"] = config.column_2
         data["settings"]["column_3"] = config.column_3
         data["settings"]["column_4"] = config.column_4
-        data["settings"]["hide_missing"] = config.hide_missing
-        data["settings"]["hide_stats"] = config.hide_stats
-        data["settings"]["auto_average_disabled"] = config.auto_average_disabled
-        data["settings"]["curve_bonus_disabled"] = config.curve_bonus_disabled
-        data["settings"]["color_bonus_disabled"] = config.color_bonus_disabled
-        data["settings"]["bayesian_average_disabled"] = config.bayesian_average_disabled
+        data["settings"]["missing_enabled"] = config.missing_enabled
+        data["settings"]["stats_enabled"] = config.stats_enabled
+        data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
+        data["settings"]["curve_bonus_enabled"] = config.curve_bonus_enabled
+        data["settings"]["color_bonus_enabled"] = config.color_bonus_enabled
+        data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
+        data["settings"]["draft_log_enabled"] = config.draft_log_enabled
         
         data["card_logic"] = {}
         data["card_logic"]["alsa_weight"] = config.alsa_weight

@@ -7,13 +7,14 @@
         "table_width": 270,
         "column_2": "All ALSA",
         "column_3": "All Decks",
-        "column_4": "WG (53.5%)",
-        "hide_missing": false,
-        "hide_stats": false,
-        "auto_average_disabled": false,
-        "curve_bonus_disabled": true,
-        "color_bonus_disabled": true,
-        "bayesian_average_disabled": true
+        "column_4": "Auto",
+        "missing_enabled": true,
+        "stats_enabled": true,
+        "auto_highest_enabled": true,
+        "curve_bonus_enabled": false,
+        "color_bonus_enabled": false,
+        "bayesian_average_enabled": false,
+        "draft_log_enabled": false
     },
     "card_logic": {
         "alsa_weight": 0.25,

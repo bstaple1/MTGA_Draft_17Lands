@@ -72,6 +72,7 @@ class ArenaScanner:
 
     def LogEnable(self, enable):
         self.logging_enabled = enable
+        self.LogSuspend(not enable)
 
     def LogSuspend(self, suspended):
         if suspended:
@@ -982,11 +983,11 @@ class ArenaScanner:
             
         return result
         
-    def RetrieveColorLimits(self, bayesian_disabled):
+    def RetrieveColorLimits(self, bayesian_enabled):
         deck_limits = {}
         
         try:
-            upper_limit, lower_limit = CL.RatingsLimits(self.set_data["card_ratings"], bayesian_disabled)
+            upper_limit, lower_limit = CL.RatingsLimits(self.set_data["card_ratings"], bayesian_enabled)
             deck_limits ={"upper" : upper_limit, "lower" : lower_limit}
         except Exception as error:
             print("RetrieveColorLimits Error: %s" % error)
