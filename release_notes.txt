@@ -1,3 +1,22 @@
+===================== RELEASE NOTES 2.84 =====================
+- New Feature: Data Source drop-down for selecting data set (i.e. Premier, Quick, Sealed, etc.)
+
+- New Feature: Enable/Disable draft log (Settings menu option)
+
+- New Feature: Enable/Disable Bayesian average (Settings menu option)
+
+- New Feature: Data set now includes Number of Games In Hand (GIH) - visible in card tooltip
+
+- Modified Feature: The file search logic will now search multiple drives (Issue #7)
+
+- UI Changes:
+    - Settings menu option taken out of Data drop-down
+    - Application is no longer resizable 
+
+- File Changes: 
+    - Sets will now be stored in the Sets folder
+    - Debug logs will be stored in the Debug folder
+
 ===================== RELEASE NOTES 2.83 =====================
 - New Feature: If Scryfall doesn't have the card Arena IDs, then the tool will retrieve the IDs from local Arena files
 
