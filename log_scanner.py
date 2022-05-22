@@ -84,15 +84,19 @@ class ArenaScanner:
             self.logger.setLevel(logging.INFO)
 
     def NewLog(self, set, event):
-        log_name = f"DraftLog_{set}_{event}_{int(time.time())}.log"
-        log_path = os.path.join(DRAFT_LOG_FOLDER, log_name)
-        for handler in self.logger.handlers:
-            if isinstance(handler, logging.FileHandler):
-                self.logger.removeHandler(handler)
-        formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%d%m%Y %H:%M:%S>')
-        new_handler = logging.FileHandler(log_path, delay=True)
-        new_handler.setFormatter(formatter)
-        self.logger.addHandler(new_handler)
+        try:
+            log_name = f"DraftLog_{set}_{event}_{int(time.time())}.log"
+            log_path = os.path.join(DRAFT_LOG_FOLDER, log_name)
+            for handler in self.logger.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    self.logger.removeHandler(handler)
+            formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%d%m%Y %H:%M:%S>')
+            new_handler = logging.FileHandler(log_path, delay=True)
+            new_handler.setFormatter(formatter)
+            self.logger.addHandler(new_handler)
+            scanner_logger.info(f"Creating new draft log: {log_path}")
+        except Exception as error:
+            scanner_logger.info(f"NewLog Error: {error}")
 
     def ClearDraft(self, full_clear):
         if full_clear:
@@ -155,6 +159,7 @@ class ArenaScanner:
                 self.pick_offset = self.search_offset 
                 self.pack_offset = self.search_offset
                 update = True
+                scanner_logger.info(f"New draft detected {self.draft_type}, {self.draft_set}")
 
         except Exception as error:
             scanner_logger.info(f"DraftStartSearch Error: {error}")

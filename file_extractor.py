@@ -555,11 +555,7 @@ class DataPlatform:
                     winrate = round((float(color["wins"])/color["games"]) * 100, 1)
                     
                     color_label = [x for x in color_ratings_dict.keys() if x in color_name]
-                    
-                    print(color_name)
-                    print(winrate)
-                    
-                    
+
                     if len(color_label):
                         
                         processed_colors = color_ratings_dict[color_label[0]]

@@ -36,8 +36,6 @@
 #   - Access to the file system navigation functions.
 # - time standard library (https://docs.python.org/3/library/time.html)
 #   - Access to sleep function.
-# - getopt standard library (https://docs.python.org/3/library/getopt.html)
-#   - Access to the command line interface functions.
 # - sys standard library (https://docs.python.org/3/library/sys.html)
 #   - Access to the command line argument list.
 # - io standard library (https://docs.python.org/3/library/sys.html)
@@ -71,7 +69,7 @@ from datetime import date
 import tkinter.messagebox as MessageBox
 import urllib
 import os
-import getopt
+import argparse
 import sys
 import io
 import functools
@@ -256,28 +254,7 @@ class WindowUI:
         self.column_3_list = self.deck_colors
         self.column_4_selection = StringVar(self.root)
         self.column_4_list = self.deck_colors
-        #try:
-        #   self.column_2_selection.set(self.configuration.column_2) 
-        #   self.column_3_selection.set(self.configuration.column_3)
-        #   self.column_4_selection.set(self.configuration.column_4)
-        #   self.deck_stats_checkbox_value.set(self.configuration.stats_enabled)
-        #   self.missing_cards_checkbox_value.set(self.configuration.missing_enabled)
-        #   self.auto_highest_checkbox_value.set(self.configuration.auto_highest_enabled)
-        #   self.curve_bonus_checkbox_value.set(self.configuration.curve_bonus_enabled)
-        #   self.color_bonus_checkbox_value.set(self.configuration.color_bonus_enabled)
-        #   self.bayesian_average_checkbox_value.set(self.configuration.bayesian_average_enabled)
-        #   self.draft_log_checkbox_value.set(self.configuration.draft_log_enabled)
-        #except Exception as error:
-        #   self.column_2_selection.set("All ALSA") 
-        #   self.column_3_selection.set("All Decks")
-        #   self.column_4_selection.set("Auto")
-        #   self.deck_stats_checkbox_value.set(False)
-        #   self.missing_cards_checkbox_value.set(False)
-        #   self.auto_highest_checkbox_value.set(False)
-        #   self.curve_bonus_checkbox_value.set(False)
-        #   self.color_bonus_checkbox_value.set(False)
-        #   self.bayesian_average_checkbox_value.set(False)
-        #   self.draft_log_checkbox_value.set(False)
+
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
         
@@ -1536,27 +1513,20 @@ class CreateCardToolTip(object):
             
             
 def Startup(argv):
-    file_location = ""
-    step_through = False
-    try:
-        opts, args = getopt.getopt(argv, "f:",["step"])
-    except Exception as error:
-        print(error)
-        
-    try:
-        for opt, arg in opts:
-            if opt in "-f":
-                file_location = arg
-            elif opt in "--step":
-                step_through = True      
-    except Exception as error:
-        print(error)
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('-f','--file')
+    parser.add_argument('--step', action='store_true')
+    
+    args = parser.parse_args()
     
     window = Tk()
     window.title("Magic Draft %.2f" % __version__)
     
-    if file_location == "":
+    if args.file is None:
         file_location = FE.ArenaLogLocation()
+    else:
+        file_location = args.file
         
     config = CL.ReadConfig()
     
@@ -1566,7 +1536,7 @@ def Startup(argv):
     else:
         window.resizable(False, False) 
     
-    ui = WindowUI(window, file_location, step_through, config)
+    ui = WindowUI(window, file_location, args.step, config)
     
     if config.hotkey_enabled:
         KeyListener(ui)    
