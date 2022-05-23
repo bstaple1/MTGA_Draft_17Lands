@@ -334,7 +334,10 @@ def CardFilter(card_list, deck, filtered, color_options, limits, tier_list, conf
                 if len(value) == 1:
                     if value[0] in non_color_options:
                         color, type = value[0].split(" ")
-                        selected_card[key] = card["deck_colors"]["All Decks"][type.lower()]
+                        if type == "GIHWR":
+                            selected_card[key] = CalculateWinRate(card["deck_colors"]["All Decks"], configuration.bayesian_average_enabled)
+                        else:
+                            selected_card[key] = card["deck_colors"]["All Decks"][type.lower()]
                     elif value[0] == "Tier":
                         card_name = card["name"].split(" // ")
                         selected_card[key] = tier_list["ratings"][card_name[0]]

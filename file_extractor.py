@@ -59,7 +59,7 @@ def RetrieveLocalSetList(sets):
                     (name_segments[2] == SET_FILE_SUFFIX)):
                     
                     set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
-                    result, json_data = FileIntegrityCheck(file)
+                    result, json_data = FileIntegrityCheck(os.path.join(SETS_FOLDER,file))
                     if result == Result.VALID:
                         if json_data["meta"]["version"] == 1:
                             start_date, end_date = json_data["meta"]["date_range"].split("->")
