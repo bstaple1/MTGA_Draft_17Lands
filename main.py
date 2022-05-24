@@ -80,7 +80,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.84
+__version__= 2.85
 
 DEBUG_LOG_FOLDER = os.path.join(os.getcwd(), "Debug")
 DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
@@ -91,7 +91,7 @@ if not os.path.exists(DEBUG_LOG_FOLDER):
 ui_logger = logging.getLogger("mtgaTool")
 ui_logger.setLevel(logging.INFO)
 handlers = {
-    logging.handlers.TimedRotatingFileHandler(DEBUG_LOG_FILE, when='D', interval=1, backupCount=7),
+    logging.handlers.TimedRotatingFileHandler(DEBUG_LOG_FILE, when='D', interval=1, backupCount=7, utc=True),
     logging.StreamHandler(sys.stdout),
 }
 formatter = logging.Formatter('%(asctime)s,%(message)s', datefmt='<%m/%d/%Y %H:%M:%S>')

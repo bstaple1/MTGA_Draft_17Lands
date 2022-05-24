@@ -56,7 +56,7 @@ Note: Some users have reported an issue with the MTGA_Draft_Tool.exe and their c
 
 - Step 4: Download Inno Setup from https://jrsoftware.org/isdl.php#stable
 
-- Step 5: Build the MTGA_Draft_Tool.exe by opening the terminal and entering "pyinstaller main.py --onefile --noconsole -n MTGA_Draft_Tool"
+- Step 5: Build MTGA_Draft_Tool.exe by opening the terminal and entering "pyinstaller main.py --onefile --noconsole -n MTGA_Draft_Tool"
     - Move the MTGA_Draft_Tool.exe file from the dist folder to the main MTGA_Draft_17Lands folder.
     
 - Step 6: Open Installer.iss in Inno Setup and click Build->Compile.

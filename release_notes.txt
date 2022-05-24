@@ -1,3 +1,12 @@
+===================== RELEASE NOTES 2.85 =====================
+- Bug Fix: The downloaded sets will now be visible in the Set Data window
+
+- Bug Fix: The Bayesian average feature will now work with the "ALL GIHWR" filter
+
+- Modified Feature: Debug logs will now use UTC timestamps
+
+- Modified Feature: Disabling the Draft Log by default
+
 ===================== RELEASE NOTES 2.84 =====================
 - New Feature: Data Source drop-down for selecting data set (i.e. Premier, Quick, Sealed, etc.)
 

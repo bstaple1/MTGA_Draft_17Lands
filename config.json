@@ -14,7 +14,7 @@
         "curve_bonus_enabled": false,
         "color_bonus_enabled": false,
         "bayesian_average_enabled": false,
-        "draft_log_enabled": true
+        "draft_log_enabled": false
     },
     "card_logic": {
         "alsa_weight": 0.25,
