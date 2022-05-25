@@ -27,7 +27,7 @@ class Config:
     curve_bonus_enabled : bool=False
     color_bonus_enabled : bool=False
     bayesian_average_enabled : bool=False
-    draft_log_enabled: bool=True
+    draft_log_enabled: bool=False
     minimum_creatures : int=13
     minimum_noncreatures : int=6
     ratings_threshold : int=500

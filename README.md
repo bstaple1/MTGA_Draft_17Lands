@@ -4,15 +4,13 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier.png?raw=true)
 
 ## Run Steps: Windows Executable (Windows Only)
-Note: Some users have reported an issue with the `MTGA_Draft_Tool.exe` and their computer's antivirus. This is a know issue with executables built using pyinstaller (https://github.com/pyinstaller/pyinstaller/issues/5492). If users are experiencing this issue, or have concerns about running an executable, then they should consider using the python version (see the Run Steps: Python section).
-
 - Step 1: Download and unzip the `MTGA_Draft_17Lands-main.zip` file, clone the repository, or download the latest executable (e.g. `MTGA_Draft_Tool_V0285_Setup.exe`) from the releases page (https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
 
 - Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
-- Step 3: Double-click setup.exe to start the install. 
+- Step 3: Double-click `setup.exe` to start the install. 
 
-- Step 4: (Optional) Go to the installed folder and right-click the executable (.exe), click properties, compatibility tab, and check Run this program as an administrator.
+- Step 4: (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
     - This step is only required if the application is installed to a directory with write restrictions (i.e. `Program Files` and `Program Files (x86)`).
     - This step isn't necessary if the application is installed to the main directory of a drive (i.e. `C:/` or `D:/`) or the `Users/<Username>/` directory
 
@@ -57,7 +55,7 @@ Note: Some users have reported an issue with the `MTGA_Draft_Tool.exe` and their
 - Step 4: Download Inno Setup from https://jrsoftware.org/isdl.php#stable
 
 - Step 5: Build MTGA_Draft_Tool.exe by opening the terminal and entering ```pyinstaller main.py --onefile --noconsole -n MTGA_Draft_Tool```
-    - Move the `MTGA_Draft_Tool.exe` file from the dist folder to the main `MTGA_Draft_17Lands` folder.
+    - Move the `MTGA_Draft_Tool.exe` file from the `dist` folder to the main `MTGA_Draft_17Lands` folder.
     
 - Step 6: Open `Installer.iss` in Inno Setup and click Build->Compile.
     - In the `{app}` folder, rename the mysetup.exe file to `setup.exe` and move the file to the main `MTGA_Draft_17Lands` folder.

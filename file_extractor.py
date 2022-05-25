@@ -81,6 +81,7 @@ def ArenaLogLocation():
             paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
             
         for file_path in paths:
+            file_logger.info(f"Arena Log: Searching file path {file_path}")
             if os.path.exists(file_path):
                 file_location = file_path
                 break
@@ -108,12 +109,14 @@ def RetrieveLocalArenaData(card_data, card_set):
                 break
                 
             #Retrieve the arena IDs without card names
+            file_logger.info(f"Arena IDs: Searching file path {arena_cards_locations[0]}")
             result, arena_data = RetrieveLocalArenaId(arena_cards_locations[0], card_set)
             
             if result == False:
                 break
                 
             #Retrieve the card names for each arena ID
+            file_logger.info(f"Card Names: Searching file path {arena_text_locations[0]}")
             result = RetrieveLocalCardName(arena_text_locations[0], arena_data, card_data)
             
         except Exception as error:
@@ -124,7 +127,6 @@ def RetrieveLocalArenaData(card_data, card_set):
 def SearchLocalFiles(paths, file_prefixes):
     file_locations = []
     for file_path in paths:
-        file_logger.info(f"Searching file path {file_path} for {file_prefixes}")
         try:           
             if os.path.exists(file_path):
                 for prefix in file_prefixes:
@@ -573,10 +575,6 @@ class DataPlatform:
         result_string = ""
         for card_data in data:
             try:
-                #Skip Alchemy cards
-                if card_data["name"].startswith("A-"):
-                    continue
-            
                 card = {}
         
                 card["cmc"] = card_data["cmc"]
@@ -590,12 +588,17 @@ class DataPlatform:
                         card["arena_id"] = card_data["arena_id"]
                     except Exception as error:
                         local_check = True
-                elif "card_faces" in card_data.keys():
-                    card["arena_id"] = arena_id
-                    arena_id += 2
                 else:
-                    card["arena_id"] = arena_id
-                    arena_id += 1
+                    #Skip Alchemy cards
+                    if card_data["name"].startswith("A-"):
+                        continue
+                
+                    if "card_faces" in card_data.keys():
+                        card["arena_id"] = arena_id
+                        arena_id += 2
+                    else:
+                        card["arena_id"] = arena_id
+                        arena_id += 1
                 try:
                     if "card_faces" in card_data.keys():
                         card["mana_cost"] = card_data["card_faces"][0]["mana_cost"]
