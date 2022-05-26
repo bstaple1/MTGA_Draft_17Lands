@@ -453,8 +453,9 @@ class WindowUI:
             added_card = entry_box.get()
             if len(added_card):
                 cards = [card_list[x] for x in card_list if card_list[x]["name"] == added_card and card_list[x] not in matching_cards]
-                matching_cards.extend(cards)
                 entry_box.delete(0,END)
+                if len(cards):
+                    matching_cards.append(cards[0])
 
             filtered_list = CL.CardFilter(matching_cards,
                                           matching_cards,

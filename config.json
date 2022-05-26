@@ -13,12 +13,12 @@
         "auto_highest_enabled": true,
         "curve_bonus_enabled": false,
         "color_bonus_enabled": false,
-        "bayesian_average_enabled": false,
+        "bayesian_average_enabled": true,
         "draft_log_enabled": false
     },
     "card_logic": {
-        "alsa_weight": 0.25,
-        "iwd_weight": 0.25,
+        "alsa_weight": 0.0,
+        "iwd_weight": 0.0,
         "minimum_creatures": 13,
         "minimum_noncreatures": 6,
         "ratings_threshold": 500,

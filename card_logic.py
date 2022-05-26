@@ -4,6 +4,8 @@ import log_scanner as LS
 from itertools import combinations
 from dataclasses import dataclass, asdict
 
+BASIC_LANDS = ["Island","Mountain","Swamp","Plains","Forest"]
+
 logic_logger = logging.getLogger("mtgaTool")
 
 @dataclass 
@@ -31,8 +33,8 @@ class Config:
     minimum_creatures : int=13
     minimum_noncreatures : int=6
     ratings_threshold : int=500
-    alsa_weight : float=0.25
-    iwd_weight :float=0.25
+    alsa_weight : float=0.0
+    iwd_weight :float=0.0
 
     deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
     deck_aggro : DeckType=DeckType([0,2,5,3,0,0,0], 24, 17, 2.40)
@@ -867,13 +869,14 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
             
 
         #Add in special lands if they are on-color, off-color, and they have a card rating above 2.0
-        card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Land"], True, True, False)
-        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["rating_filter_c"], reverse = True)
-        for count, card in enumerate(card_colors_sorted):
+        land_cards = DeckColorSearch(filtered_cards, color, ["Land"], True, True, False)
+        land_cards = [x for x in land_cards if x["name"] not in BASIC_LANDS]
+        land_cards = sorted(land_cards, key = lambda k: k["rating_filter_c"], reverse = True)
+        for card in land_cards:
             if total_card_count >= maximum_deck_size:
                 break
                 
-            if card["rating_filter_c"] >= 2.0:    
+            if card["rating_filter_c"] >= 2.5:    
                 used_list.append(card)
                 total_card_count += 1
             
