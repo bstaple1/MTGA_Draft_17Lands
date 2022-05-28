@@ -13,7 +13,7 @@
         "auto_highest_enabled": true,
         "curve_bonus_enabled": false,
         "color_bonus_enabled": false,
-        "bayesian_average_enabled": true,
+        "bayesian_average_enabled": false,
         "draft_log_enabled": false
     },
     "card_logic": {

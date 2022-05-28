@@ -828,8 +828,8 @@ class WindowUI:
         popup.wm_title("Set Data")
         Grid.rowconfigure(popup, 1, weight = 1)
         try:
-            DP = FE.DataPlatform()
-            sets = DP.SessionSets()
+            extractor = FE.FileExtractor()
+            sets = extractor.SessionSets()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
             list_box_frame = Frame(popup)
@@ -848,8 +848,6 @@ class WindowUI:
             draft_label = Label(popup, text="Draft:")
             start_label = Label(popup, text="Start Date:")
             end_label = Label(popup, text="End Date:")
-            color_label = Label(popup, text="Color Rating:")
-            id_label = Label(popup, text="ID:")
             draft_choices = ["PremierDraft", "QuickDraft", "TradDraft", "Sealed", "TradSealed"]
             
             draft_value = StringVar(self.root)
@@ -866,32 +864,22 @@ class WindowUI:
             start_entry.insert(END, '2019-1-1')
             end_entry = Entry(popup)
             end_entry.insert(END, str(date.today()))
-            id_entry = Entry(popup)
-            id_entry.insert(END, 0)
             
             progress = Progressbar(popup,orient=HORIZONTAL,length=100,mode='determinate')
             
-            color_checkbox_value = IntVar(value=1)
-            color_checkbox = Checkbutton(popup,
-                                         variable=color_checkbox_value,
-                                         onvalue=1,
-                                         offvalue=0)
-            
-            add_button = Button(popup, command=lambda: self.AddSet(DP,
-                                                                   sets[set_value.get()],
+            add_button = Button(popup, command=lambda: self.AddSet(extractor,
+                                                                   set_value,
                                                                    draft_value,
                                                                    start_entry,
                                                                    end_entry,
                                                                    add_button,
                                                                    progress,
                                                                    list_box,
-                                                                   id_entry,
-                                                                   color_checkbox_value,
                                                                    sets,
                                                                    2.00), text="ADD SET")
             
             
-            for count, column in enumerate(column_headers):
+            for column in column_headers:
                 list_box.column(column, anchor = CENTER, stretch = YES, width = 100)
                 list_box.heading(column, text = column, anchor = CENTER)
                 
@@ -905,12 +893,8 @@ class WindowUI:
             end_entry.grid(row=2, column=5, sticky = 'nsew')
             draft_label.grid(row=2, column=6, sticky = 'nsew')
             draft_entry.grid(row=2, column=7, sticky = 'nsew')
-            id_label.grid(row=3, column=0, sticky = 'nsew')
-            id_entry.grid(row=3, column=1, sticky = 'nsew')
-            color_label.grid(row=3, column=2, sticky = 'nsew')
-            color_checkbox.grid(row=3, column=3, sticky = 'nsew')
-            add_button.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
-            progress.grid(row=5, column=0, columnspan=8, sticky = 'nsew')
+            add_button.grid(row=3, column=0, columnspan=8, sticky = 'nsew')
+            progress.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
             
             list_box.pack(expand = True, fill = "both")
     
@@ -1171,41 +1155,43 @@ class WindowUI:
         except Exception as error:
             ui_logger.info(f"SettingsPopup Error: {error}")
         
-    def AddSet(self, platform, set, draft, start, end, button, progress, list_box, id, color_rating, sets, version):
+    def AddSet(self, extractor, set, draft, start, end, button, progress, list_box, sets, version):
         result = True
         result_string = ""
         while(True):
             try:
+                message_box = MessageBox.askyesno(title="Download", message=f"17Lands updates their card data once a day at 01:30 UTC. Are you sure that you want to download {set.get()} {draft.get()} data?")
+                if not message_box:
+                    break
+                    
+                extractor.ClearData()
                 button['state'] = 'disabled'
                 progress['value'] = 0
                 self.root.update()
-                platform.Sets(set)
-                platform.DraftType(draft.get())
-                if platform.StartDate(start.get()) == False:
+                extractor.Sets(sets[set.get()])
+                extractor.DraftType(draft.get())
+                if extractor.StartDate(start.get()) == False:
                     result = False
                     result_string = "Invalid Start Date (YYYY-MM-DD)"
                     break
-                if platform.EndDate(end.get()) == False:
+                if extractor.EndDate(end.get()) == False:
                     result = False
                     result_string = "Invalid End Date (YYYY-MM-DD)"
                     break
-                if platform.ID(id.get()) == False:
-                    result = False
-                    result_string = "Invalid ID"
-                    break
-                platform.Version(version)
-                if color_rating.get():
-                    platform.SessionColorRatings()
-                result, result_string = platform.SessionCardData()
+                extractor.Version(version)
+                extractor.SessionColorRatings()
+                result, result_string = extractor.RetrieveLocalArenaData()
                 if result == False:
-                    break
+                    result, result_string = extractor.SessionScryfallData()
+                    if result == False:
+                        break
                 progress['value']=10
                 self.root.update()
-                if platform.Session17Lands(self.root, progress, progress['value']) == False:
+                if extractor.Session17Lands(self.root, progress, progress['value']) == False:
                     result = False
                     result_string = "Couldn't Collect Ratings Data"
                     break
-                if platform.ExportData() == False:
+                if extractor.ExportData() == False:
                     result = False
                     result_string = "File Write Failure"
                     break
@@ -1338,14 +1324,14 @@ class WindowUI:
         if sys.platform == FE.PLATFORM_ID_WINDOWS:
             try:
                 import win32api
-                DP = FE.DataPlatform()
+                extractor = FE.FileExtractor()
                 
-                new_version_found, new_version = CheckVersion(DP, __version__)
+                new_version_found, new_version = CheckVersion(extractor, __version__)
                 if new_version_found:
                     message_string = "Update client %.2f to version %.2f" % (__version__, new_version)
                     message_box = MessageBox.askyesno(title="Update", message=message_string)
                     if message_box == True:
-                        DP.SessionRepositoryDownload("setup.exe")
+                        extractor.SessionRepositoryDownload("setup.exe")
                         self.root.destroy()
                         win32api.ShellExecute(0, "open", "setup.exe", None, None, 10)
     
@@ -1438,8 +1424,7 @@ class CreateCardToolTip(object):
             #Add scryfall image
             if self.images_enabled:
                 from PIL import Image, ImageTk
-                size = 260, 362
-                
+                size = 280, 390
                 self.images = []
                 for count, picture in enumerate(self.image):
                     raw_data = urllib.request.urlopen(picture).read()

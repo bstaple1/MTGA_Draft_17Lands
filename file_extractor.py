@@ -112,56 +112,6 @@ def ArenaLogLocation():
     except Exception as error:
         file_logger.info(f"ArenaLogLocation Error: {error}")
     return file_location
-    
-def RetrieveLocalArenaData(arena_data, card_set):
-    result_string = "Couldn't Collect Card Data"
-    result = False
-    
-    while(True):
-        try:
-            if sys.platform == PLATFORM_ID_OSX:
-                paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
-            else:
-                path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
-                paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
-        
-            arena_cards_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_CARDS])
-            arena_text_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_TEXT])
-            arena_enumerator_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_ENUMERATOR])
-            
-            if (not len(arena_cards_locations) or 
-                not len(arena_text_locations)  or 
-                not len(arena_enumerator_locations)):
-                break
-                
-            #Retrieve the card data without text
-            file_logger.info(f"Card Data: Searching file path {arena_cards_locations[0]}")
-            result = RetrieveLocalCards(arena_cards_locations[0], card_set, arena_data)
-            
-            if not result:
-                break
-                
-            #Retrieve the card text
-            file_logger.info(f"Card Text: Searching file path {arena_text_locations[0]}")
-            result, card_text = RetrieveLocalCardText(arena_text_locations[0])
-            
-            if not result:
-                break
-            
-            #Retrieve the card enumerators
-            file_logger.info(f"Card Enumerators: Searching file path {arena_enumerator_locations[0]}")
-            result, card_enumerators = RetrieveLocalCardEnumerators(arena_enumerator_locations[0])
-            
-            if not result:
-                break
-                
-            #Assemble information for local data set
-            result = AssembleLocalDataSet(arena_data, card_text, card_enumerators)
-            
-        except Exception as error:
-            file_logger.info(f"RetrieveLocalArenaData Error: {error}")
-        break
-    return result, result_string
  
 def SearchLocalFiles(paths, file_prefixes):
     file_locations = []
@@ -179,106 +129,6 @@ def SearchLocalFiles(paths, file_prefixes):
             file_logger.info(f"SearchLocalFiles Error: {error}")
                     
     return file_locations
-    
-def RetrieveLocalCards(file_location, card_set, arena_data):
-    result = False
-    try:
-        with open(file_location, 'r', encoding="utf8") as json_file:
-            json_data = json.loads(json_file.read())
-            
-            for card in json_data:
-                #if card["set"] == card_set:
-                if ((card_set in card["set"]) or
-                   (("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
-                    try:
-                        if "isToken" in card:
-                            continue
-                        
-                        group_id = card["grpid"]
-                        card_info = {"name" : []}
-                        card_info["name"].append(card["titleId"])
-                        
-                        if "linkedFaces" in card:
-                            linked_id = card["linkedFaces"][0]
-                            if linked_id < group_id:
-                                arena_data[card["linkedFaces"][0]]["name"].append(card["titleId"])
-                                arena_data[card["linkedFaces"][0]]["types"].extend(card["types"])
-                                continue
-                                
-                        
-                        arena_data[group_id] = {"name" : [], "image" : []}
-                        arena_data[group_id]["name"].append(card["titleId"])
-                        arena_data[group_id]["cmc"] = card["cmc"] if "cmc" in card else 0
-                        arena_data[group_id]["types"] = card["types"] if "types" in card else []
-                        arena_data[group_id]["colors"] = card["colorIdentity"] if "colorIdentity" in card else []
-                        arena_data[group_id]["mana_cost"] = DecodeManaCost(card["castingcost"]) if "castingcost" in card else ""
-                        arena_data[group_id]["image"] = []
-                        
-                        result = True
-                    except Exception as error:
-                        pass
-    except Exception as error:
-        file_logger.info(f"RetrieveLocalCards Error: {error}")
-        
-    return result
-    
-def RetrieveLocalCardText(file_location):
-    result = True
-    card_text = {}
-    try:
-        #Retrieve the title (card name) for each of the collected arena IDs
-        with open(file_location, 'r', encoding="utf8") as json_file:
-            json_data = json.loads(json_file.read())
-            
-            for group in json_data:
-                if group["isoCode"] == "en-US":
-                    keys = group["keys"]
-                    for key in keys:
-                        card_text[key["id"]] = key["raw"] if "raw" in key else key["text"]
-
-    except Exception as error:
-        result = False
-        file_logger.info(f"RetrieveLocalCardText Error: {error}")
-    
-    return result, card_text
-    
-def RetrieveLocalCardEnumerators(file_location):
-    result = True
-    card_enumerators = {"colors" : {}, "types" : {}}
-    try:
-        with open(file_location, 'r', encoding="utf8") as json_file:
-            json_data = json.loads(json_file.read())
-            
-            for enumerator in json_data:
-                if enumerator["name"] == "CardType":
-                    card_enumerators["types"] = {d["id"]: d["text"] for d in enumerator["values"]}
-                elif enumerator["name"] == "Color":
-                    card_enumerators["colors"] = {d["id"]: d["text"] for d in enumerator["values"]}
-    except Exception as error:
-        result = False
-        file_logger.info(f"RetrieveLocalCardEnumerators Error: {error}")
-    
-    return result, card_enumerators
-
-def AssembleLocalDataSet(arena_data, card_text, card_enumerators):
-    result = True
-    try:
-        for card in arena_data:
-            try:
-                arena_data[card]["name"] = " // ".join(card_text[x] for x in arena_data[card]["name"])     
-                arena_data[card]["types"] = list(set([card_text[card_enumerators["types"][x]] for x in arena_data[card]["types"]]))
-                arena_data[card]["colors"] = [CARD_COLORS_DICT[card_text[card_enumerators["colors"][x]]] for x in arena_data[card]["colors"]]
-                if "Creature" in arena_data[card]["types"]:
-                    index = arena_data[card]["types"].index("Creature")
-                    arena_data[card]["types"].insert(0, arena_data[card]["types"].pop(index))
-            except Exception as error:
-                pass
-
-    except Exception as error:
-        result = False
-        file_logger.info(f"AssembleLocalDataSet Error: {error}")
-    
-    return result
 
 def ExtractTypes(type_line):
     types = []
@@ -369,7 +219,7 @@ def FileIntegrityCheck(filename):
         break
     return result, json_data
        
-class DataPlatform:
+class FileExtractor:
     def __init__(self):
         self.sets = []
         self.draft = ""
@@ -379,11 +229,15 @@ class DataPlatform:
         self.context = ssl.SSLContext()
         self.id = id
         self.card_ratings = {}
-        self.combined_data = {}
-        self.card_list = []
-        self.combined_data["meta"] = {"collection_date" : str(datetime.datetime.now())}
+        self.combined_data = {"meta" : {"collection_date" : str(datetime.datetime.now())}}
+        self.card_dict = {}
+        self.card_text = {}
+        self.card_enumerators = {}
         self.deck_colors = LS.DECK_COLORS
 
+    def ClearData(self):
+        self.combined_data = {"meta" : {"collection_date" : str(datetime.datetime.now())}}
+        
     def Sets(self, sets):
         self.sets = sets
         
@@ -405,14 +259,156 @@ class DataPlatform:
             self.combined_data["meta"]["end_date"] = self.end_date
         return result
         
-    def ID(self, id):
-        result = False
-        if id.isnumeric():
-            result = True
-            self.id = id
-        return result
     def Version(self, version):
         self.combined_data["meta"]["version"] = version
+        
+    def RetrieveLocalArenaData(self):
+        result_string = "Couldn't Collect Local Card Data"
+        result = False
+        self.card_dict = {}
+        
+        if sys.platform == PLATFORM_ID_OSX:
+            paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
+        else:
+            path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
+            paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
+        
+        arena_cards_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_CARDS])
+        arena_text_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_TEXT])
+        arena_enumerator_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_ENUMERATOR])
+        
+        if (not len(arena_cards_locations) or 
+            not len(arena_text_locations)  or 
+            not len(arena_enumerator_locations)):
+            return result, result_string
+        
+        for set in self.sets:
+            result = False
+            while(True):
+                try:                      
+                    #Retrieve the card data without text
+                    file_logger.info(f"Card Data: Searching file path {arena_cards_locations[0]}")
+                    result = self.RetrieveLocalCards(arena_cards_locations[0], set.upper())
+                    
+                    if not result:
+                        break
+                        
+                    #Retrieve the card text
+                    if not self.card_text:
+                        file_logger.info(f"Card Text: Searching file path {arena_text_locations[0]}")
+                        result = self.RetrieveLocalCardText(arena_text_locations[0])
+                        
+                        if not result:
+                            break
+                    
+                    #Retrieve the card enumerators
+                    if not self.card_enumerators:
+                        file_logger.info(f"Card Enumerators: Searching file path {arena_enumerator_locations[0]}")
+                        result = self.RetrieveLocalCardEnumerators(arena_enumerator_locations[0])
+                        
+                        if not result:
+                            break
+                        
+                    #Assemble information for local data set
+                    result = self.AssembleLocalDataSet()
+                except Exception as error:
+                    file_logger.info(f"RetrieveLocalArenaData Error: {error}")
+                break
+        return result, result_string  
+        
+    def RetrieveLocalCards(self, file_location, card_set):
+        result = False
+        try:
+            with open(file_location, 'r', encoding="utf8") as json_file:
+                json_data = json.loads(json_file.read())
+                
+                for card in json_data:
+                    if ((card_set in card["set"]) or
+                    (("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
+                        try:
+                            if "isToken" in card:
+                                continue
+                            
+                            group_id = card["grpid"]
+                            
+                            if "linkedFaces" in card:
+                                linked_id = card["linkedFaces"][0]
+                                if linked_id < group_id:
+                                    self.card_dict[card["linkedFaces"][0]]["name"].append(card["titleId"])
+                                    self.card_dict[card["linkedFaces"][0]]["types"].extend(card["types"])
+                                    continue
+    
+                            self.card_dict[group_id] = {"name" : [card["titleId"]], "image" : []}
+                            self.card_dict[group_id]["cmc"] = card["cmc"] if "cmc" in card else 0
+                            self.card_dict[group_id]["types"] = card["types"] if "types" in card else []
+                            self.card_dict[group_id]["colors"] = card["colorIdentity"] if "colorIdentity" in card else []
+                            self.card_dict[group_id]["mana_cost"] = DecodeManaCost(card["castingcost"]) if "castingcost" in card else ""
+                            
+                            result = True
+                        except Exception as error:
+                            pass
+        except Exception as error:
+            file_logger.info(f"RetrieveLocalCards Error: {error}")
+            
+        return result
+        
+    def RetrieveLocalCardText(self, file_location):
+        result = True
+        self.card_text = {}
+        try:
+            #Retrieve the title (card name) for each of the collected arena IDs
+            with open(file_location, 'r', encoding="utf8") as json_file:
+                json_data = json.loads(json_file.read())
+                
+                for group in json_data:
+                    if group["isoCode"] == "en-US":
+                        keys = group["keys"]
+                        for key in keys:
+                            self.card_text[key["id"]] = key["raw"] if "raw" in key else key["text"]
+    
+        except Exception as error:
+            result = False
+            file_logger.info(f"RetrieveLocalCardText Error: {error}")
+        
+        return result
+        
+    def RetrieveLocalCardEnumerators(self, file_location):
+        result = True
+        self.card_enumerators = {"colors" : {}, "types" : {}}
+        try:
+            with open(file_location, 'r', encoding="utf8") as json_file:
+                json_data = json.loads(json_file.read())
+                
+                for enumerator in json_data:
+                    if enumerator["name"] == "CardType":
+                        self.card_enumerators["types"] = {d["id"]: d["text"] for d in enumerator["values"]}
+                    elif enumerator["name"] == "Color":
+                        self.card_enumerators["colors"] = {d["id"]: d["text"] for d in enumerator["values"]}
+        except Exception as error:
+            result = False
+            file_logger.info(f"RetrieveLocalCardEnumerators Error: {error}")
+        
+        return result
+    
+    def AssembleLocalDataSet(self):
+        result = True
+        try:
+            for card in self.card_dict:
+                try:
+                    self.card_dict[card]["name"] = " // ".join(self.card_text[x] for x in self.card_dict[card]["name"])     
+                    self.card_dict[card]["types"] = list(set([self.card_text[self.card_enumerators["types"][x]] for x in self.card_dict[card]["types"]]))
+                    self.card_dict[card]["colors"] = [CARD_COLORS_DICT[self.card_text[self.card_enumerators["colors"][x]]] for x in self.card_dict[card]["colors"]]
+                    if "Creature" in self.card_dict[card]["types"]:
+                        index = self.card_dict[card]["types"].index("Creature")
+                        self.card_dict[card]["types"].insert(0, self.card_dict[card]["types"].pop(index))
+                except Exception as error:
+                    pass
+    
+        except Exception as error:
+            result = False
+            file_logger.info(f"AssembleLocalDataSet Error: {error}")
+        
+        return result
         
     def SessionRepositoryVersion(self):
         version = ""
@@ -439,52 +435,50 @@ class DataPlatform:
         return version  
 
 
-    def SessionCardData(self):
-        arena_id = int(self.id)
+    def SessionScryfallData(self):
         result = False
-        self.card_list = {}
+        self.card_dict = {}
         result_string = "Couldn't Retrieve Card Data"
         for set in self.sets:
-            result, result_string = RetrieveLocalArenaData(self.card_list, set.upper())
-            #if set == "dbl":
-            #    continue
-            #retry = 5
-            #while retry:
-            #    try:
-            #        #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
-            #        url = "https://api.scryfall.com/cards/search?order=set&q=e" + urlencode(':', safe='') + "%s" % (set)
-            #        url_data = urllib.request.urlopen(url, context=self.context).read()
-            #        
-            #        set_json_data = json.loads(url_data)
-            #
-            #        arena_id, result, result_string = self.ProcessCardData(set_json_data["data"], arena_id)
-            #        
-            #        while (set_json_data["has_more"] == True) and (result == True):
-            #            url = set_json_data["next_page"]
-            #            url_data = urllib.request.urlopen(url, context=self.context).read()
-            #            set_json_data = json.loads(url_data)
-            #            arena_id, result, result_string = self.ProcessCardData(set_json_data["data"], arena_id)
-            #        
-            #        
-            #        if result == True:
-            #            break
-            #            
-            #    except Exception as error:
-            #        file_logger.info(url)     
-            #        file_logger.info(f"SessionCardData Error: {error}")
-            #    
-            #    if result == False:
-            #        retry -= 1
-            #        time.sleep(5)
+            if set == "dbl":
+                continue
+            retry = 5
+            while retry:
+                try:
+                    #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
+                    url = "https://api.scryfall.com/cards/search?order=set&unique=art&q=e" + urlencode(':', safe='') + "%s" % (set)
+                    url_data = urllib.request.urlopen(url, context=self.context).read()
+                    
+                    set_json_data = json.loads(url_data)
+            
+                    result, result_string = self.ProcessScryfallData(set_json_data["data"])
+                    
+                    while (set_json_data["has_more"] == True) and (result == True):
+                        url = set_json_data["next_page"]
+                        url_data = urllib.request.urlopen(url, context=self.context).read()
+                        set_json_data = json.loads(url_data)
+                        result, result_string = self.ProcessScryfallData(set_json_data["data"])
+                    
+                    
+                    if result == True:
+                        break
+                        
+                except Exception as error:
+                    file_logger.info(url)     
+                    file_logger.info(f"SessionScryfallData Error: {error}")
+                
+                if result == False:
+                    retry -= 1
+                    time.sleep(5)
         return result, result_string
 
     def Initialize17LandsData(self):
         self.card_ratings = {}
 
-        for card in self.card_list:
-            self.card_list[card]["deck_colors"] = {}
+        for card in self.card_dict:
+            self.card_dict[card]["deck_colors"] = {}
             for color in self.deck_colors:
-                self.card_list[card]["deck_colors"][color] = {"gihwr" : DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}
+                self.card_dict[card]["deck_colors"][color] = {"gihwr" : DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}
 
     def Session17Lands(self, root, progress, initial_progress):
         current_progress = 0
@@ -527,9 +521,9 @@ class DataPlatform:
                 break
             #if set == "dbl" and result:
             #    break
-        for card in self.card_list:
-            self.ProcessCardRatings(self.card_list[card])
-        self.combined_data["card_ratings"] = self.card_list
+        for card in self.card_dict:
+            self.ProcessCardRatings(self.card_dict[card])
+        self.combined_data["card_ratings"] = self.card_dict
         return result 
         
     def SessionSets(self):
@@ -642,15 +636,18 @@ class DataPlatform:
             file_logger.info(f"RetrieveColorRatings Error: {error}")
 
           
-    def ProcessCardData (self, data, arena_id):
+    def ProcessScryfallData (self, data):
         result = False
         result_string = ""
-        scryfall = {}
         for card_data in data:
             try:
-                name = card_data["name"]
+                if "arena_id" not in card_data:
+                    continue
+                
+                arena_id = card_data["arena_id"]
 
-                scryfall[name] = {
+                self.card_dict[arena_id] = {
+                    "name" : card_data["name"],
                     "cmc" : card_data["cmc"],
                     "colors" : card_data["color_identity"],
                     "types" : ExtractTypes(card_data["type_line"]),
@@ -658,27 +655,22 @@ class DataPlatform:
                     "image" : [],
                 }
 
-                if "card_faces" in card_data.keys():
-                    scryfall[name]["mana_cost"] = card_data["card_faces"][0]["mana_cost"]
-                    scryfall[name]["image"].append(card_data["card_faces"][0]["image_uris"]["normal"])
-                    scryfall[name]["image"].append(card_data["card_faces"][1]["image_uris"]["normal"])
+                if "card_faces" in card_data:
+                    self.card_dict[arena_id]["mana_cost"] = card_data["card_faces"][0]["mana_cost"]
+                    self.card_dict[arena_id]["image"].append(card_data["card_faces"][0]["image_uris"]["normal"])
+                    self.card_dict[arena_id]["image"].append(card_data["card_faces"][1]["image_uris"]["normal"])
                         
                 else:
-                    scryfall[name]["mana_cost"] = card_data["mana_cost"]
-                    scryfall[name]["image"] = [card_data["image_uris"]["normal"]]
+                    self.card_dict[arena_id]["mana_cost"] = card_data["mana_cost"]
+                    self.card_dict[arena_id]["image"] = [card_data["image_uris"]["normal"]]
 
                 result = True
 
             except Exception as error:
-                file_logger.info(f"ProcessCardData Error: {error}")
+                file_logger.info(f"ProcessScryfallData Error: {error}")
                 result_string = error
 
-        for card in self.card_list:
-            try:
-                self.card_list[card] = {**self.card_list[card],**scryfall[self.card_list[card]["name"]]}
-            except Exception as error:
-                pass
-        return arena_id, result, result_string
+        return result, result_string
         
     def ProcessCardRatings (self, card):
         try:
