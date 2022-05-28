@@ -124,7 +124,6 @@ class ArenaScanner:
         switcher={
                 "[UnityCrossThreadLogger]==> Event_Join " : (lambda x: self.DraftStartSearchV1(x)),
                 "[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
-                "[UnityCrossThreadLogger]==> BotDraft_DraftStatus " : (lambda x: self.DraftStartSearchV1(x)),
              }
         
         
@@ -171,8 +170,9 @@ class ArenaScanner:
             payload_data = json.loads(request_data["Payload"])
             event_name = payload_data["EventName"]
             
-            event_string = event_name.split('_')
+            scanner_logger.info(f"Draft event found {event_name}")
             
+            event_string = event_name.split('_')
             if len(event_string) > 1:
                 #Trad_Sealed_NEO_20220317
                 for count, event in enumerate(event_string):
