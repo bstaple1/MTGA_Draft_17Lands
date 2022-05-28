@@ -323,8 +323,8 @@ class FileExtractor:
                 json_data = json.loads(json_file.read())
                 
                 for card in json_data:
-                    if ((card_set in card["set"]) or
-                    (("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
+                    if (card_set in card["set"]):
+                    #(("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
                         try:
                             if "isToken" in card:
                                 continue
@@ -445,8 +445,8 @@ class FileExtractor:
             retry = 5
             while retry:
                 try:
-                    #https://api.scryfall.com/cards/search?order=set&q=e%3AKHM
-                    url = "https://api.scryfall.com/cards/search?order=set&unique=art&q=e" + urlencode(':', safe='') + "%s" % (set)
+                    #https://api.scryfall.com/cards/search?order=set&unique=prints&q=e%3AMID
+                    url = "https://api.scryfall.com/cards/search?order=set&unique=prints&q=e" + urlencode(':', safe='') + "%s" % (set)
                     url_data = urllib.request.urlopen(url, context=self.context).read()
                     
                     set_json_data = json.loads(url_data)
@@ -638,7 +638,7 @@ class FileExtractor:
           
     def ProcessScryfallData (self, data):
         result = False
-        result_string = ""
+        result_string = "Arena IDs Unavailable"
         for card_data in data:
             try:
                 if "arena_id" not in card_data:
@@ -700,21 +700,18 @@ class FileExtractor:
                 set_code = set["code"]
                 
                 if set_code == "dbl":
-                    sets[set_name] = []
-                    sets[set_name].append(set_code)
-                    sets[set_name].append("vow")
-                    sets[set_name].append("mid")
-                elif (len(set_code) == 3) and (set["set_type"] in SUPPORTED_SET_TYPES):
-                    sets[set_name] = []
-                    sets[set_name].append(set_code)
+                    sets[set_name] = [set_code, "vow", "mid"]
+                    counter += 1
+                elif (set["set_type"] in SUPPORTED_SET_TYPES):
+                    sets[set_name] = [set_code]
                     #Add mystic archives to strixhaven
                     if set_code == "stx":
                         sets[set_name].append("sta")
                     counter += 1
                     
-                    # Only retrieve the last 15 sets
-                    if counter >= 15:
-                        break
+                # Only retrieve the last 20 sets
+                if counter >= 20:
+                    break
             except Exception as error:
                 file_logger.info(f"ProcessSetData Error: {error}")
         

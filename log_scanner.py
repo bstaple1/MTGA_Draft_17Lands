@@ -122,9 +122,9 @@ class ArenaScanner:
         update = False
         #Open the file
         switcher={
-                "[UnityCrossThreadLogger]==> Event_Join " : (lambda x, y: self.DraftStartSearchV1(x, y)),
-                "[UnityCrossThreadLogger]==> Event.Join " : (lambda x, y: self.DraftStartSearchV2(x, y)),
-                "[UnityCrossThreadLogger]==> BotDraft_DraftStatus " : (lambda x, y: self.DraftStartSearchV1(x, y)),
+                "[UnityCrossThreadLogger]==> Event_Join " : (lambda x: self.DraftStartSearchV1(x)),
+                "[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
+                "[UnityCrossThreadLogger]==> BotDraft_DraftStatus " : (lambda x: self.DraftStartSearchV1(x)),
              }
         
         
@@ -149,7 +149,7 @@ class ArenaScanner:
                             self.search_offset = offset
                             start_parser = switcher.get(search_string, lambda: None)
                             event_data = json.loads(line[string_offset + len(search_string):])
-                            start_parser(event_data, offset)
+                            start_parser(event_data)
                             self.logger.info(line)
                             break
                                 
@@ -165,7 +165,7 @@ class ArenaScanner:
             scanner_logger.info(f"DraftStartSearch Error: {error}")
             
         return update
-    def DraftStartSearchV1(self, event_data, offset):
+    def DraftStartSearchV1(self, event_data):
         try:
             request_data = json.loads(event_data["request"])
             payload_data = json.loads(request_data["Payload"])
@@ -176,7 +176,7 @@ class ArenaScanner:
             if len(event_string) > 1:
                 #Trad_Sealed_NEO_20220317
                 for count, event in enumerate(event_string):
-                    if event in limited_types_dict.keys() or event == "Sealed":
+                    if event in limited_types_dict.keys():
                         if event == "Sealed":
                             event_type = "TradSealed" if event_string[0] == "Trad" else "Sealed"
                             event_set = event_string[count + 1]
@@ -190,14 +190,12 @@ class ArenaScanner:
                         self.draft_type = limited_types_dict[event_type]
                         self.draft_set = event_set.upper()
                         self.NewLog(event_set, event_type)
-                        #directory = "Logs/"
-                        #self.diag_log_file = directory + "DraftLog_%s_%s_%u.log" % (event_set, event_type, int(time.time()))
                         break
         except Exception as error:
             scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
             
     
-    def DraftStartSearchV2(self, event_data, offset):
+    def DraftStartSearchV2(self, event_data):
         try:
             request_data = json.loads(event_data["request"])
             params_data = request_data["params"]

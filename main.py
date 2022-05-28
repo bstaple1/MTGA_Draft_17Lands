@@ -1189,7 +1189,7 @@ class WindowUI:
                 self.root.update()
                 if extractor.Session17Lands(self.root, progress, progress['value']) == False:
                     result = False
-                    result_string = "Couldn't Collect Ratings Data"
+                    result_string = "Couldn't Collect 17Lands Data"
                     break
                 if extractor.ExportData() == False:
                     result = False
