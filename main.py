@@ -189,6 +189,7 @@ class WindowUI:
         self.step_through = step_through
         
         self.draft = LS.ArenaScanner(self.filename, self.step_through)
+        self.extractor = FE.FileExtractor(FE.ArenaDirectoryLocation(self.filename))
         self.trace_ids = []
         
         self.deck_limits = {}
@@ -828,8 +829,7 @@ class WindowUI:
         popup.wm_title("Set Data")
         Grid.rowconfigure(popup, 1, weight = 1)
         try:
-            extractor = FE.FileExtractor()
-            sets = extractor.SessionSets()
+            sets = self.extractor.SessionSets()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
             list_box_frame = Frame(popup)
@@ -867,8 +867,7 @@ class WindowUI:
             
             progress = Progressbar(popup,orient=HORIZONTAL,length=100,mode='determinate')
             
-            add_button = Button(popup, command=lambda: self.AddSet(extractor,
-                                                                   set_value,
+            add_button = Button(popup, command=lambda: self.AddSet(set_value,
                                                                    draft_value,
                                                                    start_entry,
                                                                    end_entry,
@@ -1155,7 +1154,7 @@ class WindowUI:
         except Exception as error:
             ui_logger.info(f"SettingsPopup Error: {error}")
         
-    def AddSet(self, extractor, set, draft, start, end, button, progress, list_box, sets, version):
+    def AddSet(self, set, draft, start, end, button, progress, list_box, sets, version):
         result = True
         result_string = ""
         while(True):
@@ -1164,34 +1163,34 @@ class WindowUI:
                 if not message_box:
                     break
                     
-                extractor.ClearData()
+                self.extractor.ClearData()
                 button['state'] = 'disabled'
                 progress['value'] = 0
                 self.root.update()
-                extractor.Sets(sets[set.get()])
-                extractor.DraftType(draft.get())
-                if extractor.StartDate(start.get()) == False:
+                self.extractor.Sets(sets[set.get()])
+                self.extractor.DraftType(draft.get())
+                if self.extractor.StartDate(start.get()) == False:
                     result = False
                     result_string = "Invalid Start Date (YYYY-MM-DD)"
                     break
-                if extractor.EndDate(end.get()) == False:
+                if self.extractor.EndDate(end.get()) == False:
                     result = False
                     result_string = "Invalid End Date (YYYY-MM-DD)"
                     break
-                extractor.Version(version)
-                extractor.SessionColorRatings()
-                result, result_string = extractor.RetrieveLocalArenaData()
+                self.extractor.Version(version)
+                self.extractor.SessionColorRatings()
+                result, result_string = self.extractor.RetrieveLocalArenaData()
                 if result == False:
-                    result, result_string = extractor.SessionScryfallData()
+                    result, result_string = self.extractor.SessionScryfallData()
                     if result == False:
                         break
                 progress['value']=10
                 self.root.update()
-                if extractor.Session17Lands(self.root, progress, progress['value']) == False:
+                if self.extractor.Session17Lands(self.root, progress, progress['value']) == False:
                     result = False
                     result_string = "Couldn't Collect 17Lands Data"
                     break
-                if extractor.ExportData() == False:
+                if self.extractor.ExportData() == False:
                     result = False
                     result_string = "File Write Failure"
                     break
@@ -1324,14 +1323,13 @@ class WindowUI:
         if sys.platform == FE.PLATFORM_ID_WINDOWS:
             try:
                 import win32api
-                extractor = FE.FileExtractor()
-                
-                new_version_found, new_version = CheckVersion(extractor, __version__)
+
+                new_version_found, new_version = CheckVersion(self.extractor, __version__)
                 if new_version_found:
                     message_string = "Update client %.2f to version %.2f" % (__version__, new_version)
                     message_box = MessageBox.askyesno(title="Update", message=message_string)
                     if message_box == True:
-                        extractor.SessionRepositoryDownload("setup.exe")
+                        self.extractor.SessionRepositoryDownload("setup.exe")
                         self.root.destroy()
                         win32api.ShellExecute(0, "open", "setup.exe", None, None, 10)
     

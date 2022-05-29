@@ -12,8 +12,10 @@ import re
 from enum import Enum
 import log_scanner as LS
 from urllib.parse import quote as urlencode
-LOCAL_DATA_FOLDER_PATH_WINDOWS = "Wizards of the Coast/MTGA/MTGA_Data/Downloads/Data/"
-LOCAL_DATA_FOLDER_PATH_OSX = "Library/Application Support/com.wizards.mtga/Downloads/Data/"
+LOCAL_DATA_FOLDER_PATH_WINDOWS = os.path.join("Wizards of the Coast","MTGA","MTGA_Data")
+LOCAL_DATA_FOLDER_PATH_OSX = os.path.join("Library","Application Support","com.wizards.mtga")
+
+LOCAL_DOWNLOADS_DATA = os.path.join("Downloads","Data")
 
 LOCAL_DATA_FILE_PREFIX_CARDS = "Data_cards_"
 LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
@@ -28,8 +30,8 @@ if not os.path.exists(SETS_FOLDER):
 PLATFORM_ID_OSX = "darwin"
 PLATFORM_ID_WINDOWS = "win32"
 
-LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(), "AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log")
-LOG_LOCATION_OSX = "Library/Logs/Wizards of the Coast/MTGA/Player.log"
+LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(), "AppData", "LocalLow","Wizards Of The Coast","MTGA","Player.log")
+LOG_LOCATION_OSX = os.path.join("Library","Logs","Wizards of the Coast","MTGA","Player.log")
 
 DEFAULT_GIHWR_AVERAGE = 0.0
 
@@ -94,8 +96,9 @@ def RetrieveLocalSetList(sets):
             file_logger.info(f"RetrieveLocalSetList Error: {error}")
     
     return file_list
+    
 def ArenaLogLocation():
-    file_location = ""
+    log_location = ""
     try:
         if sys.platform == PLATFORM_ID_OSX:
             paths = [os.path.join(os.path.expanduser('~'), LOG_LOCATION_OSX)]
@@ -106,12 +109,29 @@ def ArenaLogLocation():
         for file_path in paths:
             file_logger.info(f"Arena Log: Searching file path {file_path}")
             if os.path.exists(file_path):
-                file_location = file_path
+                log_location = file_path
                 break
                 
     except Exception as error:
         file_logger.info(f"ArenaLogLocation Error: {error}")
-    return file_location
+    return log_location
+    
+def ArenaDirectoryLocation(log_location):
+    arena_directory = ""
+    try:
+        #Retrieve the arena directory
+        with open(log_location, 'r') as log_file:
+            line = log_file.readline()
+            location = re.findall(r"'(.*?)/Managed'", line, re.DOTALL)
+            if location and os.path.exists(location[0]):
+                arena_directory = location[0]
+                file_logger.info(f"Arena Directory: {arena_directory}")
+            else:
+                file_logger.info(f"Unable to locate the Arena directory")
+                
+    except Exception as error:
+        file_logger.info(f"ArenaDirectoryLocation Error: {error}")
+    return arena_directory
  
 def SearchLocalFiles(paths, file_prefixes):
     file_locations = []
@@ -220,12 +240,13 @@ def FileIntegrityCheck(filename):
     return result, json_data
        
 class FileExtractor:
-    def __init__(self):
+    def __init__(self, directory):
         self.sets = []
         self.draft = ""
         self.session = ""
         self.start_date = ""
         self.end_date = ""
+        self.directory = directory
         self.context = ssl.SSLContext()
         self.id = id
         self.card_ratings = {}
@@ -266,12 +287,16 @@ class FileExtractor:
         result_string = "Couldn't Collect Local Card Data"
         result = False
         self.card_dict = {}
-        
+          
         if sys.platform == PLATFORM_ID_OSX:
-            paths = [os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX)]
+            directory = os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
+            paths = [os.path.join(directory, LOCAL_DOWNLOADS_DATA)]
         else:
-            path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
-            paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
+            if not self.directory:
+                path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
+                paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
+            else:
+                paths = [os.path.join(self.directory, LOCAL_DOWNLOADS_DATA)]
         
         arena_cards_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_CARDS])
         arena_text_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_TEXT])
