@@ -29,6 +29,8 @@ TIER_FILE_PREFIX = "Tier_"
 
 DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
 
+DRAFT_START_STRING = "[UnityCrossThreadLogger]==> Event_Join "
+
 DATA_SOURCES_NONE = {"None" : ""}
 
 #Dictionaries
@@ -123,10 +125,10 @@ class ArenaScanner:
     def DraftStartSearch(self): 
         update = False
         #Open the file
-        switcher={
-                "[UnityCrossThreadLogger]==> Event_Join " : (lambda x: self.DraftStartSearchV1(x)),
-                #"[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
-             }
+        #switcher={
+        #        "[UnityCrossThreadLogger]==> Event_Join " : (lambda x: self.DraftStartSearchV1(x)),
+        #        #"[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
+        #     }
         
         
         try:
@@ -144,15 +146,22 @@ class ArenaScanner:
                     if not line:
                         break
                     offset = log.tell()
-                    for search_string in switcher.keys():
-                        string_offset = line.find(search_string)
-                        if string_offset != -1:
-                            self.search_offset = offset
-                            start_parser = switcher.get(search_string, lambda: None)
-                            event_data = json.loads(line[string_offset + len(search_string):])
-                            start_parser(event_data)
-                            self.logger.info(line)
-                            break
+                    if DRAFT_START_STRING in line:
+                        self.search_offset = offset
+                        string_offset = line.find(DRAFT_START_STRING)
+                        event_data = json.loads(line[string_offset + len(DRAFT_START_STRING):])
+                        self.DraftStartSearchV1(event_data)
+                        self.logger.info(line)
+                        break
+                    #for search_string in switcher.keys():
+                    #    string_offset = line.find(search_string)
+                    #    if string_offset != -1:
+                    #        self.search_offset = offset
+                    #        start_parser = switcher.get(search_string, lambda: None)
+                    #        event_data = json.loads(line[string_offset + len(search_string):])
+                    #        start_parser(event_data)
+                    #        self.logger.info(line)
+                    #        break
                                 
             if (self.draft_type != LIMITED_TYPE_UNKNOWN) and \
                ((self.draft_type != previous_draft_type) or \
@@ -224,9 +233,6 @@ class ArenaScanner:
             
     #Wrapper function for performing a search based on the draft type
     def DraftDataSearch(self):
-        #if self.draft_set == None:
-        #    self.ClearDraft(False)
-        #self.DraftStartSearch()
         
         if self.draft_type == LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
