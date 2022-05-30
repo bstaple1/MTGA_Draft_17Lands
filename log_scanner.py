@@ -27,6 +27,8 @@ if not os.path.exists(DRAFT_LOG_FOLDER):
 
 TIER_FILE_PREFIX = "Tier_"
 
+DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
+
 DATA_SOURCES_NONE = {"None" : ""}
 
 #Dictionaries
@@ -43,9 +45,9 @@ limited_types_dict = {
 scanner_logger = logging.getLogger("mtgaTool")
 
 class ArenaScanner:
-    def __init__(self, filename, step_through):
+    def __init__(self, filename, step_through, set_list):
         self.arena_file = filename
-        
+        self.set_list = set_list
         self.logger = logging.getLogger("draftLog")
         self.logger.setLevel(logging.INFO)
         
@@ -123,7 +125,7 @@ class ArenaScanner:
         #Open the file
         switcher={
                 "[UnityCrossThreadLogger]==> Event_Join " : (lambda x: self.DraftStartSearchV1(x)),
-                "[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
+                #"[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
              }
         
         
@@ -170,27 +172,31 @@ class ArenaScanner:
             payload_data = json.loads(request_data["Payload"])
             event_name = payload_data["EventName"]
             
-            scanner_logger.info(f"Draft event found {event_name}")
+            scanner_logger.info(f"Event found {event_name}")
             
-            event_string = event_name.split('_')
-            if len(event_string) > 1:
-                #Trad_Sealed_NEO_20220317
-                for count, event in enumerate(event_string):
-                    if event in limited_types_dict.keys():
-                        if event == "Sealed":
-                            event_type = "TradSealed" if event_string[0] == "Trad" else "Sealed"
-                            event_set = event_string[count + 1]
-                        else:
-                            event_type = event
-                            if count == 0:
-                                event_set = event_string[count + 1]
-                            else:
-                                event_set = event_string[count - 1]
+            event_sections = event_name.split('_')
+            
+            #Find set name within the event string
+            sets = [i[0] for i in self.set_list.values() for x in event_sections if i[0] in x]
+            events = []
+            if sets:
+                #Find event type in event string
+                events = [i for i in limited_types_dict.keys() for x in event_sections if i in x]
                 
-                        self.draft_type = limited_types_dict[event_type]
-                        self.draft_set = event_set.upper()
-                        self.NewLog(event_set, event_type)
-                        break
+                if not events and [i for i in DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
+                    events.append("PremierDraft") #Unknown draft events will be parsed as premier drafts
+            
+            if sets and events:
+                event_set = sets[0]
+                if events[0] == "Sealed":
+                    #Trad_Sealed_NEO_20220317
+                    event_type = "TradSealed" if "Trad" in event_sections else "Sealed"
+                else:
+                    event_type = events[0]
+                self.draft_type = limited_types_dict[event_type]
+                self.draft_set = event_set
+                self.NewLog(event_set, event_type)
+
         except Exception as error:
             scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
             

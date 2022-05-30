@@ -24,6 +24,9 @@ LOCAL_DATA_FILE_PREFIX_ENUMERATOR = "Data_enums_"
 SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
 SET_FILE_SUFFIX = "Data.json"
 
+CARD_RATINGS_BACKOFF_DELAY_SECONDS = 30
+CARD_RATINGS_INTER_DELAY_SECONDS = 2
+
 if not os.path.exists(SETS_FOLDER):
     os.makedirs(SETS_FOLDER)
 
@@ -79,11 +82,11 @@ def RetrieveLocalSetList(sets):
             name_segments = file.split("_")
             if len(name_segments) == 3:
 
-                if ((name_segments[0].lower() in main_sets) and 
+                if ((name_segments[0].upper() in main_sets) and 
                     (name_segments[1] in LS.limited_types_dict.keys()) and 
                     (name_segments[2] == SET_FILE_SUFFIX)):
                     
-                    set_name = list(sets.keys())[list(main_sets).index(name_segments[0].lower())]
+                    set_name = list(sets.keys())[list(main_sets).index(name_segments[0].upper())]
                     result, json_data = FileIntegrityCheck(os.path.join(SETS_FOLDER,file))
                     if result == Result.VALID:
                         if json_data["meta"]["version"] == 1:
@@ -127,7 +130,7 @@ def ArenaDirectoryLocation(log_location):
                 arena_directory = location[0]
                 file_logger.info(f"Arena Directory: {arena_directory}")
             else:
-                file_logger.info(f"Unable to locate the Arena directory")
+                file_logger.info(f"Unable to locate the Arena directory at {line}")
                 
     except Exception as error:
         file_logger.info(f"ArenaDirectoryLocation Error: {error}")
@@ -241,7 +244,8 @@ def FileIntegrityCheck(filename):
        
 class FileExtractor:
     def __init__(self, directory):
-        self.sets = []
+        self.selected_sets = []
+        self.set_list = []
         self.draft = ""
         self.session = ""
         self.start_date = ""
@@ -260,8 +264,13 @@ class FileExtractor:
         self.combined_data = {"meta" : {"collection_date" : str(datetime.datetime.now())}}
         
     def Sets(self, sets):
-        self.sets = sets
+        self.selected_sets = sets
         
+    def SetList(self):
+        if not self.set_list:
+            self.set_list = self.SessionSets()
+        
+        return self.set_list
     def DraftType(self, draft_type):
         self.draft = draft_type
         
@@ -307,7 +316,7 @@ class FileExtractor:
             not len(arena_enumerator_locations)):
             return result, result_string
         
-        for set in self.sets:
+        for set in self.selected_sets:
             result = False
             while(True):
                 try:                      
@@ -339,6 +348,10 @@ class FileExtractor:
                 except Exception as error:
                     file_logger.info(f"RetrieveLocalArenaData Error: {error}")
                 break
+        
+        if not result:
+            file_logger.info(result_string)
+        
         return result, result_string  
         
     def RetrieveLocalCards(self, file_location, card_set):
@@ -348,8 +361,8 @@ class FileExtractor:
                 json_data = json.loads(json_file.read())
                 
                 for card in json_data:
-                    if (card_set in card["set"]):
-                    #(("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
+                    if ((card_set in card["set"]) or
+                       (("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
                         try:
                             if "isToken" in card:
                                 continue
@@ -464,7 +477,7 @@ class FileExtractor:
         result = False
         self.card_dict = {}
         result_string = "Couldn't Retrieve Card Data"
-        for set in self.sets:
+        for set in self.selected_sets:
             if set == "dbl":
                 continue
             retry = 5
@@ -509,7 +522,7 @@ class FileExtractor:
         current_progress = 0
         result = False
         self.Initialize17LandsData()
-        for set in self.sets:
+        for set in self.selected_sets:
             if set == "dbl":
                 continue
             for color in self.deck_colors:
@@ -531,16 +544,16 @@ class FileExtractor:
                     except Exception as error:
                         file_logger.info(url) 
                         file_logger.info(f"Session17Lands Error: {error}")   
-                        time.sleep(15)
+                        time.sleep(CARD_RATINGS_BACKOFF_DELAY_SECONDS)
                         retry -= 1
                         
                 if result:
-                    current_progress += 3 / len(self.sets)
+                    current_progress += 3 / len(self.selected_sets)
                     progress['value'] = current_progress + initial_progress
                     root.update()
                 else:
                     break
-                time.sleep(1)
+                time.sleep(CARD_RATINGS_INTER_DELAY_SECONDS)
          
             if set == "stx":
                 break
@@ -572,7 +585,7 @@ class FileExtractor:
     def SessionColorRatings(self):
         try:
             #https://www.17lands.com/color_ratings/data?expansion=VOW&event_type=QuickDraft&start_date=2019-1-1&end_date=2022-01-13&combine_splash=true
-            url = "https://www.17lands.com/color_ratings/data?expansion=%s&event_type=%s&start_date=%s&end_date=%s&combine_splash=true" % (self.sets[0], self.draft, self.start_date, self.end_date)
+            url = "https://www.17lands.com/color_ratings/data?expansion=%s&event_type=%s&start_date=%s&end_date=%s&combine_splash=true" % (self.selected_sets[0], self.draft, self.start_date, self.end_date)
             url_data = urllib.request.urlopen(url, context=self.context).read()
             
             color_json_data = json.loads(url_data)
@@ -725,13 +738,13 @@ class FileExtractor:
                 set_code = set["code"]
                 
                 if set_code == "dbl":
-                    sets[set_name] = [set_code, "vow", "mid"]
+                    sets[set_name] = [set_code, "VOW", "MID"]
                     counter += 1
                 elif (set["set_type"] in SUPPORTED_SET_TYPES):
-                    sets[set_name] = [set_code]
+                    sets[set_name] = [set_code.upper()]
                     #Add mystic archives to strixhaven
                     if set_code == "stx":
-                        sets[set_name].append("sta")
+                        sets[set_name].append("STA")
                     counter += 1
                     
                 # Only retrieve the last 20 sets
@@ -749,7 +762,7 @@ class FileExtractor:
     def ExportData(self):
         result = True
         try:
-            output_file = "_".join((self.sets[0].upper(), self.draft, SET_FILE_SUFFIX))
+            output_file = "_".join((self.selected_sets[0].upper(), self.draft, SET_FILE_SUFFIX))
             location = os.path.join(SETS_FOLDER, output_file)
 
             with open(location, 'w') as f:

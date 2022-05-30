@@ -188,8 +188,9 @@ class WindowUI:
         self.filename = filename
         self.step_through = step_through
         
-        self.draft = LS.ArenaScanner(self.filename, self.step_through)
         self.extractor = FE.FileExtractor(FE.ArenaDirectoryLocation(self.filename))
+        self.draft = LS.ArenaScanner(self.filename, self.step_through, self.extractor.SetList())
+        
         self.trace_ids = []
         
         self.deck_limits = {}
@@ -829,7 +830,7 @@ class WindowUI:
         popup.wm_title("Set Data")
         Grid.rowconfigure(popup, 1, weight = 1)
         try:
-            sets = self.extractor.SessionSets()
+            sets = self.extractor.SetList()
         
             column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
             list_box_frame = Frame(popup)
@@ -1514,7 +1515,11 @@ def Startup(argv):
         
     config = CL.ReadConfig()
     
-    if sys.platform == FE.PLATFORM_ID_OSX:
+    platform = sys.platform
+    
+    ui_logger.info(f"Platform: {platform}")
+    
+    if platform == FE.PLATFORM_ID_OSX:
         config.hotkey_enabled = False
         window.resizable(width = True, height = True)
     else:
