@@ -1,3 +1,15 @@
+===================== RELEASE NOTES 2.86 =====================
+- Modified Feature: The application will now build data sets that include alternate card art, Alchemy cards, and cards with Alchemy revisions.
+    - The tooltips for the alternate art cards will display the original card art.
+
+- Modified Feature: Added support for non-standard drafts (draft events, competitions, etc.)
+    - The application will parse all non-standard drafts as premier drafts, excluding the MWM bot draft.
+
+- Modified Feature: The application will primarily build data sets using local files instead of Scryfall.
+    - Scryfall will be used as a backup in case there is an issue with the local files.
+
+- UI Change: Added a window to remind users that 17Lands only updates their card data once a day.
+
 ===================== RELEASE NOTES 2.85 =====================
 - Bug Fix: The downloaded sets will now be visible in the Set Data window
 
