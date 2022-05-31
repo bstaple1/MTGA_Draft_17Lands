@@ -129,8 +129,7 @@ def ArenaDirectoryLocation(log_location):
             if location and os.path.exists(location[0]):
                 arena_directory = location[0]
                 file_logger.info(f"Arena Directory: {arena_directory}")
-            else:
-                file_logger.info(f"Unable to locate the Arena directory at {line}")
+
                 
     except Exception as error:
         file_logger.info(f"ArenaDirectoryLocation Error: {error}")
