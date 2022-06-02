@@ -9,17 +9,53 @@ import getpass
 import itertools
 import logging
 import re
+import sqlite3
 from enum import Enum
 import log_scanner as LS
 from urllib.parse import quote as urlencode
 LOCAL_DATA_FOLDER_PATH_WINDOWS = os.path.join("Wizards of the Coast","MTGA","MTGA_Data")
 LOCAL_DATA_FOLDER_PATH_OSX = os.path.join("Library","Application Support","com.wizards.mtga")
 
-LOCAL_DOWNLOADS_DATA = os.path.join("Downloads","Data")
+LOCAL_DOWNLOADS_DATA = os.path.join("Downloads","Raw")
 
-LOCAL_DATA_FILE_PREFIX_CARDS = "Data_cards_"
-LOCAL_DATA_FILE_PREFIX_TEXT = "Data_loc_"
-LOCAL_DATA_FILE_PREFIX_ENUMERATOR = "Data_enums_"
+LOCAL_DATA_FILE_PREFIX_CARDS = "Raw_cards_"
+LOCAL_DATA_FILE_PREFIX_DATABASE = "Raw_CardDatabase_"
+
+LOCAL_DATABASE_TABLE_LOCALIZATION = "Localizations"
+LOCAL_DATABASE_TABLE_ENUMERATOR = "Enums"
+
+LOCAL_DATABASE_LOCALIZATION_COLUMN_ID = "LocId"
+LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT = "Formatted"
+LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT = "enUS"
+
+LOCAL_DATABASE_ENUMERATOR_COLUMN_ID = "LocId"
+LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE = "Type"
+LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE = "Value"
+
+LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR = "Color"
+LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES = "CardType"
+
+LOCAL_DATABASE_LOCALIZATION_QUERY = f"""SELECT 
+                                            A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_ID}, 
+                                            A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT}, 
+                                            A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT}
+                                        FROM {LOCAL_DATABASE_TABLE_LOCALIZATION} A INNER JOIN(
+                                            SELECT 
+                                                {LOCAL_DATABASE_LOCALIZATION_COLUMN_ID},
+                                                min({LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT}) AS MIN_FORMAT 
+                                            FROM {LOCAL_DATABASE_TABLE_LOCALIZATION} 
+                                            GROUP BY {LOCAL_DATABASE_LOCALIZATION_COLUMN_ID}) 
+                                        B ON A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_ID} = B.{LOCAL_DATABASE_LOCALIZATION_COLUMN_ID} 
+                                        AND A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT} = B.MIN_FORMAT"""
+                                        
+LOCAL_DATABASE_ENUMERATOR_QUERY = f"""SELECT
+                                        {LOCAL_DATABASE_ENUMERATOR_COLUMN_ID},
+                                        {LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE},
+                                        {LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE}
+                                      FROM {LOCAL_DATABASE_TABLE_ENUMERATOR}
+                                      WHERE {LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE} 
+                                      IN ('{LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR}', 
+                                          '{LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES}')"""
 
 SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
 SET_FILE_SUFFIX = "Data.json"
@@ -307,12 +343,10 @@ class FileExtractor:
                 paths = [os.path.join(self.directory, LOCAL_DOWNLOADS_DATA)]
         
         arena_cards_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_CARDS])
-        arena_text_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_TEXT])
-        arena_enumerator_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_ENUMERATOR])
+        arena_database_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_DATABASE])
         
         if (not len(arena_cards_locations) or 
-            not len(arena_text_locations)  or 
-            not len(arena_enumerator_locations)):
+            not len(arena_database_locations)):
             return result, result_string
         
         for set in self.selected_sets:
@@ -326,18 +360,10 @@ class FileExtractor:
                     if not result:
                         break
                         
-                    #Retrieve the card text
-                    if not self.card_text:
-                        file_logger.info(f"Card Text: Searching file path {arena_text_locations[0]}")
-                        result = self.RetrieveLocalCardText(arena_text_locations[0])
-                        
-                        if not result:
-                            break
-                    
-                    #Retrieve the card enumerators
-                    if not self.card_enumerators:
-                        file_logger.info(f"Card Enumerators: Searching file path {arena_enumerator_locations[0]}")
-                        result = self.RetrieveLocalCardEnumerators(arena_enumerator_locations[0])
+                    #Retrieve the card localizations and enumerators
+                    if not self.card_text or not self.card_enumerators:
+                        file_logger.info(f"Card Info Database: Searching file path {arena_database_locations[0]}")
+                        result = self.RetrieveLocalDatabase(arena_database_locations[0])
                         
                         if not result:
                             break
@@ -388,20 +414,46 @@ class FileExtractor:
             file_logger.info(f"RetrieveLocalCards Error: {error}")
             
         return result
+      
+    def RetrieveLocalDatabase(self, file_location):
+        result = True
+        self.card_text = {}
+        try:
+            #Open Sqlite3 database
+            while(True):
+                connection = sqlite3.connect(file_location)
+                connection.row_factory = sqlite3.Row
+                cursor = connection.cursor()
+                
+                if not self.card_text:
+                    rows = [dict(row) for row in cursor.execute(LOCAL_DATABASE_LOCALIZATION_QUERY)]
+                    
+                    result = self.RetrieveLocalCardText(rows)
+                    
+                    if not result:
+                        break
+                        
+                if not self.card_enumerators:
+                    rows = [dict(row) for row in cursor.execute(LOCAL_DATABASE_ENUMERATOR_QUERY)]
+                    
+                    result = self.RetrieveLocalCardEnumerators(rows)
+                    
+                    if not result:
+                        break  
+                break
+                
+        except Exception as error:
+            result = False
+            file_logger.info(f"RetrievRetrieveLocalDatabaseeLocalCardText Error: {error}")
         
-    def RetrieveLocalCardText(self, file_location):
+        return result
+      
+    def RetrieveLocalCardText(self, data):
         result = True
         self.card_text = {}
         try:
             #Retrieve the title (card name) for each of the collected arena IDs
-            with open(file_location, 'r', encoding="utf8") as json_file:
-                json_data = json.loads(json_file.read())
-                
-                for group in json_data:
-                    if group["isoCode"] == "en-US":
-                        keys = group["keys"]
-                        for key in keys:
-                            self.card_text[key["id"]] = key["raw"] if "raw" in key else key["text"]
+            self.card_text = {x[LOCAL_DATABASE_LOCALIZATION_COLUMN_ID] : x[LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
     
         except Exception as error:
             result = False
@@ -409,18 +461,16 @@ class FileExtractor:
         
         return result
         
-    def RetrieveLocalCardEnumerators(self, file_location):
+    def RetrieveLocalCardEnumerators(self, data):
         result = True
         self.card_enumerators = {"colors" : {}, "types" : {}}
         try:
-            with open(file_location, 'r', encoding="utf8") as json_file:
-                json_data = json.loads(json_file.read())
-                
-                for enumerator in json_data:
-                    if enumerator["name"] == "CardType":
-                        self.card_enumerators["types"] = {d["id"]: d["text"] for d in enumerator["values"]}
-                    elif enumerator["name"] == "Color":
-                        self.card_enumerators["colors"] = {d["id"]: d["text"] for d in enumerator["values"]}
+            for row in data:
+                    if row[LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES:
+                        self.card_enumerators["types"][row[LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = row[LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
+                    elif row[LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR:
+                        self.card_enumerators["colors"][row[LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = row[LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
+
         except Exception as error:
             result = False
             file_logger.info(f"RetrieveLocalCardEnumerators Error: {error}")
