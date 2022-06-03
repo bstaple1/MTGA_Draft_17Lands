@@ -82,7 +82,14 @@ PLATFORM_LOG_DICT = {
     PLATFORM_ID_WINDOWS : LOG_LOCATION_WINDOWS,
 }
 
-SUPPORTED_SET_TYPES = ["expansion"]
+SET_TYPE_EXPANSION = "expansion"
+SET_TYPE_ALCHEMY = "alchemy"
+
+SET_LIST_ARENA = "arena"
+SET_LIST_SCRYFALL = "scryfall"
+SET_LIST_17LANDS = "17Lands"
+
+SUPPORTED_SET_TYPES = [SET_TYPE_EXPANSION, SET_TYPE_ALCHEMY]
 
 CARD_COLORS_DICT = {
     "White" : "W",
@@ -112,7 +119,7 @@ def DecodeManaCost(encoded_cost):
     return decoded_cost
 def RetrieveLocalSetList(sets):
     file_list = []
-    main_sets = [v[0] for k, v in sets.items()]
+    main_sets = [v[SET_LIST_17LANDS][0] for k, v in sets.items()]
     for file in os.listdir(SETS_FOLDER):
         try:
             name_segments = file.split("_")
@@ -349,13 +356,13 @@ class FileExtractor:
             not len(arena_database_locations)):
             return result, result_string
         
-        for set in self.selected_sets:
+        for set in self.selected_sets[SET_LIST_ARENA]:
             result = False
             while(True):
                 try:                      
                     #Retrieve the card data without text
                     file_logger.info(f"Card Data: Searching file path {arena_cards_locations[0]}")
-                    result = self.RetrieveLocalCards(arena_cards_locations[0], set.upper())
+                    result = self.RetrieveLocalCards(arena_cards_locations[0], set)
                     
                     if not result:
                         break
@@ -444,7 +451,7 @@ class FileExtractor:
                 
         except Exception as error:
             result = False
-            file_logger.info(f"RetrievRetrieveLocalDatabaseeLocalCardText Error: {error}")
+            file_logger.info(f"RetrieveLocalDatabase Error: {error}")
         
         return result
       
@@ -526,7 +533,7 @@ class FileExtractor:
         result = False
         self.card_dict = {}
         result_string = "Couldn't Retrieve Card Data"
-        for set in self.selected_sets:
+        for set in self.selected_sets[SET_LIST_SCRYFALL]:
             if set == "dbl":
                 continue
             retry = 5
@@ -571,7 +578,7 @@ class FileExtractor:
         current_progress = 0
         result = False
         self.Initialize17LandsData()
-        for set in self.selected_sets:
+        for set in self.selected_sets[SET_LIST_17LANDS]:
             if set == "dbl":
                 continue
             for color in self.deck_colors:
@@ -580,7 +587,7 @@ class FileExtractor:
                 while retry:
                     
                     try:
-                        url = "https://www.17lands.com/card_ratings/data?expansion=%s&format=%s&start_date=%s&end_date=%s" % (set.upper(), self.draft, self.start_date, self.end_date)
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={set}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}"
                         
                         if color != "All Decks":
                             url += "&colors=" + color
@@ -597,7 +604,7 @@ class FileExtractor:
                         retry -= 1
                         
                 if result:
-                    current_progress += 3 / len(self.selected_sets)
+                    current_progress += 3 / len(self.selected_sets[SET_LIST_17LANDS])
                     progress['value'] = current_progress + initial_progress
                     root.update()
                 else:
@@ -634,7 +641,7 @@ class FileExtractor:
     def SessionColorRatings(self):
         try:
             #https://www.17lands.com/color_ratings/data?expansion=VOW&event_type=QuickDraft&start_date=2019-1-1&end_date=2022-01-13&combine_splash=true
-            url = "https://www.17lands.com/color_ratings/data?expansion=%s&event_type=%s&start_date=%s&end_date=%s&combine_splash=true" % (self.selected_sets[0], self.draft, self.start_date, self.end_date)
+            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets[SET_LIST_17LANDS][0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
             
             color_json_data = json.loads(url_data)
@@ -787,13 +794,24 @@ class FileExtractor:
                 set_code = set["code"]
                 
                 if set_code == "dbl":
-                    sets[set_name] = [set_code, "VOW", "MID"]
+                    set_list = ["VOW", "MID"]
+                    sets[set_name] = {SET_LIST_ARENA : set_list, SET_LIST_SCRYFALL : set_list, SET_LIST_17LANDS : set_list}
                     counter += 1
                 elif (set["set_type"] in SUPPORTED_SET_TYPES):
-                    sets[set_name] = [set_code.upper()]
-                    #Add mystic archives to strixhaven
-                    if set_code == "stx":
-                        sets[set_name].append("STA")
+                    if set["set_type"] == SET_TYPE_ALCHEMY:
+                        sets[set_name] = {}
+                        if ("parent_set_code" in set) and ("block_code" in set):
+                            sets[set_name][SET_LIST_ARENA] = [set["parent_set_code"].upper()]
+                            sets[set_name][SET_LIST_17LANDS] = [f"{set['block_code'].upper()}{set['parent_set_code'].upper()}"]
+                            sets[set_name][SET_LIST_SCRYFALL] = [set_code.upper(), set["parent_set_code"].upper()]
+                        else:
+                            sets[set_name] = {key:[set_code.upper()] for key in [SET_LIST_ARENA, SET_LIST_SCRYFALL, SET_LIST_17LANDS]}
+                    else:
+                        sets[set_name] = {key:[set_code.upper()] for key in [SET_LIST_ARENA, SET_LIST_SCRYFALL, SET_LIST_17LANDS]}
+                        #Add mystic archives to strixhaven
+                        if set_code == "stx":
+                            sets[set_name][SET_LIST_ARENA].append("STA")
+                            sets[set_name][SET_LIST_SCRYFALL].append("STA")
                     counter += 1
                     
                 # Only retrieve the last 20 sets
@@ -811,7 +829,7 @@ class FileExtractor:
     def ExportData(self):
         result = True
         try:
-            output_file = "_".join((self.selected_sets[0].upper(), self.draft, SET_FILE_SUFFIX))
+            output_file = "_".join((self.selected_sets[SET_LIST_17LANDS][0], self.draft, SET_FILE_SUFFIX))
             location = os.path.join(SETS_FOLDER, output_file)
 
             with open(location, 'w') as f:

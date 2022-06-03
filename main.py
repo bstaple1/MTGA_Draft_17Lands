@@ -593,7 +593,7 @@ class WindowUI:
                 if LS.limited_types_dict[key] == draft_type:
                     draft_type_string = key
                     
-            new_label = " %s %s" % (set, draft_type_string)
+            new_label = f" {set[0]} {draft_type_string}" if set else " None"
             self.current_draft_value_label.config(text = new_label)
         except Exception as error:
             ui_logger.info(f"UpdateCurrentDraft Error: {error}")
@@ -768,7 +768,7 @@ class WindowUI:
         filtered["filtered_b"] = CL.ColorFilter(taken_cards, self.column_3_selection.get(), self.deck_colors, self.configuration)
         filtered["filtered_c"] = CL.ColorFilter(taken_cards, self.column_4_selection.get(), self.deck_colors, self.configuration)
 
-        self.UpdateCurrentDraft(self.draft.draft_set, self.draft.draft_type)
+        self.UpdateCurrentDraft(self.draft.draft_sets, self.draft.draft_type)
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
 

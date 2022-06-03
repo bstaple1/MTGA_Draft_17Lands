@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import re
 import logging
 import card_logic as CL
 import file_extractor as FE
@@ -61,7 +62,7 @@ class ArenaScanner:
         self.pick_offset = 0
         self.pack_offset = 0
         self.search_offset = 0
-        self.draft_set = None
+        self.draft_sets = []
         self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
@@ -110,7 +111,7 @@ class ArenaScanner:
         self.draft_type = LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
-        self.draft_set = None
+        self.draft_sets = None
         self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
         self.taken_cards = []
@@ -138,7 +139,7 @@ class ArenaScanner:
             self.file_size = os.path.getsize(self.arena_file)
             offset = self.search_offset
             previous_draft_type = self.draft_type
-            previous_draft_set = self.draft_set
+            previous_draft_set = self.draft_sets
             with open(self.arena_file, 'r') as log:
                 log.seek(offset)
                 while(True):
@@ -153,23 +154,14 @@ class ArenaScanner:
                         self.DraftStartSearchV1(event_data)
                         self.logger.info(line)
                         break
-                    #for search_string in switcher.keys():
-                    #    string_offset = line.find(search_string)
-                    #    if string_offset != -1:
-                    #        self.search_offset = offset
-                    #        start_parser = switcher.get(search_string, lambda: None)
-                    #        event_data = json.loads(line[string_offset + len(search_string):])
-                    #        start_parser(event_data)
-                    #        self.logger.info(line)
-                    #        break
                                 
             if (self.draft_type != LIMITED_TYPE_UNKNOWN) and \
                ((self.draft_type != previous_draft_type) or \
-                (self.draft_set != previous_draft_set)):
+                (self.draft_sets != previous_draft_set)):
                 self.pick_offset = self.search_offset 
                 self.pack_offset = self.search_offset
                 update = True
-                scanner_logger.info(f"New draft detected {self.draft_type}, {self.draft_set}")
+                scanner_logger.info(f"New draft detected {self.draft_type}, {self.draft_sets}")
 
         except Exception as error:
             scanner_logger.info(f"DraftStartSearch Error: {error}")
@@ -186,7 +178,8 @@ class ArenaScanner:
             event_sections = event_name.split('_')
             
             #Find set name within the event string
-            sets = [i[0] for i in self.set_list.values() for x in event_sections if i[0] in x]
+            sets = [i[FE.SET_LIST_17LANDS][0] for i in self.set_list.values() for x in event_sections if i[FE.SET_LIST_17LANDS][0] in x]
+            sets = list(dict.fromkeys(sets)) #Remove duplicates while retaining order
             events = []
             if sets:
                 #Find event type in event string
@@ -196,15 +189,15 @@ class ArenaScanner:
                     events.append("PremierDraft") #Unknown draft events will be parsed as premier drafts
             
             if sets and events:
-                event_set = sets[0]
+                #event_set = sets[0]
                 if events[0] == "Sealed":
                     #Trad_Sealed_NEO_20220317
                     event_type = "TradSealed" if "Trad" in event_sections else "Sealed"
                 else:
                     event_type = events[0]
                 self.draft_type = limited_types_dict[event_type]
-                self.draft_set = event_set
-                self.NewLog(event_set, event_type)
+                self.draft_sets = sets
+                self.NewLog(self.draft_sets[0], event_type)
 
         except Exception as error:
             scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
@@ -224,7 +217,7 @@ class ArenaScanner:
                 
                 if event_type in limited_types_dict.keys():
                     self.draft_type = limited_types_dict[event_type]
-                    self.draft_set = event_set.upper()
+                    self.draft_sets = [event_set.upper()]
                     self.NewLog(event_set, event_type)
                     self.logger.info(event_data)
                                 
@@ -905,14 +898,16 @@ class ArenaScanner:
                 draft_list.insert(0, draft_list.pop(draft_list.index(draft_type)))
                 
                 #Search for the set files
-                for type in draft_list:
-                    file_name = "_".join((self.draft_set.upper(),type,FE.SET_FILE_SUFFIX))
-                    file = FE.SearchLocalFiles([FE.SETS_FOLDER], [file_name])
-                    if len(file):
-                        result, json_data = FE.FileIntegrityCheck(file[0])
-                        
-                        if result == FE.Result.VALID:
-                            data_sources[type] = file[0]
+                for set in self.draft_sets:
+                    for type in draft_list:
+                        file_name = "_".join((set,type,FE.SET_FILE_SUFFIX))
+                        file = FE.SearchLocalFiles([FE.SETS_FOLDER], [file_name])
+                        if len(file):
+                            result, json_data = FE.FileIntegrityCheck(file[0])
+                            
+                            if result == FE.Result.VALID:
+                                type_string = f"[{set[0:3]}]{type}" if re.findall("^[Yy]\d{2}", set) else type
+                                data_sources[type_string] = file[0]
         
         except Exception as error:
             scanner_logger.info(f"RetrieveDataSources Error: {error}")
@@ -926,7 +921,7 @@ class ArenaScanner:
         tier_source = ""
         
         try:
-            if self.draft_set != None:
+            if self.draft_sets:
                 file = FE.SearchLocalFiles([os.getcwd()], [TIER_FILE_PREFIX])
                 
                 if len(file):
@@ -1036,7 +1031,7 @@ class ArenaScanner:
             if os.path.exists(file):
                 with open(file, 'r') as json_file:
                     data = json.loads(json_file.read())
-                    if data["meta"]["set"] == self.draft_set.upper():
+                    if [i for i in self.draft_sets for x in data["meta"]["set"] if i in x]:
                         tier_data = data
                         deck_colors["Tier"] = "Tier (%s)" % data["meta"]["label"]
              
