@@ -1426,14 +1426,15 @@ class CreateCardToolTip(object):
                 size = 280, 390
                 self.images = []
                 for count, picture in enumerate(self.image):
-                    raw_data = urllib.request.urlopen(picture).read()
-                    im = Image.open(io.BytesIO(raw_data))
-                    im.thumbnail(size, Image.ANTIALIAS)
-                    image = ImageTk.PhotoImage(im)
-                    image_label = Label(tt_frame, image=image)
-                    columnspan = 1 if len(self.image) == 2 else 2
-                    image_label.grid(column=count, row=8, columnspan=columnspan)
-                    self.images.append(image)
+                    if picture:
+                        raw_data = urllib.request.urlopen(picture).read()
+                        im = Image.open(io.BytesIO(raw_data))
+                        im.thumbnail(size, Image.ANTIALIAS)
+                        image = ImageTk.PhotoImage(im)
+                        image_label = Label(tt_frame, image=image)
+                        columnspan = 1 if len(self.image) == 2 else 2
+                        image_label.grid(column=count, row=8, columnspan=columnspan)
+                        self.images.append(image)
             
 
             card_label = Label(tt_frame, justify="left", text=self.card_name, font=("Consolas", 12, "bold"))
