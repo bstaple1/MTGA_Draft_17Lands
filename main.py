@@ -80,7 +80,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.86
+__version__= 2.87
 
 DEBUG_LOG_FOLDER = os.path.join(os.getcwd(), "Debug")
 DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")

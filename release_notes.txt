@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 2.87 =====================
+- New Feature: Added support for Alchemy drafts
+    - Alchemy sets added to the set drop-down in the Set Data window.
+    - The Alchemy drafts will be listed as Y##<base set> (e.g. Y22SNC).
+    - For Alchemy drafts, the application will list the Alchemy data sets, denoted by a [Y##] prefix, and the base data sets.
+
 ===================== RELEASE NOTES 2.86 =====================
 - Modified Feature: The application will now build data sets that include alternate card art, Alchemy cards, and cards with Alchemy revisions.
     - The tooltips for the alternate art cards will display the original card art.
