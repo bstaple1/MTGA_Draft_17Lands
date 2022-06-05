@@ -1,12 +1,11 @@
 import json
 import logging
+import constants
 import log_scanner as LS
 from itertools import combinations
 from dataclasses import dataclass, asdict
 
-BASIC_LANDS = ["Island","Mountain","Swamp","Plains","Forest"]
-
-logic_logger = logging.getLogger("mtgaTool")
+logic_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
 @dataclass 
 class DeckType:
@@ -21,6 +20,7 @@ class Config:
     column_2 : str="All ALSA"
     column_3 : str="All Decks"
     column_4 : str="Auto"
+    filter_format : str=constants.FILTER_FORMAT_COLORS
     missing_enabled : bool=True
     stats_enabled : bool=True
     hotkey_enabled : bool=True
@@ -211,7 +211,7 @@ def ColorFilter(deck, color_selection, color_list, configuration):
     try:
         if color_data == "Auto":
             filtered_color_list = AutoColors(deck, color_list, 2, configuration)
-        elif color_data in LS.NON_COLORS_OPTIONS:
+        elif color_data in constants.NON_COLORS_OPTIONS:
             filtered_color_list = [color_data]
         else:
             filtered_color_list = [[key for key, value in color_list.items() if value == color_data][0]]
@@ -400,7 +400,7 @@ def RatingsLimits(cards, bayesian_enabled):
     lower_limit = 100
     
     for card in cards:
-        for color in LS.DECK_COLORS:
+        for color in constants.DECK_COLORS:
             try:
                 if color in cards[card]["deck_colors"]:
                     gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_enabled)
@@ -870,7 +870,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
 
         #Add in special lands if they are on-color, off-color, and they have a card rating above 2.0
         land_cards = DeckColorSearch(filtered_cards, color, ["Land"], True, True, False)
-        land_cards = [x for x in land_cards if x["name"] not in BASIC_LANDS]
+        land_cards = [x for x in land_cards if x["name"] not in constants.BASIC_LANDS]
         land_cards = sorted(land_cards, key = lambda k: k["rating_filter_c"], reverse = True)
         for card in land_cards:
             if total_card_count >= maximum_deck_size:
@@ -904,6 +904,7 @@ def ReadConfig():
         config.column_2 = config_data["settings"]["column_2"]
         config.column_3 = config_data["settings"]["column_3"]
         config.column_4 = config_data["settings"]["column_4"]
+        config.filter_format = config_data["settings"]["filter_format"]
         config.missing_enabled = config_data["settings"]["missing_enabled"]
         config.stats_enabled = config_data["settings"]["stats_enabled"]
         config.auto_highest_enabled = config_data["settings"]["auto_highest_enabled"]
@@ -924,6 +925,7 @@ def WriteConfig(config):
         config_data["settings"]["column_2"] = config.column_2
         config_data["settings"]["column_3"] = config.column_3
         config_data["settings"]["column_4"] = config.column_4
+        config_data["settings"]["filter_format"] = config.filter_format
         config_data["settings"]["missing_enabled"] = config.missing_enabled
         config_data["settings"]["stats_enabled"] = config.stats_enabled
         config_data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
@@ -953,6 +955,7 @@ def ResetConfig():
         data["settings"]["column_2"] = config.column_2
         data["settings"]["column_3"] = config.column_3
         data["settings"]["column_4"] = config.column_4
+        data["settings"]["filter_format"] = config.filter_format
         data["settings"]["missing_enabled"] = config.missing_enabled
         data["settings"]["stats_enabled"] = config.stats_enabled
         data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
