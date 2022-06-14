@@ -925,7 +925,7 @@ class ArenaScanner:
         return deck_limits
         
     def RetrieveColorWinRate(self, label_type):
-        deck_colors = OrderedDict()
+        deck_colors = {}
         for colors in constants.DECK_FILTERS:
             deck_color = colors
             if (label_type == constants.FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
@@ -944,6 +944,10 @@ class ArenaScanner:
                             deck_colors[deck_color] = ratings_string
         except Exception as error:
             scanner_logger.info(f"RetrieveColorWinRate Error: {error}")
+
+        #Switch key and value
+        deck_colors = {v: k for k, v in deck_colors.items()}
+
         return deck_colors
        
     def PickedCards(self, pack_index):
