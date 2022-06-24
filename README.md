@@ -32,8 +32,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 4: Install the python package installer Pip by opening the terminal and entering ```python3.10 -m ensurepip --upgrade```.
 
-- Step 5: Open the terminal and enter ```pip install -r requirements.txt```
-    - Ignore the pywin32 warnings/errors if you are using a Mac.
+- Step 5: Open the terminal and install the python libraries.
+    - Windows: ```pip install -r requirements.txt```
+    - Mac: ```pip install -r requirements_mac.txt```
 
 - Step 6: (Mac Only) Install web certificates by going to `/Applications/Python 3.10/` and double-clicking the file `Install Certificates.command`.
 
