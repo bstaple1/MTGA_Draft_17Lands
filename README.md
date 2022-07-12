@@ -1,6 +1,8 @@
 # MTGA_Draft_17Lands
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
+**Latest Supported Set:** Alchemy Horizons: Baldur's Gate
+
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier.png?raw=true)
 
 ## Run Steps: Windows Executable (Windows Only)
