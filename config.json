@@ -3,11 +3,15 @@
         "hotkey_enabled": true,
         "images_enabled": true
     },
+    "card_data": {
+        "database_size": 0
+    },
     "settings": {
         "table_width": 270,
         "column_2": "All ALSA",
         "column_3": "All Decks",
         "column_4": "Auto",
+        "filter_format": "Colors",
         "missing_enabled": true,
         "stats_enabled": true,
         "auto_highest_enabled": true,

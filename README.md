@@ -134,6 +134,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Column 4: Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used. This configures the same column as the deck filter drop-down in the main window.
 
+- Deck Filter Format: Used to switch the Deck Filter, Column 2, Column 3, and Column 4 values to either the color permutations (i.e., UB, BG, WUG, etc.) or the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
+
 - Enable Deck Stats: Displays the deck stats table and drop-down in the main window.
 
 - Enable Missing Cards: Displays the missing cards table in the main window.
@@ -148,6 +150,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Enable Draft Log: Records the draft in a log file within the ./Logs folder.
 ## Card Logic:
+- Card Ratings: The application will identify the upper and lower GIHWR values of all of the set cards across all of the filters and perform the following calculation to determine a card's rating: ((card_gihwr - lower_gihwr) / (upper_gihwr - lower_gihwr)) * 5.0
+    - Example: If the highest winrate of the set is 75.67% (Lae'zel, Githyanki Warrior (WR)) and the lowest winrate of the set is 41.73% (Ambitious Dragonborn (URG)), then the All Decks rating for The Hourglass Coven (71.97%) will be 4.5 (((71.97 - 41.73) / (75.67 - 41.73)) * 5.0 = 4.5)
+    - If the color and curve bonuses are enabled, then the application will add those bonuses to the card rating
 
 - Bayesian Average: A Bayesian average calculation applied to the Games In Hand Win Rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
     - Enabled: The application will perform this calculation on the GIHWR data. The adjustment made by this calculation will disappear as the Number of Games In Hand reaches 200.

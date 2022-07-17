@@ -5,101 +5,22 @@ import json
 import urllib.request
 import datetime
 import ssl
-import getpass
 import itertools
 import logging
 import re
 import sqlite3
+import constants
 from enum import Enum
 import log_scanner as LS
 from urllib.parse import quote as urlencode
-LOCAL_DATA_FOLDER_PATH_WINDOWS = os.path.join("Wizards of the Coast","MTGA","MTGA_Data")
-LOCAL_DATA_FOLDER_PATH_OSX = os.path.join("Library","Application Support","com.wizards.mtga")
 
-LOCAL_DOWNLOADS_DATA = os.path.join("Downloads","Raw")
+if not os.path.exists(constants.SETS_FOLDER):
+    os.makedirs(constants.SETS_FOLDER)
 
-LOCAL_DATA_FILE_PREFIX_CARDS = "Raw_cards_"
-LOCAL_DATA_FILE_PREFIX_DATABASE = "Raw_CardDatabase_"
+if not os.path.exists(constants.TEMP_FOLDER):
+    os.makedirs(constants.TEMP_FOLDER)
 
-LOCAL_DATABASE_TABLE_LOCALIZATION = "Localizations"
-LOCAL_DATABASE_TABLE_ENUMERATOR = "Enums"
-
-LOCAL_DATABASE_LOCALIZATION_COLUMN_ID = "LocId"
-LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT = "Formatted"
-LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT = "enUS"
-
-LOCAL_DATABASE_ENUMERATOR_COLUMN_ID = "LocId"
-LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE = "Type"
-LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE = "Value"
-
-LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR = "Color"
-LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES = "CardType"
-
-LOCAL_DATABASE_LOCALIZATION_QUERY = f"""SELECT 
-                                            A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_ID}, 
-                                            A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT}, 
-                                            A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT}
-                                        FROM {LOCAL_DATABASE_TABLE_LOCALIZATION} A INNER JOIN(
-                                            SELECT 
-                                                {LOCAL_DATABASE_LOCALIZATION_COLUMN_ID},
-                                                min({LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT}) AS MIN_FORMAT 
-                                            FROM {LOCAL_DATABASE_TABLE_LOCALIZATION} 
-                                            GROUP BY {LOCAL_DATABASE_LOCALIZATION_COLUMN_ID}) 
-                                        B ON A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_ID} = B.{LOCAL_DATABASE_LOCALIZATION_COLUMN_ID} 
-                                        AND A.{LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT} = B.MIN_FORMAT"""
-                                        
-LOCAL_DATABASE_ENUMERATOR_QUERY = f"""SELECT
-                                        {LOCAL_DATABASE_ENUMERATOR_COLUMN_ID},
-                                        {LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE},
-                                        {LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE}
-                                      FROM {LOCAL_DATABASE_TABLE_ENUMERATOR}
-                                      WHERE {LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE} 
-                                      IN ('{LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR}', 
-                                          '{LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES}')"""
-
-SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
-SET_FILE_SUFFIX = "Data.json"
-
-CARD_RATINGS_BACKOFF_DELAY_SECONDS = 30
-CARD_RATINGS_INTER_DELAY_SECONDS = 2
-
-if not os.path.exists(SETS_FOLDER):
-    os.makedirs(SETS_FOLDER)
-
-PLATFORM_ID_OSX = "darwin"
-PLATFORM_ID_WINDOWS = "win32"
-
-LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(), "AppData", "LocalLow","Wizards Of The Coast","MTGA","Player.log")
-LOG_LOCATION_OSX = os.path.join("Library","Logs","Wizards of the Coast","MTGA","Player.log")
-
-DEFAULT_GIHWR_AVERAGE = 0.0
-
-WINDOWS_DRIVES = ["C:/","D:/","E:/","F:/"]
-WINDOWS_PROGRAM_FILES = ["Program Files","Program Files (x86)"]
-
-PLATFORM_LOG_DICT = {
-    PLATFORM_ID_OSX     : LOG_LOCATION_OSX,
-    PLATFORM_ID_WINDOWS : LOG_LOCATION_WINDOWS,
-}
-
-SET_TYPE_EXPANSION = "expansion"
-SET_TYPE_ALCHEMY = "alchemy"
-
-SET_LIST_ARENA = "arena"
-SET_LIST_SCRYFALL = "scryfall"
-SET_LIST_17LANDS = "17Lands"
-
-SUPPORTED_SET_TYPES = [SET_TYPE_EXPANSION, SET_TYPE_ALCHEMY]
-
-CARD_COLORS_DICT = {
-    "White" : "W",
-    "Black" : "B",
-    "Blue"  : "U",
-    "Red"   : "R",
-    "Green" : "G",
-}
-
-file_logger = logging.getLogger("mtgaTool")
+file_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
 class Result(Enum):
     VALID = 0
@@ -119,18 +40,18 @@ def DecodeManaCost(encoded_cost):
     return decoded_cost
 def RetrieveLocalSetList(sets):
     file_list = []
-    main_sets = [v[SET_LIST_17LANDS][0] for k, v in sets.items()]
-    for file in os.listdir(SETS_FOLDER):
+    main_sets = [v[constants.SET_LIST_17LANDS][0] for k, v in sets.items()]
+    for file in os.listdir(constants.SETS_FOLDER):
         try:
             name_segments = file.split("_")
             if len(name_segments) == 3:
 
                 if ((name_segments[0].upper() in main_sets) and 
-                    (name_segments[1] in LS.limited_types_dict.keys()) and 
-                    (name_segments[2] == SET_FILE_SUFFIX)):
+                    (name_segments[1] in constants.LIMITED_TYPES_DICT.keys()) and 
+                    (name_segments[2] == constants.SET_FILE_SUFFIX)):
                     
                     set_name = list(sets.keys())[list(main_sets).index(name_segments[0].upper())]
-                    result, json_data = FileIntegrityCheck(os.path.join(SETS_FOLDER,file))
+                    result, json_data = FileIntegrityCheck(os.path.join(constants.SETS_FOLDER,file))
                     if result == Result.VALID:
                         if json_data["meta"]["version"] == 1:
                             start_date, end_date = json_data["meta"]["date_range"].split("->")
@@ -146,10 +67,10 @@ def RetrieveLocalSetList(sets):
 def ArenaLogLocation():
     log_location = ""
     try:
-        if sys.platform == PLATFORM_ID_OSX:
-            paths = [os.path.join(os.path.expanduser('~'), LOG_LOCATION_OSX)]
+        if sys.platform == constants.PLATFORM_ID_OSX:
+            paths = [os.path.join(os.path.expanduser('~'), constants.LOG_LOCATION_OSX)]
         else:
-            path_list = [WINDOWS_DRIVES, [LOG_LOCATION_WINDOWS]]
+            path_list = [constants.WINDOWS_DRIVES, [constants.LOG_LOCATION_WINDOWS]]
             paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
             
         for file_path in paths:
@@ -298,9 +219,7 @@ class FileExtractor:
         self.card_ratings = {}
         self.combined_data = {"meta" : {"collection_date" : str(datetime.datetime.now())}}
         self.card_dict = {}
-        self.card_text = {}
-        self.card_enumerators = {}
-        self.deck_colors = LS.DECK_COLORS
+        self.deck_colors = constants.DECK_COLORS
 
     def ClearData(self):
         self.combined_data = {"meta" : {"collection_date" : str(datetime.datetime.now())}}
@@ -334,49 +253,50 @@ class FileExtractor:
     def Version(self, version):
         self.combined_data["meta"]["version"] = version
         
-    def RetrieveLocalArenaData(self):
+    def RetrieveLocalArenaData(self, database_size):
         result_string = "Couldn't Collect Local Card Data"
         result = False
         self.card_dict = {}
           
-        if sys.platform == PLATFORM_ID_OSX:
-            directory = os.path.join(os.path.expanduser('~'), LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
-            paths = [os.path.join(directory, LOCAL_DOWNLOADS_DATA)]
+        if sys.platform == constants.PLATFORM_ID_OSX:
+            directory = os.path.join(os.path.expanduser('~'), constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
+            paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
         else:
             if not self.directory:
-                path_list = [WINDOWS_DRIVES, WINDOWS_PROGRAM_FILES, [LOCAL_DATA_FOLDER_PATH_WINDOWS]]
+                path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [constants.LOCAL_DATA_FOLDER_PATH_WINDOWS]]
                 paths = [os.path.join(*x) for x in  itertools.product(*path_list)]
             else:
-                paths = [os.path.join(self.directory, LOCAL_DOWNLOADS_DATA)]
+                paths = [os.path.join(self.directory, constants.LOCAL_DOWNLOADS_DATA)]
         
-        arena_cards_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_CARDS])
-        arena_database_locations = SearchLocalFiles(paths, [LOCAL_DATA_FILE_PREFIX_DATABASE])
+        arena_cards_locations = SearchLocalFiles(paths, [constants.LOCAL_DATA_FILE_PREFIX_CARDS])
+        arena_database_locations = SearchLocalFiles(paths, [constants.LOCAL_DATA_FILE_PREFIX_DATABASE])
         
         if (not len(arena_cards_locations) or 
             not len(arena_database_locations)):
             return result, result_string
         
-        for set in self.selected_sets[SET_LIST_ARENA]:
+        for set in self.selected_sets[constants.SET_LIST_ARENA]:
             result = False
             while(True):
-                try:                      
+                try:      
+                    file_logger.info(f"Local Card Data: Searching file path {arena_cards_locations[0]}")
+                    #Check temporary localization data and update it if necessary
+                    result, card_text, card_enumerators, database_size = self.CollectLocalizationData(arena_database_locations[0], database_size)
+                    
+                    if not result:
+                        break
+                
                     #Retrieve the card data without text
-                    file_logger.info(f"Card Data: Searching file path {arena_cards_locations[0]}")
                     result = self.RetrieveLocalCards(arena_cards_locations[0], set)
                     
                     if not result:
                         break
-                        
-                    #Retrieve the card localizations and enumerators
-                    if not self.card_text or not self.card_enumerators:
-                        file_logger.info(f"Card Info Database: Searching file path {arena_database_locations[0]}")
-                        result = self.RetrieveLocalDatabase(arena_database_locations[0])
-                        
-                        if not result:
-                            break
+                                   
+
                         
                     #Assemble information for local data set
-                    result = self.AssembleLocalDataSet()
+                    result = self.AssembleLocalDataSet(card_text, card_enumerators)
+                    
                 except Exception as error:
                     file_logger.info(f"RetrieveLocalArenaData Error: {error}")
                 break
@@ -384,8 +304,49 @@ class FileExtractor:
         if not result:
             file_logger.info(result_string)
         
-        return result, result_string  
+        return result, result_string, database_size 
         
+    def CollectLocalizationData(self, file_location, file_size):
+        result = False
+        card_text = {}
+        card_enumerators = {}
+        current_database_size = 0
+        
+        try:
+            while(True): #break loop
+                    
+                #Determine if the database file matches the file size (indicates that the temporary data is up-to-date)
+                database_size = os.path.getsize(file_location)
+                
+                if database_size != file_size:
+                    file_logger.info(f"Database change detected {database_size}, {file_size}")
+                    #Update the temp file with data from the database
+                    if not self.RetrieveLocalDatabase(file_location):
+                        break
+                    
+                #Collect the localization and enumeration data from the temp localization file
+                with open(constants.TEMP_LOCALIZATION_FILE, 'r', encoding='utf-8') as data:
+                    json_file = data.read()
+                    json_data = json.loads(json_file)
+
+                    card_text = json_data["localization"]
+                    card_enumerators = json_data["enumeration"]
+            
+                
+                current_database_size = database_size
+                result = True
+                break
+        
+        
+        except Exception as error:
+            file_logger.info(f"CollectLocalizationData Error: {error}")
+        
+        if not result:
+            file_logger.info(f"Failed to create temp localization file")
+        
+        return result, card_text, card_enumerators, current_database_size
+        
+
     def RetrieveLocalCards(self, file_location, card_set):
         result = False
         try:
@@ -404,7 +365,8 @@ class FileExtractor:
                             if "linkedFaces" in card:
                                 linked_id = card["linkedFaces"][0]
                                 if linked_id < group_id:
-                                    self.card_dict[card["linkedFaces"][0]]["name"].append(card["titleId"])
+                                    #The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
+                                    #self.card_dict[card["linkedFaces"][0]]["name"].append(card["titleId"])
                                     self.card_dict[card["linkedFaces"][0]]["types"].extend(card["types"])
                                     continue
     
@@ -423,8 +385,8 @@ class FileExtractor:
         return result
       
     def RetrieveLocalDatabase(self, file_location):
-        result = True
-        self.card_text = {}
+        result = False
+        card_data = {}
         try:
             #Open Sqlite3 database
             while(True):
@@ -432,21 +394,32 @@ class FileExtractor:
                 connection.row_factory = sqlite3.Row
                 cursor = connection.cursor()
                 
-                if not self.card_text:
-                    rows = [dict(row) for row in cursor.execute(LOCAL_DATABASE_LOCALIZATION_QUERY)]
-                    
-                    result = self.RetrieveLocalCardText(rows)
-                    
-                    if not result:
-                        break
+                rows = [dict(row) for row in cursor.execute(constants.LOCAL_DATABASE_LOCALIZATION_QUERY)]
+                
+                if not rows:
+                    break
+                
+                result, card_data["localization"] = self.RetrieveLocalCardText(rows)
+                
+                if not result:
+                    break
+                
                         
-                if not self.card_enumerators:
-                    rows = [dict(row) for row in cursor.execute(LOCAL_DATABASE_ENUMERATOR_QUERY)]
+                rows = [dict(row) for row in cursor.execute(constants.LOCAL_DATABASE_ENUMERATOR_QUERY)]
+                
+                if not rows:
+                    break
+                
+                result, card_data["enumeration"] = self.RetrieveLocalCardEnumerators(rows)
+                
+                if not result:
+                    break
                     
-                    result = self.RetrieveLocalCardEnumerators(rows)
-                    
-                    if not result:
-                        break  
+                #store the localization data in a temporary file
+                with open(constants.TEMP_LOCALIZATION_FILE, 'w', encoding='utf-8') as json_file:
+                    json.dump(card_data, json_file)
+                
+                result = True
                 break
                 
         except Exception as error:
@@ -457,44 +430,45 @@ class FileExtractor:
       
     def RetrieveLocalCardText(self, data):
         result = True
-        self.card_text = {}
+        card_text = {}
         try:
             #Retrieve the title (card name) for each of the collected arena IDs
-            self.card_text = {x[LOCAL_DATABASE_LOCALIZATION_COLUMN_ID] : x[LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
+            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID] : x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
     
         except Exception as error:
             result = False
             file_logger.info(f"RetrieveLocalCardText Error: {error}")
         
-        return result
+        return result, card_text
         
     def RetrieveLocalCardEnumerators(self, data):
         result = True
-        self.card_enumerators = {"colors" : {}, "types" : {}}
+        card_enumerators = {"colors" : {}, "types" : {}}
         try:
             for row in data:
-                    if row[LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES:
-                        self.card_enumerators["types"][row[LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = row[LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
-                    elif row[LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR:
-                        self.card_enumerators["colors"][row[LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = row[LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
+                    if row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES:
+                        card_enumerators["types"][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
+                    elif row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR:
+                        card_enumerators["colors"][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
 
         except Exception as error:
             result = False
             file_logger.info(f"RetrieveLocalCardEnumerators Error: {error}")
         
-        return result
+        return result, card_enumerators
     
-    def AssembleLocalDataSet(self):
-        result = True
+    def AssembleLocalDataSet(self, card_text, card_enumerators):
+        result = False
         try:
             for card in self.card_dict:
                 try:
-                    self.card_dict[card]["name"] = " // ".join(self.card_text[x] for x in self.card_dict[card]["name"])     
-                    self.card_dict[card]["types"] = list(set([self.card_text[self.card_enumerators["types"][x]] for x in self.card_dict[card]["types"]]))
-                    self.card_dict[card]["colors"] = [CARD_COLORS_DICT[self.card_text[self.card_enumerators["colors"][x]]] for x in self.card_dict[card]["colors"]]
+                    self.card_dict[card]["name"] = " // ".join(card_text[str(x)] for x in self.card_dict[card]["name"])     
+                    self.card_dict[card]["types"] = list(set([card_text[card_enumerators["types"][str(x)]] for x in self.card_dict[card]["types"]]))
+                    self.card_dict[card]["colors"] = [constants.CARD_COLORS_DICT[card_text[card_enumerators["colors"][str(x)]]] for x in self.card_dict[card]["colors"]]
                     if "Creature" in self.card_dict[card]["types"]:
                         index = self.card_dict[card]["types"].index("Creature")
                         self.card_dict[card]["types"].insert(0, self.card_dict[card]["types"].pop(index))
+                    result = True
                 except Exception as error:
                     pass
     
@@ -533,7 +507,7 @@ class FileExtractor:
         result = False
         self.card_dict = {}
         result_string = "Couldn't Retrieve Card Data"
-        for set in self.selected_sets[SET_LIST_SCRYFALL]:
+        for set in self.selected_sets[constants.SET_LIST_SCRYFALL]:
             if set == "dbl":
                 continue
             retry = 5
@@ -572,13 +546,13 @@ class FileExtractor:
         for card in self.card_dict:
             self.card_dict[card]["deck_colors"] = {}
             for color in self.deck_colors:
-                self.card_dict[card]["deck_colors"][color] = {"gihwr" : DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}
+                self.card_dict[card]["deck_colors"][color] = {"gihwr" : constants.DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}
 
     def Session17Lands(self, root, progress, initial_progress):
         current_progress = 0
         result = False
         self.Initialize17LandsData()
-        for set in self.selected_sets[SET_LIST_17LANDS]:
+        for set in self.selected_sets[constants.SET_LIST_17LANDS]:
             if set == "dbl":
                 continue
             for color in self.deck_colors:
@@ -600,16 +574,16 @@ class FileExtractor:
                     except Exception as error:
                         file_logger.info(url) 
                         file_logger.info(f"Session17Lands Error: {error}")   
-                        time.sleep(CARD_RATINGS_BACKOFF_DELAY_SECONDS)
+                        time.sleep(constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
                         retry -= 1
                         
                 if result:
-                    current_progress += 3 / len(self.selected_sets[SET_LIST_17LANDS])
+                    current_progress += 3 / len(self.selected_sets[constants.SET_LIST_17LANDS])
                     progress['value'] = current_progress + initial_progress
                     root.update()
                 else:
                     break
-                time.sleep(CARD_RATINGS_INTER_DELAY_SECONDS)
+                time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
          
             if set == "stx":
                 break
@@ -641,7 +615,7 @@ class FileExtractor:
     def SessionColorRatings(self):
         try:
             #https://www.17lands.com/color_ratings/data?expansion=VOW&event_type=QuickDraft&start_date=2019-1-1&end_date=2022-01-13&combine_splash=true
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets[SET_LIST_17LANDS][0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}&combine_splash=true"
+            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets[constants.SET_LIST_17LANDS][0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
             
             color_json_data = json.loads(url_data)
@@ -794,24 +768,25 @@ class FileExtractor:
                 set_code = set["code"]
                 
                 if set_code == "dbl":
-                    set_list = ["VOW", "MID"]
-                    sets[set_name] = {SET_LIST_ARENA : set_list, SET_LIST_SCRYFALL : set_list, SET_LIST_17LANDS : set_list}
+                    sets[set_name][constants.SET_LIST_ARENA] = ["VOW","MID"]
+                    sets[set_name][constants.SET_LIST_17LANDS] = [set_code.upper()]
+                    sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW","MID"]
                     counter += 1
-                elif (set["set_type"] in SUPPORTED_SET_TYPES):
-                    if set["set_type"] == SET_TYPE_ALCHEMY:
+                elif (set["set_type"] in constants.SUPPORTED_SET_TYPES):
+                    if set["set_type"] == constants.SET_TYPE_ALCHEMY:
                         sets[set_name] = {}
                         if ("parent_set_code" in set) and ("block_code" in set):
-                            sets[set_name][SET_LIST_ARENA] = [set["parent_set_code"].upper()]
-                            sets[set_name][SET_LIST_17LANDS] = [f"{set['block_code'].upper()}{set['parent_set_code'].upper()}"]
-                            sets[set_name][SET_LIST_SCRYFALL] = [set_code.upper(), set["parent_set_code"].upper()]
+                            sets[set_name][constants.SET_LIST_ARENA] = [set["parent_set_code"].upper()]
+                            sets[set_name][constants.SET_LIST_17LANDS] = [f"{set['block_code'].upper()}{set['parent_set_code'].upper()}"]
+                            sets[set_name][constants.SET_LIST_SCRYFALL] = [set_code.upper(), set["parent_set_code"].upper()]
                         else:
-                            sets[set_name] = {key:[set_code.upper()] for key in [SET_LIST_ARENA, SET_LIST_SCRYFALL, SET_LIST_17LANDS]}
+                            sets[set_name] = {key:[set_code.upper()] for key in [constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
                     else:
-                        sets[set_name] = {key:[set_code.upper()] for key in [SET_LIST_ARENA, SET_LIST_SCRYFALL, SET_LIST_17LANDS]}
+                        sets[set_name] = {key:[set_code.upper()] for key in [constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
                         #Add mystic archives to strixhaven
                         if set_code == "stx":
-                            sets[set_name][SET_LIST_ARENA].append("STA")
-                            sets[set_name][SET_LIST_SCRYFALL].append("STA")
+                            sets[set_name][constants.SET_LIST_ARENA].append("STA")
+                            sets[set_name][constants.SET_LIST_SCRYFALL].append("STA")
                     counter += 1
                     
                 # Only retrieve the last 20 sets
@@ -829,8 +804,8 @@ class FileExtractor:
     def ExportData(self):
         result = True
         try:
-            output_file = "_".join((self.selected_sets[SET_LIST_17LANDS][0], self.draft, SET_FILE_SUFFIX))
-            location = os.path.join(SETS_FOLDER, output_file)
+            output_file = "_".join((self.selected_sets[constants.SET_LIST_17LANDS][0], self.draft, constants.SET_FILE_SUFFIX))
+            location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w') as f:
                 json.dump(self.combined_data, f)

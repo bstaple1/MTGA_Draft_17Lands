@@ -3,62 +3,28 @@ import time
 import json
 import re
 import logging
+import constants 
 import card_logic as CL
 import file_extractor as FE
 from collections import OrderedDict
 
-# Global Constants
-## The different types of draft.
-LIMITED_TYPE_UNKNOWN            = 0
-LIMITED_TYPE_DRAFT_PREMIER_V1   = 1
-LIMITED_TYPE_DRAFT_PREMIER_V2   = 2
-LIMITED_TYPE_DRAFT_QUICK        = 3
-LIMITED_TYPE_DRAFT_TRADITIONAL  = 4
-LIMITED_TYPE_SEALED             = 5
-LIMITED_TYPE_SEALED_TRADITIONAL = 6
+if not os.path.exists(constants.DRAFT_LOG_FOLDER):
+    os.makedirs(constants.DRAFT_LOG_FOLDER)
 
-NON_COLORS_OPTIONS = ["Auto", "All GIHWR", "All IWD", "All ALSA"]
-DECK_COLORS = ["All Decks","W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
-DECK_FILTERS = NON_COLORS_OPTIONS + DECK_COLORS
-
-DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
-
-if not os.path.exists(DRAFT_LOG_FOLDER):
-    os.makedirs(DRAFT_LOG_FOLDER)
-
-TIER_FILE_PREFIX = "Tier_"
-
-DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
-
-DRAFT_START_STRING = "[UnityCrossThreadLogger]==> Event_Join "
-
-DATA_SOURCES_NONE = {"None" : ""}
-
-#Dictionaries
-## Used to identify the limited type based on log string
-limited_types_dict = {
-    "PremierDraft"     : LIMITED_TYPE_DRAFT_PREMIER_V1,
-    "QuickDraft"       : LIMITED_TYPE_DRAFT_QUICK,
-    "TradDraft"        : LIMITED_TYPE_DRAFT_TRADITIONAL,
-    "BotDraft"         : LIMITED_TYPE_DRAFT_QUICK,
-    "Sealed"           : LIMITED_TYPE_SEALED,
-    "TradSealed"       : LIMITED_TYPE_SEALED_TRADITIONAL,
-}
-
-scanner_logger = logging.getLogger("mtgaTool")
+scanner_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
 class ArenaScanner:
     def __init__(self, filename, step_through, set_list):
         self.arena_file = filename
         self.set_list = set_list
-        self.logger = logging.getLogger("draftLog")
+        self.logger = logging.getLogger(constants.LOG_TYPE_DRAFT)
         self.logger.setLevel(logging.INFO)
         
         self.logging_enabled = True
         
         self.step_through = step_through
         self.set_data = None
-        self.draft_type = LIMITED_TYPE_UNKNOWN
+        self.draft_type = constants.LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
         self.search_offset = 0
@@ -91,7 +57,7 @@ class ArenaScanner:
     def NewLog(self, set, event):
         try:
             log_name = f"DraftLog_{set}_{event}_{int(time.time())}.log"
-            log_path = os.path.join(DRAFT_LOG_FOLDER, log_name)
+            log_path = os.path.join(constants.DRAFT_LOG_FOLDER, log_name)
             for handler in self.logger.handlers:
                 if isinstance(handler, logging.FileHandler):
                     self.logger.removeHandler(handler)
@@ -108,7 +74,7 @@ class ArenaScanner:
             self.search_offset = 0
             self.file_size = 0
         self.set_data = None
-        self.draft_type = LIMITED_TYPE_UNKNOWN
+        self.draft_type = constants.LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
         self.draft_sets = None
@@ -147,15 +113,15 @@ class ArenaScanner:
                     if not line:
                         break
                     offset = log.tell()
-                    if DRAFT_START_STRING in line:
+                    if constants.DRAFT_START_STRING in line:
                         self.search_offset = offset
-                        string_offset = line.find(DRAFT_START_STRING)
-                        event_data = json.loads(line[string_offset + len(DRAFT_START_STRING):])
+                        string_offset = line.find(constants.DRAFT_START_STRING)
+                        event_data = json.loads(line[string_offset + len(constants.DRAFT_START_STRING):])
                         self.DraftStartSearchV1(event_data)
                         self.logger.info(line)
                         break
                                 
-            if (self.draft_type != LIMITED_TYPE_UNKNOWN) and \
+            if (self.draft_type != constants.LIMITED_TYPE_UNKNOWN) and \
                ((self.draft_type != previous_draft_type) or \
                 (self.draft_sets != previous_draft_set)):
                 self.pick_offset = self.search_offset 
@@ -178,14 +144,14 @@ class ArenaScanner:
             event_sections = event_name.split('_')
             
             #Find set name within the event string
-            sets = [i[FE.SET_LIST_17LANDS][0] for i in self.set_list.values() for x in event_sections if i[FE.SET_LIST_17LANDS][0] in x]
+            sets = [i[constants.SET_LIST_17LANDS][0] for i in self.set_list.values() for x in event_sections if i[constants.SET_LIST_17LANDS][0] in x]
             sets = list(dict.fromkeys(sets)) #Remove duplicates while retaining order
             events = []
             if sets:
                 #Find event type in event string
-                events = [i for i in limited_types_dict.keys() for x in event_sections if i in x]
+                events = [i for i in constants.LIMITED_TYPES_DICT.keys() for x in event_sections if i in x]
                 
-                if not events and [i for i in DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
+                if not events and [i for i in constants.DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
                     events.append("PremierDraft") #Unknown draft events will be parsed as premier drafts
             
             if sets and events:
@@ -195,7 +161,7 @@ class ArenaScanner:
                     event_type = "TradSealed" if "Trad" in event_sections else "Sealed"
                 else:
                     event_type = events[0]
-                self.draft_type = limited_types_dict[event_type]
+                self.draft_type = constants.LIMITED_TYPES_DICT[event_type]
                 self.draft_sets = sets
                 self.NewLog(self.draft_sets[0], event_type)
 
@@ -215,8 +181,8 @@ class ArenaScanner:
                 event_type = event_string[0]
                 event_set = event_string[1]
                 
-                if event_type in limited_types_dict.keys():
-                    self.draft_type = limited_types_dict[event_type]
+                if event_type in constants.LIMITED_TYPES_DICT.keys():
+                    self.draft_type = constants.LIMITED_TYPES_DICT[event_type]
                     self.draft_sets = [event_set.upper()]
                     self.NewLog(event_set, event_type)
                     self.logger.info(event_data)
@@ -227,25 +193,25 @@ class ArenaScanner:
     #Wrapper function for performing a search based on the draft type
     def DraftDataSearch(self):
         
-        if self.draft_type == LIMITED_TYPE_DRAFT_PREMIER_V1:
+        if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV1()
             self.DraftPickedSearchPremierV1()
-        elif self.draft_type == LIMITED_TYPE_DRAFT_PREMIER_V2:
+        elif self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V2:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
             self.DraftPackSearchPremierV2()
             self.DraftPickedSearchPremierV2() 
-        elif self.draft_type == LIMITED_TYPE_DRAFT_QUICK:
+        elif self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK:
             self.DraftPackSearchQuick()
             self.DraftPickedSearchQuick()
-        elif self.draft_type == LIMITED_TYPE_DRAFT_TRADITIONAL:
+        elif self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchTraditionalP1P1()
             self.DraftPackSearchTraditional()
             self.DraftPickedSearchTraditional()
-        elif (self.draft_type == LIMITED_TYPE_SEALED) or (self.draft_type == LIMITED_TYPE_SEALED_TRADITIONAL):
+        elif (self.draft_type == constants.LIMITED_TYPE_SEALED) or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL):
             self.SealedPackSearch()
         return
         
@@ -892,16 +858,16 @@ class ArenaScanner:
         data_sources = OrderedDict()
         
         try:
-            if self.draft_type != LIMITED_TYPE_UNKNOWN:
-                draft_list = list(limited_types_dict.keys())
-                draft_type = [x for x in draft_list if limited_types_dict[x] == self.draft_type][0]
+            if self.draft_type != constants.LIMITED_TYPE_UNKNOWN:
+                draft_list = list(constants.LIMITED_TYPES_DICT.keys())
+                draft_type = [x for x in draft_list if constants.LIMITED_TYPES_DICT[x] == self.draft_type][0]
                 draft_list.insert(0, draft_list.pop(draft_list.index(draft_type)))
                 
                 #Search for the set files
                 for set in self.draft_sets:
                     for type in draft_list:
-                        file_name = "_".join((set,type,FE.SET_FILE_SUFFIX))
-                        file = FE.SearchLocalFiles([FE.SETS_FOLDER], [file_name])
+                        file_name = "_".join((set,type,constants.SET_FILE_SUFFIX))
+                        file = FE.SearchLocalFiles([constants.SETS_FOLDER], [file_name])
                         if len(file):
                             result, json_data = FE.FileIntegrityCheck(file[0])
                             
@@ -913,7 +879,7 @@ class ArenaScanner:
             scanner_logger.info(f"RetrieveDataSources Error: {error}")
     
         if len(data_sources) == 0:
-            data_sources = DATA_SOURCES_NONE
+            data_sources = constants.DATA_SOURCES_NONE
 
         return data_sources
         
@@ -922,7 +888,7 @@ class ArenaScanner:
         
         try:
             if self.draft_sets:
-                file = FE.SearchLocalFiles([os.getcwd()], [TIER_FILE_PREFIX])
+                file = FE.SearchLocalFiles([os.getcwd()], [constants.TIER_FILE_PREFIX])
                 
                 if len(file):
                     tier_source = file[0]
@@ -958,20 +924,30 @@ class ArenaScanner:
             scanner_logger.info(f"RetrieveColorLimits Error: {error}")
         return deck_limits
         
-    def RetrieveColorWinRate(self):
-        deck_colors = OrderedDict()
-        for colors in DECK_FILTERS:
-            deck_colors[colors] = colors
+    def RetrieveColorWinRate(self, label_type):
+        deck_colors = {}
+        for colors in constants.DECK_FILTERS:
+            deck_color = colors
+            if (label_type == constants.FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
+                deck_color = constants.COLOR_NAMES_DICT[deck_color]
+            deck_colors[colors] = deck_color
         
         try:
             if self.set_data:
                 for colors in self.set_data["color_ratings"].keys():
                     for deck_color in deck_colors.keys():
                         if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
-                            ratings_string = deck_color + " (%s%%)" % (self.set_data["color_ratings"][colors])
+                            filter_label = deck_color
+                            if (label_type == constants.FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
+                                filter_label = constants.COLOR_NAMES_DICT[deck_color]
+                            ratings_string = filter_label + " (%s%%)" % (self.set_data["color_ratings"][colors])
                             deck_colors[deck_color] = ratings_string
         except Exception as error:
             scanner_logger.info(f"RetrieveColorWinRate Error: {error}")
+
+        #Switch key and value
+        deck_colors = {v: k for k, v in deck_colors.items()}
+
         return deck_colors
        
     def PickedCards(self, pack_index):

@@ -1,12 +1,11 @@
 import json
 import logging
+import constants
 import log_scanner as LS
 from itertools import combinations
 from dataclasses import dataclass, asdict
 
-BASIC_LANDS = ["Island","Mountain","Swamp","Plains","Forest"]
-
-logic_logger = logging.getLogger("mtgaTool")
+logic_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
 @dataclass 
 class DeckType:
@@ -21,6 +20,7 @@ class Config:
     column_2 : str="All ALSA"
     column_3 : str="All Decks"
     column_4 : str="Auto"
+    filter_format : str=constants.FILTER_FORMAT_COLORS
     missing_enabled : bool=True
     stats_enabled : bool=True
     hotkey_enabled : bool=True
@@ -39,6 +39,8 @@ class Config:
     deck_mid : DeckType=DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
     deck_aggro : DeckType=DeckType([0,2,5,3,0,0,0], 24, 17, 2.40)
     deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
+    
+    database_size : int=0
     
 
 def CompareRatings(a, b):
@@ -205,21 +207,18 @@ def ColorCmc(deck):
     
     return cmc_total, count, distribution
     
-def ColorFilter(deck, color_selection, color_list, configuration):
-    color_data = color_selection
-    filtered_color_list = [color_data]
+def ColorFilter(deck, color_selection, configuration):
+    filtered_color_list = [color_selection]
     try:
-        if color_data == "Auto":
-            filtered_color_list = AutoColors(deck, color_list, 2, configuration)
-        elif color_data in LS.NON_COLORS_OPTIONS:
-            filtered_color_list = [color_data]
+        if color_selection == "Auto":
+            filtered_color_list = AutoColors(deck, 2, configuration)
         else:
-            filtered_color_list = [[key for key, value in color_list.items() if value == color_data][0]]
+            filtered_color_list = [color_selection]
     except Exception as error:
         logic_logger.info(f"ColorFilter Error: {error}")
     return filtered_color_list
     
-def DeckColors(deck, color_options, colors_max, configuration):
+def DeckColors(deck, colors_max, configuration):
     try:
         deck_colors = {}
         
@@ -259,7 +258,7 @@ def DeckColors(deck, color_options, colors_max, configuration):
                     color_dict[color_string] = 0
                 color_dict[color_string] += colors[color]
         
-        for color_option in color_options.keys():
+        for color_option in constants.DECK_COLORS:
             for color_string in color_dict.keys():
                 if (len(color_string) == len(color_option)) and set(color_string).issubset(color_option):
                     deck_colors[color_option] = color_dict[color_string]
@@ -271,13 +270,13 @@ def DeckColors(deck, color_options, colors_max, configuration):
     
     return deck_colors
     
-def AutoColors(deck, color_options, colors_max, configuration):
+def AutoColors(deck, colors_max, configuration):
     try:
         deck_colors_list = ["All Decks"]
         colors_dict = {}
         deck_length = len(deck)
         if deck_length > 15:
-            colors_dict = DeckColors(deck, color_options, colors_max, configuration)
+            colors_dict = DeckColors(deck, colors_max, configuration)
             colors = list(colors_dict.keys())
             auto_select_threshold = 30 - deck_length
             if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
@@ -308,12 +307,12 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
             logic_logger.info(f"CalculateColorAffinity Error: {error}")
     return colors 
 
-def CardFilter(card_list, deck, filtered, color_options, limits, tier_list, configuration, curve_bonus, color_bonus):
+def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curve_bonus, color_bonus):
     filtered_list = []
     non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     ratings_filter_dict = {"rating_filter_a" : filtered["filtered_a"], "rating_filter_b" : filtered["filtered_b"], "rating_filter_c" : filtered["filtered_c"]}
     
-    deck_colors = DeckColors(deck, color_options, 2, configuration)
+    deck_colors = DeckColors(deck, 2, configuration)
     deck_colors = deck_colors.keys()
     
     for card in card_list:
@@ -400,7 +399,7 @@ def RatingsLimits(cards, bayesian_enabled):
     lower_limit = 100
     
     for card in cards:
-        for color in LS.DECK_COLORS:
+        for color in constants.DECK_COLORS:
             try:
                 if color in cards[card]["deck_colors"]:
                     gihwr = CalculateWinRate(cards[card]["deck_colors"][color], bayesian_enabled)
@@ -743,18 +742,17 @@ def ManaBase(deck):
         logic_logger.info(f"ManaBase Error: {error}")
     return combined_deck
     
-def SuggestDeck(taken_cards, color_options, limits, configuration):
+def SuggestDeck(taken_cards, limits, configuration):
     colors_max = 3
     maximum_card_count = 23
-    used_list = []
     sorted_decks = {}
     try:
         deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Calculate the base ratings
         filtered = {"filtered_a" : ["All Decks"], "filtered_b" : ["All Decks"], "filtered_c" : ["All Decks"]}
-        filtered_cards = CardFilter(taken_cards, taken_cards, filtered, color_options, limits, None, configuration, False, False)
+        filtered_cards = CardFilter(taken_cards, taken_cards, filtered, limits, None, configuration, False, False)
         #Identify the top color combinations
-        colors = DeckColors(taken_cards, color_options, colors_max, configuration)
+        colors = DeckColors(taken_cards, colors_max, configuration)
         colors = colors.keys()
         filtered_colors = []
         
@@ -769,7 +767,7 @@ def SuggestDeck(taken_cards, color_options, limits, configuration):
         decks = {}
         for color in filtered_colors:
             for type in deck_types.keys():
-                deck, sideboard_cards = BuildDeck(deck_types[type], taken_cards, color, limits, configuration, color_options)
+                deck, sideboard_cards = BuildDeck(deck_types[type], taken_cards, color, limits, configuration)
                 rating = DeckRating(deck, deck_types[type], color)
                 if rating >= configuration.ratings_threshold:
                     
@@ -790,7 +788,7 @@ def SuggestDeck(taken_cards, color_options, limits, configuration):
 
     return sorted_decks
     
-def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
+def BuildDeck(deck_type, cards, color, limits, configuration):
     minimum_distribution = deck_type.distribution
     maximum_card_count = deck_type.maximum_card_count
     maximum_deck_size = 40
@@ -801,7 +799,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
     try:
         #filter cards using the correct deck's colors
         filtered = {"filtered_a" : [color], "filtered_b" : [color], "filtered_c" : [color]}
-        filtered_cards = CardFilter(cards, cards, filtered, color_options, limits, None, configuration, False, False)
+        filtered_cards = CardFilter(cards, cards, filtered, limits, None, configuration, False, False)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color, configuration))
@@ -870,7 +868,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration, color_options):
 
         #Add in special lands if they are on-color, off-color, and they have a card rating above 2.0
         land_cards = DeckColorSearch(filtered_cards, color, ["Land"], True, True, False)
-        land_cards = [x for x in land_cards if x["name"] not in BASIC_LANDS]
+        land_cards = [x for x in land_cards if x["name"] not in constants.BASIC_LANDS]
         land_cards = sorted(land_cards, key = lambda k: k["rating_filter_c"], reverse = True)
         for card in land_cards:
             if total_card_count >= maximum_deck_size:
@@ -900,10 +898,12 @@ def ReadConfig():
             config_data = json.loads(config_json)
         config.hotkey_enabled = config_data["features"]["hotkey_enabled"]
         config.images_enabled = config_data["features"]["images_enabled"]
+        config.database_size = config_data["card_data"]["database_size"]
         config.table_width = int(config_data["settings"]["table_width"])
         config.column_2 = config_data["settings"]["column_2"]
         config.column_3 = config_data["settings"]["column_3"]
         config.column_4 = config_data["settings"]["column_4"]
+        config.filter_format = config_data["settings"]["filter_format"]
         config.missing_enabled = config_data["settings"]["missing_enabled"]
         config.stats_enabled = config_data["settings"]["stats_enabled"]
         config.auto_highest_enabled = config_data["settings"]["auto_highest_enabled"]
@@ -920,10 +920,13 @@ def WriteConfig(config):
         with open("config.json", 'r') as data:
             config_json = data.read()
             config_data = json.loads(config_json)
+            
+        config_data["card_data"]["database_size"] = config.database_size
         
         config_data["settings"]["column_2"] = config.column_2
         config_data["settings"]["column_3"] = config.column_3
         config_data["settings"]["column_4"] = config.column_4
+        config_data["settings"]["filter_format"] = config.filter_format
         config_data["settings"]["missing_enabled"] = config.missing_enabled
         config_data["settings"]["stats_enabled"] = config.stats_enabled
         config_data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
@@ -948,11 +951,15 @@ def ResetConfig():
         data["features"]["hotkey_enabled"] = config.hotkey_enabled
         data["features"]["images_enabled"] = config.images_enabled
         
+        data["card_data"] = {}
+        data["card_data"]["database_size"] = config.database_size
+        
         data["settings"] = {}
         data["settings"]["table_width"] = config.table_width
         data["settings"]["column_2"] = config.column_2
         data["settings"]["column_3"] = config.column_3
         data["settings"]["column_4"] = config.column_4
+        data["settings"]["filter_format"] = config.filter_format
         data["settings"]["missing_enabled"] = config.missing_enabled
         data["settings"]["stats_enabled"] = config.stats_enabled
         data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
