@@ -319,6 +319,7 @@ class FileExtractor:
                 database_size = os.path.getsize(file_location)
                 
                 if database_size != file_size:
+                    file_logger.info(f"Database change detected {database_size}, {file_size}")
                     #Update the temp file with data from the database
                     if not self.RetrieveLocalDatabase(file_location):
                         break
@@ -339,6 +340,9 @@ class FileExtractor:
         
         except Exception as error:
             file_logger.info(f"CollectLocalizationData Error: {error}")
+        
+        if not result:
+            file_logger.info(f"Failed to create temp localization file")
         
         return result, card_text, card_enumerators, current_database_size
         
