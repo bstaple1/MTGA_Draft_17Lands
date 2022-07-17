@@ -1,4 +1,4 @@
-===================== RELEASE NOTES 2.90 =====================
+===================== RELEASE NOTES 2.91 =====================
 - New Feature: For the filter drop-downs, users can use the Deck Filter Format setting to switch between the color combinations (i.e., UB, BG, WUG, etc.) and the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
 - Modified Feature: The application will store the card localization data in a temp file to speed up the set download process
 - Modified Feature: The card tooltips will no longer list the names of the other card sides
