@@ -110,6 +110,9 @@ SUPPORTED_SET_TYPES = [SET_TYPE_EXPANSION, SET_TYPE_ALCHEMY]
 DEBUG_LOG_FOLDER = os.path.join(os.getcwd(), "Debug")
 DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
 
+TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
+TEMP_LOCALIZATION_FILE = os.path.join(TEMP_FOLDER, "temp_localization.json")
+
 #Dictionaries
 ## Used to identify the limited type based on log string
 LIMITED_TYPES_DICT = {

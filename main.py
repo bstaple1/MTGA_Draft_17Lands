@@ -1177,6 +1177,7 @@ class WindowUI:
     def AddSet(self, set, draft, start, end, button, progress, list_box, sets, version):
         result = True
         result_string = ""
+        return_size = 0
         while(True):
             try:
                 message_box = MessageBox.askyesno(title="Download", message=f"17Lands updates their card data once a day at 01:30 UTC. Are you sure that you want to download {set.get()} {draft.get()} data?")
@@ -1199,7 +1200,7 @@ class WindowUI:
                     break
                 self.extractor.Version(version)
                 self.extractor.SessionColorRatings()
-                result, result_string = self.extractor.RetrieveLocalArenaData()
+                result, result_string, temp_size = self.extractor.RetrieveLocalArenaData(self.configuration.database_size)
                 if result == False:
                     result, result_string = self.extractor.SessionScryfallData()
                     if result == False:
@@ -1216,11 +1217,12 @@ class WindowUI:
                     break
                 progress['value']=100
                 button['state'] = 'normal'
+                return_size = temp_size
                 self.root.update()
                 self.DataViewUpdate(list_box, sets)
                 self.DraftReset(True)
                 self.UpdateCallback(True)
-
+                
             except Exception as error:
                 result = False
                 result_string = error
@@ -1231,6 +1233,10 @@ class WindowUI:
             button['state'] = 'normal'
             message_string = "Download Failed: %s" % result_string
             message_box = MessageBox.showwarning(title="Error", message=message_string)
+        else:
+            self.configuration.database_size = return_size
+            CL.WriteConfig(self.configuration)
+        return
         
     def DataViewUpdate(self, list_box, sets):
         #Delete the content of the list box

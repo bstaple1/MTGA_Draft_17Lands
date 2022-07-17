@@ -17,6 +17,9 @@
         "bayesian_average_enabled": false,
         "draft_log_enabled": false
     },
+    "card_data": {
+        "database_size": 0
+    },
     "card_logic": {
         "alsa_weight": 0.0,
         "iwd_weight": 0.0,

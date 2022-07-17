@@ -40,6 +40,8 @@ class Config:
     deck_aggro : DeckType=DeckType([0,2,5,3,0,0,0], 24, 17, 2.40)
     deck_control : DeckType=DeckType([0,0,3,3,3,1,1], 22, 14, 3.68)
     
+    database_size : int=0
+    
 
 def CompareRatings(a, b):
     try:
@@ -896,6 +898,7 @@ def ReadConfig():
             config_data = json.loads(config_json)
         config.hotkey_enabled = config_data["features"]["hotkey_enabled"]
         config.images_enabled = config_data["features"]["images_enabled"]
+        config.database_size = config_data["card_data"]["database_size"]
         config.table_width = int(config_data["settings"]["table_width"])
         config.column_2 = config_data["settings"]["column_2"]
         config.column_3 = config_data["settings"]["column_3"]
@@ -917,6 +920,8 @@ def WriteConfig(config):
         with open("config.json", 'r') as data:
             config_json = data.read()
             config_data = json.loads(config_json)
+            
+        config_data["card_data"]["database_size"] = config.database_size
         
         config_data["settings"]["column_2"] = config.column_2
         config_data["settings"]["column_3"] = config.column_3
@@ -945,6 +950,8 @@ def ResetConfig():
         data["features"] = {}
         data["features"]["hotkey_enabled"] = config.hotkey_enabled
         data["features"]["images_enabled"] = config.images_enabled
+        
+        data["card_data"]["database_size"] = config.database_size
         
         data["settings"] = {}
         data["settings"]["table_width"] = config.table_width
