@@ -768,8 +768,9 @@ class FileExtractor:
                 set_code = set["code"]
                 
                 if set_code == "dbl":
-                    set_list = ["VOW", "MID"]
-                    sets[set_name] = {constants.SET_LIST_ARENA : set_list, constants.SET_LIST_SCRYFALL : set_list, constants.SET_LIST_17LANDS : set_list}
+                    sets[set_name][constants.SET_LIST_ARENA] = ["VOW","MID"]
+                    sets[set_name][constants.SET_LIST_17LANDS] = [set_code.upper()]
+                    sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW","MID"]
                     counter += 1
                 elif (set["set_type"] in constants.SUPPORTED_SET_TYPES):
                     if set["set_type"] == constants.SET_TYPE_ALCHEMY:

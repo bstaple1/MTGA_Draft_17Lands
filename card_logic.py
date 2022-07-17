@@ -951,6 +951,7 @@ def ResetConfig():
         data["features"]["hotkey_enabled"] = config.hotkey_enabled
         data["features"]["images_enabled"] = config.images_enabled
         
+        data["card_data"] = {}
         data["card_data"]["database_size"] = config.database_size
         
         data["settings"] = {}
