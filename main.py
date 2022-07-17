@@ -81,7 +81,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.87
+__version__= 2.90
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
     os.makedirs(constants.DEBUG_LOG_FOLDER)

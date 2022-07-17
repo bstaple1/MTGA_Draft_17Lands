@@ -131,6 +131,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Column 4: Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used. This configures the same column as the deck filter drop-down in the main window.
 
+- Deck Filter Format: Used to switch the Deck Filter, Column 2, Column 3, and Column 4 values to either the color permutations (i.e., UB, BG, WUG, etc.) or the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
+
 - Enable Deck Stats: Displays the deck stats table and drop-down in the main window.
 
 - Enable Missing Cards: Displays the missing cards table in the main window.
