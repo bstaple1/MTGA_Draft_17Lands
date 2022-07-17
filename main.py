@@ -695,7 +695,7 @@ class WindowUI:
         
     def UpdateDraftData(self):
         self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
-        self.deck_limits = self.draft.RetrieveColorLimits(True)
+        self.deck_limits = self.draft.RetrieveColorLimits(False)
         self.deck_colors = self.draft.RetrieveColorWinRate(self.filter_format_selection.get())
         self.tier_data = self.draft.RetrieveTierData(self.tier_source, self.deck_colors)
         
