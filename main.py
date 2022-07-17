@@ -81,7 +81,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.90
+__version__= 2.91
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
     os.makedirs(constants.DEBUG_LOG_FOLDER)
@@ -919,9 +919,9 @@ class WindowUI:
             
             filtered = {}
             taken_cards = self.draft.TakenCards()
-            filtered["filtered_a"] = CL.ColorFilter(taken_cards, self.column_2_selection.get(), self.configuration)
-            filtered["filtered_b"] = CL.ColorFilter(taken_cards, self.column_3_selection.get(), self.configuration)
-            filtered["filtered_c"] = CL.ColorFilter(taken_cards, self.column_4_selection.get(), self.configuration)
+            filtered["filtered_a"] = CL.ColorFilter(taken_cards, self.deck_colors[self.column_2_selection.get()], self.configuration)
+            filtered["filtered_b"] = CL.ColorFilter(taken_cards, self.deck_colors[self.column_3_selection.get()], self.configuration)
+            filtered["filtered_c"] = CL.ColorFilter(taken_cards, self.deck_colors[self.column_4_selection.get()], self.configuration)
             
             matching_cards = []
             
@@ -972,9 +972,9 @@ class WindowUI:
             Grid.columnconfigure(popup, 0, weight = 1)
             taken_cards = self.draft.TakenCards()
             filtered = {}
-            filtered["filtered_a"] = CL.ColorFilter(taken_cards, self.column_2_selection.get(), self.configuration)
-            filtered["filtered_b"] = CL.ColorFilter(taken_cards, self.column_3_selection.get(), self.configuration)
-            filtered["filtered_c"] = CL.ColorFilter(taken_cards, self.column_4_selection.get(), self.configuration)
+            filtered["filtered_a"] = CL.ColorFilter(taken_cards, self.deck_colors[self.column_2_selection.get()], self.configuration)
+            filtered["filtered_b"] = CL.ColorFilter(taken_cards, self.deck_colors[self.column_3_selection.get()], self.configuration)
+            filtered["filtered_c"] = CL.ColorFilter(taken_cards, self.deck_colors[self.column_4_selection.get()], self.configuration)
             
             copy_button = Button(popup, command=lambda:CopyTaken(taken_cards,
                                                                  self.draft.set_data,
