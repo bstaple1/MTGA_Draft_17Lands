@@ -1,7 +1,7 @@
 ; -- MtgaDraft.iss --
 [Setup]
 AppName=MTGA Draft Tool
-AppVersion=2.87
+AppVersion=2.90
 WizardStyle=modern
 DefaultDirName={sd}\MtgaDraftTool
 DefaultGroupName=MtgaDraftTool
@@ -28,4 +28,5 @@ Name: "{group}\MtgaDraftTool"; Filename: "{app}\MTGA_Draft_Tool.exe"
 Name: {app}\Logs
 Name: {app}\Debug
 Name: {app}\Sets
+Name: {app}\Temp
 Name: {app}\Tools\TierScraper17Lands

@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 2.90 =====================
+- New Feature: For the filter drop-downs, users can use the Deck Filter Format setting to switch between the color combinations (i.e., UB, BG, WUG, etc.) and the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
+- Modified Feature: The application will store the card localization data in a temp file to speed up the set download process
+- Modified Feature: The card tooltips will no longer list the names of the other card sides
+    - The tooltip will display all of the images for double-sided cards, but not for Specialize cards 
+- Bug Fix: The application will no longer list the Crimson Vow set as Double Feature
+- Documentation Change: Added a Card Ratings note to the Card Logic section of the README. This note summarizes how the card ratings are calculated
+
 ===================== RELEASE NOTES 2.87 =====================
 - New Feature: Added support for Alchemy drafts
     - Alchemy sets added to the set drop-down in the Set Data window.

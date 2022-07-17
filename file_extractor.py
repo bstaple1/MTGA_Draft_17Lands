@@ -768,6 +768,7 @@ class FileExtractor:
                 set_code = set["code"]
                 
                 if set_code == "dbl":
+                    sets[set_name] = {}
                     sets[set_name][constants.SET_LIST_ARENA] = ["VOW","MID"]
                     sets[set_name][constants.SET_LIST_17LANDS] = [set_code.upper()]
                     sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW","MID"]
