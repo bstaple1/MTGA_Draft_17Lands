@@ -534,13 +534,13 @@ def CardCmcSearch(deck, offset, starting_cmc, cmc_limit, remaining_count):
     
     return cards, unused
     
-def DeckRating(deck, deck_type, color):
+def DeckRating(deck, deck_type, color, bayesian_enabled):
     rating = 0
     try:
         #Combined GIHWR of the cards
         for count, card in enumerate(deck):
             try:
-                gihwr = card["deck_colors"][color]["gihwr"]
+                gihwr = CalculateWinRate(card["deck_colors"][color], bayesian_enabled)
                 if gihwr > 50.0:
                     rating += gihwr
             except Exception as error:
@@ -768,7 +768,7 @@ def SuggestDeck(taken_cards, limits, configuration):
         for color in filtered_colors:
             for type in deck_types.keys():
                 deck, sideboard_cards = BuildDeck(deck_types[type], taken_cards, color, limits, configuration)
-                rating = DeckRating(deck, deck_types[type], color)
+                rating = DeckRating(deck, deck_types[type], color, configuration.bayesian_average_enabled)
                 if rating >= configuration.ratings_threshold:
                     
                     if ((color not in decks.keys()) or 
