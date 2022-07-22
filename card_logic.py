@@ -48,7 +48,7 @@ def CompareRatings(a, b):
         if(a["rating_filter_c"] == b["rating_filter_c"]):
             return a["deck_colors"]["All Decks"]["alsa"] - b["deck_colors"]["All Decks"]["alsa"]
         else:
-            return b["rating_filter_c"] - a["rating_filter_c"]
+            return b["rating_filter_c"][0] - a["rating_filter_c"][0]
     except Exception as error:
         logic_logger.info(f"CompareRatings Error: {error}")
     return 0
@@ -431,7 +431,7 @@ def CalculateWinRate(card_data, bayesian_enabled):
     return winrate
 
 def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
-    rating_data = {"rating" : 0}
+    rating_data = {"rating" : (0, 0)}
     try:
         gihwr = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_enabled)
         upper_limit = 0
@@ -479,11 +479,12 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enab
             
             rating_data["rating"] = min(rating_data["rating"], 5.0)
             rating_data["rating"] = max(rating_data["rating"], 0)
+            rating_data["rating"] = rating_data["rating"], gihwr
             
     except Exception as error:
         logic_logger.info(f"CardRating Error: {error}")
     return rating_data
-    
+
 def DeckColorStats(deck, color):
     creature_count = 0
     noncreature_count = 0
