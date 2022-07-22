@@ -10,11 +10,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Step 2: In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
-- Step 3: Double-click `setup.exe` to start the install. 
+- Step 3: Double-click `setup.exe` to start the installation. 
 
 - Step 4: (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
-    - This step is only required if the application is installed to a directory with write restrictions (i.e. `Program Files` and `Program Files (x86)`).
-    - This step isn't necessary if the application is installed to the main directory of a drive (i.e. `C:/` or `D:/`) or the `Users/<Username>/` directory
+    - This step is only required if the application is installed in a directory with write restrictions (i.e. `Program Files` and `Program Files (x86)`).
+    - This step isn't necessary if the application is installed in the main directory of a drive (i.e. `C:/` or `D:/`) or the `Users/<Username>/` directory
 
 - Step 5: Double-click the `MTGA_Draft_Tool.exe` to start the program.
 
@@ -74,7 +74,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - This field will display "None" if the application is unable to find a valid data file for the current draft type and set.
   
 - Deck Filter: A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
-    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color ratings page on 17Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
+    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color rating page on 17Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
     - The "All Decks" option lists the combined rating across all of the deck color combinations
         -The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards. See the auto averaging note in the card logic section.
 - Pack, Pick Table: This table lists the cards contained in the current pack. 
@@ -100,12 +100,12 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The download can take several minutes.
     
 - List Taken Cards: Get to the Taken Cards window by selecting Cards->Taken Cards. 
-    - This table lists the cards that were taken by the user over the course of the draft.
+    - This table lists the cards that were taken by the user throughout the draft.
 
 - List Suggested Decks: Get to the Suggested Decks window by selecting Cards->Suggested Decks. 
-    - This table lists a 40 card deck that the application has built from your taken cards. You might see multiple decks if the application is able to build them.
+    - This table lists a 40-card deck that the application has built from your taken cards. You might see multiple decks if the application can build them.
     - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
-        - The application builds the decks based on a number of requirements including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
+        - The application builds the decks based on several requirements including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 
 - Card Compare: Get to the Card Compare window by selecting Cards->Compare Cards. This window will allow you to compare cards that you've entered in.
     - This feature can be used to quickly compare cards for P1P1 of the Premier and Traditional drafts.
@@ -122,7 +122,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Tier List: A tier list can be added to the drop-downs by following the instructions in /Tools/TierScraper17Lands/README.txt.
 
-- Tooltips: Clicking on any field that lists a card will display a tooltip the contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
+- Tooltips: Clicking on any field that lists a card will display a tooltip that contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
 	
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tooltip.png?raw=true)	
 	
@@ -132,7 +132,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Column 3: Configure column 3 of the pack table, missing table, compare table, and taken table. Any filter can be used.
 
-- Column 4: Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used. This configures the same column as the deck filter drop-down in the main window.
+- Column 4: Configure column 4 of the pack table, missing table, compare table, and taken table. Any filter can be used. This configures the same column as the deck filter drop-down in the main window.
 
 - Deck Filter Format: Used to switch the Deck Filter, Column 2, Column 3, and Column 4 values to either the color permutations (i.e., UB, BG, WUG, etc.) or the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
 
@@ -174,11 +174,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The application will add a color bonus of 0.1 for each taken card that has a GIHWR between 59.9% and 52%.
         - For colorless cards, the application will divide the highest color bonus by 2.
         
-- Deck Suggester: For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build a deck that's intentionally synergistic. 
+- Deck Suggester: For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build an intentionally synergistic deck. 
     - Deck Building Requirements:
         - Aggro Deck:
             - The deck must have a minimum of 13 creatures and should have no less than 17 creatures.
-            - The deck should have at least 2 1-drops, 5 2-drops, 3 3-drops.
+            - The deck should have at least 2 1-drops, 5 2-drops, and 3 3-drops.
             - The average CMC of all of the creatures must be 2.40 or less.
             - The deck has 16 lands.
         - Mid Deck:
@@ -193,7 +193,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
             - The deck has 18 lands.
     - Notes:
         - The CMC average and land requirements were derived from this article: https://strategy.channelfireball.com/all-strategy/mtg/channelmagic-articles/how-many-lands-do-you-need-to-consistently-hit-your-land-drops/
-        - The deck distribution and CMC requirements can result in the inclusion of some poor performing cards.
+        - The deck distribution and CMC requirements can result in the inclusion of some poor-performing cards.
             Example: If the user has a pool of white and blue cards, and the only 3-drops are Acquisition Octopus (53.7% for WU) and Guardians of Oboro (50.7% for WU), then the suggester will include those two cards to fulfill the 3-drop requirement (3 Aggro/3 Mid/3 Control).
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
         - The NEO creature sagas count as creatures.
