@@ -1003,15 +1003,18 @@ class ArenaScanner:
         
     def RetrieveTierData(self, files, deck_colors):
         tier_data = {}
+        count = 0
         try:
             for file in files:
                 if os.path.exists(file):
                     with open(file, 'r') as json_file:
                         data = json.loads(json_file.read())
                         if [i for i in self.draft_sets if i in data["meta"]["set"]]:
-                            tier_data = data
-                            tier_key = f'Tier ({data["meta"]["label"]})'
-                            deck_colors[tier_key] = "Tier"
+                            tier_id = f"Tier{count}"
+                            tier_key = f'{tier_id} ({data["meta"]["label"]})'
+                            deck_colors[tier_key] = tier_id
+                            tier_data[tier_id] = data
+                            count += 1
              
         except Exception as error:
             scanner_logger.info(f"RetrieveTierData Error: {error}")  
