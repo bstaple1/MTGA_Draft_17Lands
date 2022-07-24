@@ -17,6 +17,9 @@ from urllib.parse import quote as urlencode
 if not os.path.exists(constants.SETS_FOLDER):
     os.makedirs(constants.SETS_FOLDER)
 
+if not os.path.exists(constants.TIER_FOLDER):
+    os.makedirs(constants.TIER_FOLDER)
+
 if not os.path.exists(constants.TEMP_FOLDER):
     os.makedirs(constants.TEMP_FOLDER)
 

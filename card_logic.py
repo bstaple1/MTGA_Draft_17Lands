@@ -17,9 +17,9 @@ class DeckType:
 @dataclass
 class Config:
     table_width : int=270
-    column_2 : str="All ALSA"
-    column_3 : str="All Decks"
-    column_4 : str="Auto"
+    column_2 : str=constants.COLUMN_2_DEFAULT
+    column_3 : str=constants.COLUMN_3_DEFAULT
+    column_4 : str=constants.COLUMN_4_DEFAULT
     filter_format : str=constants.FILTER_FORMAT_COLORS
     missing_enabled : bool=True
     stats_enabled : bool=True

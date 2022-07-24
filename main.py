@@ -195,7 +195,7 @@ class WindowUI:
         self.tier_data = {}
         self.deck_colors = self.draft.RetrieveColorWinRate(configuration.filter_format)
         self.data_sources = self.draft.RetrieveDataSources()
-        self.tier_source = self.draft.RetrieveTierSource()
+        self.tier_sources = self.draft.RetrieveTierSource()
         
         Grid.rowconfigure(self.root, 8, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -629,11 +629,11 @@ class WindowUI:
             if self.filter_format_selection.get() not in constants.FILTER_FORMAT_LIST:
                 self.filter_format_selection.set(constants.FILTER_FORMAT_COLORS)
             if self.column_2_selection.get() not in self.deck_colors.keys():
-                self.column_2_selection.set("All ALSA")
+                self.column_2_selection.set(constants.COLUMN_2_DEFAULT)
             if self.column_3_selection.get() not in self.deck_colors.keys():
-                self.column_3_selection.set("All Decks")
+                self.column_3_selection.set(constants.COLUMN_3_DEFAULT)
             if self.column_4_selection.get() not in self.deck_colors.keys():
-                self.column_4_selection.set("Auto")
+                self.column_4_selection.set(constants.COLUMN_4_DEFAULT)
             
             deck_colors_menu = self.deck_colors_options["menu"]
             deck_colors_menu.delete(0, "end")
@@ -697,12 +697,12 @@ class WindowUI:
         self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
         self.deck_limits = self.draft.RetrieveColorLimits(False)
         self.deck_colors = self.draft.RetrieveColorWinRate(self.filter_format_selection.get())
-        self.tier_data = self.draft.RetrieveTierData(self.tier_source, self.deck_colors)
+        self.tier_data = self.draft.RetrieveTierData(self.tier_sources, self.deck_colors)
         
     def UpdateDraft(self):
         if self.draft.DraftStartSearch():
             self.data_sources = self.draft.RetrieveDataSources()
-            self.tier_source = self.draft.RetrieveTierSource()
+            self.tier_sources = self.draft.RetrieveTierSource()
             self.UpdateSourceOptions(True)
             self.UpdateDraftData()
 
@@ -710,9 +710,12 @@ class WindowUI:
 
     def UpdateSettingsStorage(self):
         try:
-            self.configuration.column_2 = self.deck_colors[self.column_2_selection.get()]
-            self.configuration.column_3 = self.deck_colors[self.column_3_selection.get()]
-            self.configuration.column_4 = self.deck_colors[self.column_4_selection.get()]
+            selection = self.column_2_selection.get()
+            self.configuration.column_2 = self.deck_colors[selection] if selection in self.deck_colors else self.deck_colors[constants.COLUMN_2_DEFAULT]
+            selection = self.column_3_selection.get()
+            self.configuration.column_3 = self.deck_colors[selection] if selection in self.deck_colors else self.deck_colors[constants.COLUMN_3_DEFAULT]
+            selection = self.column_4_selection.get()
+            self.configuration.column_4 = self.deck_colors[selection] if selection in self.deck_colors else self.deck_colors[constants.COLUMN_4_DEFAULT]
             self.configuration.filter_format = self.filter_format_selection.get()
 
             self.configuration.missing_enabled = bool(self.missing_cards_checkbox_value.get())
@@ -729,28 +732,31 @@ class WindowUI:
     def UpdateSettingsData(self):
         self.ControlTrace(False)
         try:
-           self.column_2_selection.set([k for k,v in self.deck_colors.items() if v == self.configuration.column_2][0]) 
-           self.column_3_selection.set([k for k,v in self.deck_colors.items() if v == self.configuration.column_3][0])
-           self.column_4_selection.set([k for k,v in self.deck_colors.items() if v == self.configuration.column_4][0])
-           self.filter_format_selection.set(self.configuration.filter_format)
-           self.deck_stats_checkbox_value.set(self.configuration.stats_enabled)
-           self.missing_cards_checkbox_value.set(self.configuration.missing_enabled)
-           self.auto_highest_checkbox_value.set(self.configuration.auto_highest_enabled)
-           self.curve_bonus_checkbox_value.set(self.configuration.curve_bonus_enabled)
-           self.color_bonus_checkbox_value.set(self.configuration.color_bonus_enabled)
-           self.bayesian_average_checkbox_value.set(self.configuration.bayesian_average_enabled)
-           self.draft_log_checkbox_value.set(self.configuration.draft_log_enabled)
+            selection = [k for k,v in self.deck_colors.items() if v == self.configuration.column_2]
+            self.column_2_selection.set(selection[0] if len(selection) else constants.COLUMN_2_DEFAULT) 
+            selection = [k for k,v in self.deck_colors.items() if v == self.configuration.column_3]
+            self.column_3_selection.set(selection[0] if len(selection) else constants.COLUMN_3_DEFAULT) 
+            selection = [k for k,v in self.deck_colors.items() if v == self.configuration.column_4]
+            self.column_4_selection.set(selection[0] if len(selection) else constants.COLUMN_4_DEFAULT) 
+            self.filter_format_selection.set(self.configuration.filter_format)
+            self.deck_stats_checkbox_value.set(self.configuration.stats_enabled)
+            self.missing_cards_checkbox_value.set(self.configuration.missing_enabled)
+            self.auto_highest_checkbox_value.set(self.configuration.auto_highest_enabled)
+            self.curve_bonus_checkbox_value.set(self.configuration.curve_bonus_enabled)
+            self.color_bonus_checkbox_value.set(self.configuration.color_bonus_enabled)
+            self.bayesian_average_checkbox_value.set(self.configuration.bayesian_average_enabled)
+            self.draft_log_checkbox_value.set(self.configuration.draft_log_enabled)
         except Exception as error:
-           self.column_2_selection.set("All ALSA") 
-           self.column_3_selection.set("All Decks")
-           self.column_4_selection.set("Auto")
-           self.deck_stats_checkbox_value.set(False)
-           self.missing_cards_checkbox_value.set(False)
-           self.auto_highest_checkbox_value.set(False)
-           self.curve_bonus_checkbox_value.set(False)
-           self.color_bonus_checkbox_value.set(False)
-           self.bayesian_average_checkbox_value.set(False)
-           self.draft_log_checkbox_value.set(False)
+            self.column_2_selection.set(constants.COLUMN_2_DEFAULT) 
+            self.column_3_selection.set(constants.COLUMN_3_DEFAULT)
+            self.column_4_selection.set(constants.COLUMN_4_DEFAULT)
+            self.deck_stats_checkbox_value.set(False)
+            self.missing_cards_checkbox_value.set(False)
+            self.auto_highest_checkbox_value.set(False)
+            self.curve_bonus_checkbox_value.set(False)
+            self.color_bonus_checkbox_value.set(False)
+            self.bayesian_average_checkbox_value.set(False)
+            self.draft_log_checkbox_value.set(False)
         self.ControlTrace(True) 
         
         self.draft.LogEnable(self.configuration.draft_log_enabled)

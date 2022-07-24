@@ -20,8 +20,13 @@ NON_COLORS_OPTIONS = ["Auto", "All GIHWR", "All IWD", "All ALSA"]
 DECK_COLORS = ["All Decks","W","U","B","R","G","WU","WB","WR","WG","UB","UR","UG","BR","BG","RG","WUB","WUR","WUG","WBR","WBG","WRG","UBR","UBG","URG","BRG"]
 DECK_FILTERS = NON_COLORS_OPTIONS + DECK_COLORS
 
+COLUMN_2_DEFAULT = "All ALSA"
+COLUMN_3_DEFAULT = "All Decks"
+COLUMN_4_DEFAULT = "Auto"
+
 DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
 
+TIER_FOLDER = os.path.join(os.getcwd(), "Tier")
 TIER_FILE_PREFIX = "Tier_"
 
 DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]

@@ -884,19 +884,19 @@ class ArenaScanner:
         return data_sources
         
     def RetrieveTierSource(self):
-        tier_source = ""
+        tier_sources = []
         
         try:
             if self.draft_sets:
-                file = FE.SearchLocalFiles([os.getcwd()], [constants.TIER_FILE_PREFIX])
+                file = FE.SearchLocalFiles([constants.TIER_FOLDER], [constants.TIER_FILE_PREFIX])
                 
                 if len(file):
-                    tier_source = file[0]
+                    tier_sources = file
         
         except Exception as error:
             scanner_logger.info(f"RetrieveTierSource Error: {error}")
 
-        return tier_source
+        return tier_sources
         
     def RetrieveSetData(self, file):
         result = FE.Result.ERROR_MISSING_FILE
@@ -1001,15 +1001,17 @@ class ArenaScanner:
         
         return taken_cards
         
-    def RetrieveTierData(self, file, deck_colors):
+    def RetrieveTierData(self, files, deck_colors):
         tier_data = {}
         try:
-            if os.path.exists(file):
-                with open(file, 'r') as json_file:
-                    data = json.loads(json_file.read())
-                    if [i for i in self.draft_sets for x in data["meta"]["set"] if i in x]:
-                        tier_data = data
-                        deck_colors["Tier"] = "Tier (%s)" % data["meta"]["label"]
+            for file in files:
+                if os.path.exists(file):
+                    with open(file, 'r') as json_file:
+                        data = json.loads(json_file.read())
+                        if [i for i in self.draft_sets if i in data["meta"]["set"]]:
+                            tier_data = data
+                            tier_key = f'Tier ({data["meta"]["label"]})'
+                            deck_colors[tier_key] = "Tier"
              
         except Exception as error:
             scanner_logger.info(f"RetrieveTierData Error: {error}")  
