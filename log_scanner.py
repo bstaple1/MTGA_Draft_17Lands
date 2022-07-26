@@ -1011,7 +1011,9 @@ class ArenaScanner:
                         data = json.loads(json_file.read())
                         if [i for i in self.draft_sets if i in data["meta"]["set"]]:
                             tier_id = f"Tier{count}"
-                            tier_key = f'{tier_id} ({data["meta"]["label"]})'
+                            tier_label = data["meta"]["label"]
+                            tier_label = f'{tier_label[:8]}...' if len(tier_label) > 11 else tier_label #Truncate label if it's too long
+                            tier_key = f'{tier_id} ({tier_label})'
                             deck_colors[tier_key] = tier_id
                             tier_data[tier_id] = data
                             count += 1

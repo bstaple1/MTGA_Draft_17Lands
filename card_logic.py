@@ -339,7 +339,6 @@ def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curv
                             selected_card[key] = CalculateWinRate(card["deck_colors"]["All Decks"], configuration.bayesian_average_enabled)
                         else:
                             selected_card[key] = card["deck_colors"]["All Decks"][type.lower()]
-                    #elif value[0] == "Tier":
                     elif "Tier" in value[0]:
                         card_name = card["name"].split(" // ")
                         selected_card[key] = tier_list[value[0]]["ratings"][card_name[0]]

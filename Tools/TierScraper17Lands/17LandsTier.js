@@ -94,7 +94,6 @@ function CollectLabel (){
     var tierLabel = "";
     
     try{
-        //tierLabel = document.getElementsByClassName("tier-container main-text")[0][0].textContent;
         tierLabel = document.querySelector("h2").textContent;
     }catch(error){
         console.log(error);
@@ -106,8 +105,7 @@ function RatingsExport (ratingsObj){
 
 	var url = document.URL.split("/");
 
-	//var fileName = "Tier_" +  Date.now().toString() + ".json";
-    var filename = `Tier_${ratingsObj.meta.set}_${Date.now().toString()}.json`
+    var filename = `Tier_${ratingsObj.meta.set}_${Date.now().toString()}.txt`
 	
 	var _ratingObj = JSON.stringify(ratingsObj , null, 4); //indentation in json format, human readable
 	
