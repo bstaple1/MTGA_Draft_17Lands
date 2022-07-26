@@ -1,3 +1,17 @@
+===================== RELEASE NOTES 2.95 =====================
+- Bug Fix: The application can now read tier list files created using the Chrome extension (Issue #12)
+    - The downloaded tier lists need to be placed in the new Tier folder
+
+- Bug Fix: The deck suggester will now correctly calculate the deck ratings
+
+- New Feature: Added support for multiple tier lists per set (Issue #12)
+    - Tier lists will appear as Tier# (<Label>) in the drop-downs (i.e., Tier0 (Test), Tier1 (HBG), etc.).
+
+- Modified Feature: The tier scraper extension will now automatically populate the Set and Label fields with data collected from the tier list page
+    - Follow the revised steps in ./Tools/TierScraper17Lands/README.txt
+
+- Documentation Change: Added a Tier List Ratings note to the Card Logic section of the README
+
 ===================== RELEASE NOTES 2.91 =====================
 - New Feature: For the filter drop-downs, users can use the Deck Filter Format setting to switch between the color combinations (i.e., UB, BG, WUG, etc.) and the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
 - Modified Feature: The application will store the card localization data in a temp file to speed up the set download process
