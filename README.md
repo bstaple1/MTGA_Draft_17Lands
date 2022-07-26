@@ -150,31 +150,31 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - Enable Draft Log: Records the draft in a log file within the ./Logs folder.
 ## Card Logic:
-- Card Ratings: The application will identify the upper and lower GIHWR values of all of the set cards across all of the filters and perform the following calculation to determine a card's rating: ((card_gihwr - lower_gihwr) / (upper_gihwr - lower_gihwr)) * 5.0
+- **Card Ratings:** The application will identify the upper and lower GIHWR values of all of the set cards across all of the filters and perform the following calculation to determine a card's rating: ((card_gihwr - lower_gihwr) / (upper_gihwr - lower_gihwr)) * 5.0
     - Example: If the highest winrate of the set is 75.67% (Lae'zel, Githyanki Warrior (WR)) and the lowest winrate of the set is 41.73% (Ambitious Dragonborn (URG)), then the All Decks rating for The Hourglass Coven (71.97%) will be 4.5 (((71.97 - 41.73) / (75.67 - 41.73)) * 5.0 = 4.5)
     - If the color and curve bonuses are enabled, then the application will add those bonuses to the card rating
 
-- Bayesian Average: A Bayesian average calculation applied to the Games In Hand Win Rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
+- **Bayesian Average:** A Bayesian average calculation applied to the Games In Hand Win Rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
     - Enabled: The application will perform this calculation on the GIHWR data. The adjustment made by this calculation will disappear as the Number of Games In Hand reaches 200.
     - Disabled: The application will not perform this calculation. If the Number of Games In Hand is fewer than 200, then the application will set the GIHWR to 0 (same as the 17Lands Card Ratings table).
 
-- Auto Highest Rating: If the "Auto" filter is set, then the application will attempt to identify the user's deck (using two-color pairs) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will display the highest pick rating of the top two color pairs. The column header will display both color pairs separated by a slash.
+- **Auto Highest Rating:** If the "Auto" filter is set, then the application will attempt to identify the user's deck (using two-color pairs) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will display the highest pick rating of the top two color pairs. The column header will display both color pairs separated by a slash.
     - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG rating of 3.5 and a UB rating of 0, then the displayed pick rating will be 3.5.
 
-- Curve Bonus: If column 4 is set to a specific color filter, or the "Auto" filter is used, then the application will add a curve bonus if certain conditions aren't met.
+- **Curve Bonus:** If column 4 is set to a specific color filter, or the "Auto" filter is used, then the application will add a curve bonus if certain conditions are met.
     - Curve Bonus Conditions:
         - If the identified, or configured, color pair has fewer than 13 creatures, then the application will add a curve bonus ranging from 0.1 - 1.0.
         - If the identified, or configured, color pair has fewer than 4 2-drops, 3 3-drops, 2 4-drops, and 1 5-drop, then it will add a curve bonus ranging from 0.1 - 0.5 to cards that fit the distribution.
         - If the identified, or configured, color pair identifies a card in a pack that could potentially replace a taken card (due to higher GIHWR or lower CMC), then it will add a curve bonus ranging from 0.1 - 0.25.
         
-- Color Bonus: If column 4 is set to "All Decks", or "Auto" with fewer than 16 cards, then the application will add a color bonus based on the top 3 colors identified from the taken cards.
+- **Color Bonus:** If column 4 is set to "All Decks", or "Auto" with fewer than 16 cards, then the application will add a color bonus based on the top 3 colors identified from the taken cards.
     - Color Bonus Factors:
         - The application will add a color bonus of 0.3 for each taken card that has a GIHWR equal to or above 65%
         - The application will add a color bonus of 0.2 for each taken card that has a GIHWR between 64.9% and 60%.
         - The application will add a color bonus of 0.1 for each taken card that has a GIHWR between 59.9% and 52%.
         - For colorless cards, the application will divide the highest color bonus by 2.
         
-- Deck Suggester: For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build an intentionally synergistic deck. 
+- **Deck Suggester:** For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build an intentionally synergistic deck. 
     - Deck Building Requirements:
         - Aggro Deck:
             - The deck must have a minimum of 13 creatures and should have no less than 17 creatures.
@@ -198,3 +198,21 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
         - The NEO creature sagas count as creatures.
 
+- **Tier List Ratings:** The tier scraper Chrome extension, found in `\Tools\TierScraper17Lands`, converts the grades in a 17Lands tier list into ratings using the following table:
+| **Letter Grade** | **Numeric Rating** |
+|------------------|--------------------|
+| A+               | 5.0                |
+| A                | 4.6                |
+| A-               | 4.2                |
+| B+               | 3.8                |
+| B                | 3.5                |
+| B-               | 3.1                |
+| C+               | 2.7                |
+| C                | 2.3                |
+| C-               | 1.9                |
+| D+               | 1.5                |
+| D                | 1.2                |
+| D-               | 0.8                |
+| F                | 0.4                |
+| SB               | 0.0                |
+| TBD              | 0.0                |
