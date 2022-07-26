@@ -199,8 +199,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The NEO creature sagas count as creatures.
 
 - **Tier List Ratings:** The tier scraper Chrome extension, found in `\Tools\TierScraper17Lands`, converts the grades in a 17Lands tier list into ratings using the following table:
-| **Letter Grade** | **Numeric Rating** |
-|------------------|--------------------|
+
+| Letter Grade     | Numeric Rating     |
+|:----------------:|:------------------:|
 | A+               | 5.0                |
 | A                | 4.6                |
 | A-               | 4.2                |
