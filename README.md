@@ -121,11 +121,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Tier List:** A tier list can be added to the drop-downs by following the instructions in `./Tools/TierScraper17Lands/README.txt`.
 
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tier_List.png?raw=true)	
+
 - **Card Tooltips:** Clicking on any field that lists a card will display a tooltip that contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
 	
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tooltip.png?raw=true)	
 	
 ## Settings
+
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Settings.png?raw=true)	
 
 - **Column 2:** Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used.
 
