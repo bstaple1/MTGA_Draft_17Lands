@@ -85,6 +85,18 @@ LOCAL_DATABASE_ENUMERATOR_QUERY = f"""SELECT
                                       IN ('{LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR}', 
                                           '{LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES}')"""
 
+LOCAL_CARDS_KEY_SET = "set"
+LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET = "digitalreleaseset"
+LOCAL_CARDS_KEY_GROUP_ID = "grpid"
+LOCAL_CARDS_KEY_TOKEN = "istoken"
+LOCAL_CARDS_KEY_LINKED_FACES = "linkedfaces"
+LOCAL_CARDS_KEY_TYPES = "types"
+LOCAL_CARDS_KEY_TITLE_ID = "titleid"
+LOCAL_CARDS_KEY_CMC = "cmc"
+LOCAL_CARDS_KEY_COLOR_ID = "coloridentity"
+LOCAL_CARDS_KEY_CASTING_COST = "castingcost"
+
+
 SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
 SET_FILE_SUFFIX = "Data.json"
 

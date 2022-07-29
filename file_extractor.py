@@ -32,15 +32,17 @@ class Result(Enum):
     
 def DecodeManaCost(encoded_cost):
     decoded_cost = ""
-    
+    cmc = 0
     if len(encoded_cost):
         cost_string = re.sub('\(|\)', '', encoded_cost)
         
         sections = cost_string[1:].split("o")
-        
+        for section in sections:
+            cmc += int(section) if section.isnumeric() else 1
+
         decoded_cost = "".join("{{{0}}}".format(x) for x in sections)
     
-    return decoded_cost
+    return decoded_cost, cmc
 def RetrieveLocalSetList(sets):
     file_list = []
     main_sets = [v[constants.SET_LIST_17LANDS][0] for k, v in sets.items()]
@@ -357,28 +359,31 @@ class FileExtractor:
                 json_data = json.loads(json_file.read())
                 
                 for card in json_data:
-                    if ((card_set in card["set"]) or
-                       (("DigitalReleaseSet" in card) and (card_set in card["DigitalReleaseSet"]))):
+                    card = {k.lower(): v for k, v in card.items()} #Making all of the keys lowercase
+                    if ((card_set in card[constants.LOCAL_CARDS_KEY_SET]) or
+                       ((constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET in card) and (card_set in card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]))):
                         try:
-                            if "isToken" in card:
+                            if constants.LOCAL_CARDS_KEY_TOKEN in card:
                                 continue
                             
-                            group_id = card["grpid"]
+                            group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
                             
-                            if "linkedFaces" in card:
-                                linked_id = card["linkedFaces"][0]
+                            if constants.LOCAL_CARDS_KEY_LINKED_FACES in card:
+                                linked_id = int(card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
                                 if linked_id < group_id:
                                     #The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
                                     #self.card_dict[card["linkedFaces"][0]]["name"].append(card["titleId"])
-                                    self.card_dict[card["linkedFaces"][0]]["types"].extend(card["types"])
+                                    types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
+                                    self.card_dict[linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(types)
                                     continue
     
-                            self.card_dict[group_id] = {"name" : [card["titleId"]], "image" : []}
-                            self.card_dict[group_id]["cmc"] = card["cmc"] if "cmc" in card else 0
-                            self.card_dict[group_id]["types"] = card["types"] if "types" in card else []
-                            self.card_dict[group_id]["colors"] = card["colorIdentity"] if "colorIdentity" in card else []
-                            self.card_dict[group_id]["mana_cost"] = DecodeManaCost(card["castingcost"]) if "castingcost" in card else ""
-                            
+                            self.card_dict[group_id] = {"name" : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], "image" : []}
+                            self.card_dict[group_id]["types"] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
+                            self.card_dict[group_id]["colors"] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
+                            mana_cost, cmc = DecodeManaCost(card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("",0)
+                            self.card_dict[group_id]["cmc"] = cmc
+                            self.card_dict[group_id]["mana_cost"] = mana_cost
+
                             result = True
                         except Exception as error:
                             pass
