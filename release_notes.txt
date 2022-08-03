@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 2.96 =====================
+- Bug Fix: The application will now support back-to-back drafts
+
+- Modified Feature: The application can now parse the reformatted card files that were modified in a recent Arena update
+    - The application can now build data sets using local files instead of Scryfall data
+
 ===================== RELEASE NOTES 2.95 =====================
 - Bug Fix: The application can now read tier list files created using the Chrome extension (Issue #12)
     - The downloaded tier lists need to be placed in the new Tier folder

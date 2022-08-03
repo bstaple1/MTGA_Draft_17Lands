@@ -806,22 +806,23 @@ class WindowUI:
             if self.current_timestamp != self.previous_timestamp:
                 self.previous_timestamp = self.current_timestamp
                 
-                previous_pick = self.draft.current_pick
-                previous_pack = self.draft.current_pack
+                #previous_pick = self.draft.current_pick
+                #previous_pack = self.draft.current_pack
                 
                 while(True):
 
                     self.UpdateCallback(True)
-                    if self.draft.current_pack < previous_pack:
-                        self.DraftReset(True)
-                        self.UpdateCallback(True)
-                    if self.draft.step_through and (previous_pick != self.draft.current_pick):
+                    #if self.draft.current_pack < previous_pack:
+                    #    self.DraftReset(True)
+                    #    self.UpdateCallback(True)
+                    #if self.draft.step_through and (previous_pick != self.draft.current_pick):
+                    if self.draft.step_through:
                         input("Continue?")
                     else:
                         break
                         
-                    previous_pick = self.draft.current_pick
-                    previous_pack = self.draft.current_pack
+                    #previous_pick = self.draft.current_pick
+                    #previous_pack = self.draft.current_pack
         except Exception as error:
             ui_logger.info(f"UpdateUI Error: {error}")
             

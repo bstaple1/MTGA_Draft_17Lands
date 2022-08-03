@@ -3,6 +3,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 **Latest Supported Set:** Alchemy Horizons: Baldur's Gate
 
+**Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
+  * \* For some events, the Arena logs don't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
+  * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.) although not all events have been tested.
+
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier.png?raw=true)
 
 ## Run Steps: Windows Executable (Windows Only)

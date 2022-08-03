@@ -104,8 +104,6 @@ class ArenaScanner:
                 self.ClearDraft(True)
             self.file_size = os.path.getsize(self.arena_file)
             offset = self.search_offset
-            previous_draft_type = self.draft_type
-            previous_draft_set = self.draft_sets
             with open(self.arena_file, 'r') as log:
                 log.seek(offset)
                 while(True):
@@ -117,23 +115,20 @@ class ArenaScanner:
                         self.search_offset = offset
                         string_offset = line.find(constants.DRAFT_START_STRING)
                         event_data = json.loads(line[string_offset + len(constants.DRAFT_START_STRING):])
-                        self.DraftStartSearchV1(event_data)
+                        update = self.DraftStartSearchV1(event_data)
                         self.logger.info(line)
+                        if update:
+                            self.pick_offset = self.search_offset
+                            self.pack_offset = self.search_offset
+                            scanner_logger.info(f"New draft detected {self.draft_type}, {self.draft_sets}")
                         break
-                                
-            if (self.draft_type != constants.LIMITED_TYPE_UNKNOWN) and \
-               ((self.draft_type != previous_draft_type) or \
-                (self.draft_sets != previous_draft_set)):
-                self.pick_offset = self.search_offset 
-                self.pack_offset = self.search_offset
-                update = True
-                scanner_logger.info(f"New draft detected {self.draft_type}, {self.draft_sets}")
 
         except Exception as error:
             scanner_logger.info(f"DraftStartSearch Error: {error}")
             
         return update
     def DraftStartSearchV1(self, event_data):
+        update = False
         try:
             request_data = json.loads(event_data["request"])
             payload_data = json.loads(request_data["Payload"])
@@ -161,14 +156,17 @@ class ArenaScanner:
                     event_type = "TradSealed" if "Trad" in event_sections else "Sealed"
                 else:
                     event_type = events[0]
-                self.draft_type = constants.LIMITED_TYPES_DICT[event_type]
+                draft_type = constants.LIMITED_TYPES_DICT[event_type]
+                self.ClearDraft(False)
+                self.draft_type = draft_type
                 self.draft_sets = sets
                 self.NewLog(self.draft_sets[0], event_type)
+                update = True
 
         except Exception as error:
             scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
             
-    
+        return update
     def DraftStartSearchV2(self, event_data):
         try:
             request_data = json.loads(event_data["request"])
@@ -274,8 +272,6 @@ class ArenaScanner:
         
                         except Exception as error:
                             self.logger.info(f"DraftPackSearchPremierP1P1 Sub Error: {error}")
-            if log.closed == False:
-                log.close() 
         except Exception as error:
             self.logger.info(f"DraftPackSearchPremierP1P1 Error: {error}")
         
@@ -689,8 +685,6 @@ class ArenaScanner:
         
                         except Exception as error:
                             self.logger.info(f"DraftPackSearchTraditionalP1P1 Error: {error}")
-            if log.closed == False:
-                log.close() 
         except Exception as error:
             self.logger.info(f"DraftPackSearchTraditionalP1P1 Error: {error}")
         
