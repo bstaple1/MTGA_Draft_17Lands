@@ -91,13 +91,9 @@ class ArenaScanner:
         
     def DraftStartSearch(self): 
         update = False
-        #Open the file
-        #switcher={
-        #        "[UnityCrossThreadLogger]==> Event_Join " : (lambda x: self.DraftStartSearchV1(x)),
-        #        #"[UnityCrossThreadLogger]==> Event.Join " : (lambda x: self.DraftStartSearchV2(x)),
-        #     }
-        
-        
+        event_type = ""
+        event_line = ""
+
         try:
             #Check if a new player.log was created (e.g. application was started before Arena was started)
             if self.file_size > os.path.getsize(self.arena_file):
@@ -115,20 +111,23 @@ class ArenaScanner:
                         self.search_offset = offset
                         string_offset = line.find(constants.DRAFT_START_STRING)
                         event_data = json.loads(line[string_offset + len(constants.DRAFT_START_STRING):])
-                        update = self.DraftStartSearchV1(event_data)
-                        self.logger.info(line)
-                        if update:
-                            self.pick_offset = self.search_offset
-                            self.pack_offset = self.search_offset
-                            scanner_logger.info(f"New draft detected {self.draft_type}, {self.draft_sets}")
-                        break
+                        update, event_type = self.DraftStartSearchV1(event_data)
+                        event_line = line
+                        
 
+            if update:
+                self.NewLog(self.draft_sets[0], event_type)
+                self.logger.info(event_line)
+                self.pick_offset = self.search_offset
+                self.pack_offset = self.search_offset
+                scanner_logger.info(f"New draft detected {event_type}, {self.draft_sets}")
         except Exception as error:
             scanner_logger.info(f"DraftStartSearch Error: {error}")
             
         return update
     def DraftStartSearchV1(self, event_data):
         update = False
+        event_type = ""
         try:
             request_data = json.loads(event_data["request"])
             payload_data = json.loads(request_data["Payload"])
@@ -160,13 +159,12 @@ class ArenaScanner:
                 self.ClearDraft(False)
                 self.draft_type = draft_type
                 self.draft_sets = sets
-                self.NewLog(self.draft_sets[0], event_type)
                 update = True
 
         except Exception as error:
             scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
             
-        return update
+        return update, event_type
     def DraftStartSearchV2(self, event_data):
         try:
             request_data = json.loads(event_data["request"])
