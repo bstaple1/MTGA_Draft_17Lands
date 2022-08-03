@@ -5,7 +5,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 **Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
   * \* For some events, the Arena logs don't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
-  * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.) although not all events have been tested.
+  * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.), although not all events have been tested.
 
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier.png?raw=true)
 
@@ -15,6 +15,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
 - **Step 3:** Double-click `setup.exe` to start the installation. 
+    - The MTGA_Draft_Tool_V####_Setup.exe and setup.exe files are the same.
 
 - **Step 4:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
     - This step is only required if the application is installed in a directory with write restrictions (i.e., `Program Files` and `Program Files (x86)`).
