@@ -12,6 +12,7 @@
         "column_3": "All Decks",
         "column_4": "Auto",
         "filter_format": "Colors",
+        "result_format": "Win Rate (%)",
         "missing_enabled": true,
         "stats_enabled": true,
         "auto_highest_enabled": true,

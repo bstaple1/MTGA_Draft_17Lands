@@ -20,7 +20,8 @@ class Config:
     column_2 : str=constants.COLUMN_2_DEFAULT
     column_3 : str=constants.COLUMN_3_DEFAULT
     column_4 : str=constants.COLUMN_4_DEFAULT
-    filter_format : str=constants.FILTER_FORMAT_COLORS
+    filter_format : str=constants.DECK_FILTER_FORMAT_COLORS
+    result_format : str=constants.RESULT_FORMAT_WIN_RATE
     missing_enabled : bool=True
     stats_enabled : bool=True
     hotkey_enabled : bool=True
@@ -345,8 +346,9 @@ def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curv
                     else:
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == value[0]:
-                                rating_data = CardRating(card, limits, configuration, value[0], deck, deck_colors, enable_curve_bonus, enable_color_bonus)
-                                selected_card[key] = rating_data["rating"]
+                                #rating_data = CardRating(card, limits, configuration, value[0], deck, deck_colors, enable_curve_bonus, enable_color_bonus)
+                                rating_data = FormattedResult(card, limits, configuration, value[0], deck, deck_colors, enable_color_bonus, enable_color_bonus)
+                                selected_card[key] = rating_data["result"]
                                 if key == "rating_filter_c":
                                     if "curve_bonus" in rating_data:
                                         selected_card["curve_bonus"].append(rating_data["curve_bonus"])
@@ -357,12 +359,13 @@ def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curv
                     rated_colors = []
                     
                     for colors in value:
-                        rating_data = {"rating" : 0}
+                        rating_data = {"result" : 0}
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == colors:
-                                rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
+                                #rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
+                                rating_data = FormattedResult(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
                                 break
-                        rated_colors.append(rating_data["rating"])
+                        rated_colors.append(rating_data["result"])
                         if key == "rating_filter_c":
                             if "curve_bonus" in rating_data:
                                 selected_card["curve_bonus"].append(rating_data["curve_bonus"])
@@ -429,9 +432,18 @@ def CalculateWinRate(card_data, bayesian_enabled):
     except Exception as error:
         logic_logger.info(f"CalculateWinRate Error: {error}")
     return winrate
-
+    
+def FormattedResult(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
+    rating_data = {"result" : 0}
+    #Produce a result that matches the Result Format setting
+    if configuration.result_format == constants.RESULT_FORMAT_RATING:
+        rating_data = CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
+    else:
+        rating_data["result"] = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_enabled)
+        
+    return rating_data
 def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
-    rating_data = {"rating" : 0}
+    rating_data = {"result" : 0}
     try:
         gihwr = CalculateWinRate(card_data["deck_colors"][filter], configuration.bayesian_average_enabled)
         upper_limit = 0
@@ -464,21 +476,21 @@ def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enab
             gihwr = min(gihwr, upper_limit)
             gihwr = max(gihwr, lower_limit)
             
-            rating_data["rating"] = ((gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0
+            rating_data["result"] = ((gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0
             
             #Make adjustments
-            rating_data["rating"] += alsa_bonus + iwd_penalty
+            rating_data["result"] += alsa_bonus + iwd_penalty
             
             if "curve_bonus" in rating_data:
-                rating_data["rating"] += rating_data["curve_bonus"]
+                rating_data["result"] += rating_data["curve_bonus"]
                 
             if "color_bonus" in rating_data:
-                rating_data["rating"] += rating_data["color_bonus"]
+                rating_data["result"] += rating_data["color_bonus"]
             
-            rating_data["rating"] = round(rating_data["rating"], 1)
+            rating_data["result"] = round(rating_data["result"], 1)
             
-            rating_data["rating"] = min(rating_data["rating"], 5.0)
-            rating_data["rating"] = max(rating_data["rating"], 0)
+            rating_data["result"] = min(rating_data["result"], 5.0)
+            rating_data["result"] = max(rating_data["result"], 0)
             
     except Exception as error:
         logic_logger.info(f"CardRating Error: {error}")
@@ -904,6 +916,7 @@ def ReadConfig():
         config.column_3 = config_data["settings"]["column_3"]
         config.column_4 = config_data["settings"]["column_4"]
         config.filter_format = config_data["settings"]["filter_format"]
+        config.result_format = config_data["settings"]["result_format"]
         config.missing_enabled = config_data["settings"]["missing_enabled"]
         config.stats_enabled = config_data["settings"]["stats_enabled"]
         config.auto_highest_enabled = config_data["settings"]["auto_highest_enabled"]
@@ -927,6 +940,7 @@ def WriteConfig(config):
         config_data["settings"]["column_3"] = config.column_3
         config_data["settings"]["column_4"] = config.column_4
         config_data["settings"]["filter_format"] = config.filter_format
+        config_data["settings"]["result_format"] = config.result_format
         config_data["settings"]["missing_enabled"] = config.missing_enabled
         config_data["settings"]["stats_enabled"] = config.stats_enabled
         config_data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
@@ -960,6 +974,7 @@ def ResetConfig():
         data["settings"]["column_3"] = config.column_3
         data["settings"]["column_4"] = config.column_4
         data["settings"]["filter_format"] = config.filter_format
+        data["settings"]["result_format"] = config.result_format
         data["settings"]["missing_enabled"] = config.missing_enabled
         data["settings"]["stats_enabled"] = config.stats_enabled
         data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled

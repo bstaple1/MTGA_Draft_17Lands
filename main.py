@@ -255,7 +255,9 @@ class WindowUI:
         self.column_4_selection = StringVar(self.root)
         self.column_4_list = self.deck_colors
         self.filter_format_selection = StringVar(self.root)
-        self.filter_format_list = constants.FILTER_FORMAT_LIST
+        self.filter_format_list = constants.DECK_FILTER_FORMAT_LIST
+        self.result_format_selection = StringVar(self.root)
+        self.result_format_list = constants.RESULT_FORMAT_LIST
 
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
@@ -271,7 +273,7 @@ class WindowUI:
         self.deck_colors_options = OptionMenu(deck_colors_option_frame, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
         
         self.refresh_button_frame = Frame(self.root)
-        self.refresh_button = Button(self.refresh_button_frame, command= lambda : self.UpdateCallback(True), text="Refresh");
+        self.refresh_button = Button(self.refresh_button_frame, command= lambda : self.UpdateCallback(True), text="Refresh")
         
         self.status_frame = Frame(self.root)
         self.pack_pick_label = Label(self.status_frame, text="Pack: 0, Pick: 0", font='Helvetica 9 bold')
@@ -626,8 +628,10 @@ class WindowUI:
     def UpdateFilterOptions(self):
         self.ControlTrace(False)
         try: 
-            if self.filter_format_selection.get() not in constants.FILTER_FORMAT_LIST:
-                self.filter_format_selection.set(constants.FILTER_FORMAT_COLORS)
+            if self.filter_format_selection.get() not in self.filter_format_list:
+                self.filter_format_selection.set(constants.DECK_FILTER_FORMAT_COLORS)
+            if self.result_format_selection.get() not in self.result_format_list:
+                self.result_format_selection.set(constants.RESULT_FORMAT_WIN_RATE)
             if self.column_2_selection.get() not in self.deck_colors.keys():
                 self.column_2_selection.set(constants.COLUMN_2_DEFAULT)
             if self.column_3_selection.get() not in self.deck_colors.keys():
@@ -717,6 +721,7 @@ class WindowUI:
             selection = self.column_4_selection.get()
             self.configuration.column_4 = self.deck_colors[selection] if selection in self.deck_colors else self.deck_colors[constants.COLUMN_4_DEFAULT]
             self.configuration.filter_format = self.filter_format_selection.get()
+            self.configuration.result_format = self.result_format_selection.get()
 
             self.configuration.missing_enabled = bool(self.missing_cards_checkbox_value.get())
             self.configuration.stats_enabled = bool(self.deck_stats_checkbox_value.get())
@@ -739,6 +744,7 @@ class WindowUI:
             selection = [k for k,v in self.deck_colors.items() if v == self.configuration.column_4]
             self.column_4_selection.set(selection[0] if len(selection) else constants.COLUMN_4_DEFAULT) 
             self.filter_format_selection.set(self.configuration.filter_format)
+            self.result_format_selection.set(self.configuration.result_format)
             self.deck_stats_checkbox_value.set(self.configuration.stats_enabled)
             self.missing_cards_checkbox_value.set(self.configuration.missing_enabled)
             self.auto_highest_checkbox_value.set(self.configuration.auto_highest_enabled)
@@ -1095,6 +1101,7 @@ class WindowUI:
             column_3_label = Label(popup, text="Column 3:", font='Helvetica 9 bold', anchor="w")
             column_4_label = Label(popup, text="Column 4:", font='Helvetica 9 bold', anchor="w")
             filter_format_label = Label(popup, text="Deck Filter Format:", font='Helvetica 9 bold', anchor="w")
+            result_format_label = Label(popup, text="Result Format:", font='Helvetica 9 bold', anchor="w")
             deck_stats_label = Label(popup, text="Enable Deck Stats:", font='Helvetica 9 bold', anchor="w")
             deck_stats_checkbox = Checkbutton(popup,
                                               variable=self.deck_stats_checkbox_value,
@@ -1148,31 +1155,36 @@ class WindowUI:
             filter_format_options = OptionMenu(popup, self.filter_format_selection, self.filter_format_selection.get(), *self.filter_format_list, style="my.TMenubutton")
             filter_format_options.config(width=15)
             
+            result_format_options = OptionMenu(popup, self.result_format_selection, self.result_format_selection.get(), *self.result_format_list, style="my.TMenubutton")
+            result_format_options.config(width=15)
+            
             default_button = Button(popup, command=self.DefaultSettingsCallback, text="Default Settings");
             
             column_2_label.grid(row=0, column=0, columnspan=1, sticky="nsew", padx=(10,))
             column_3_label.grid(row=1, column=0, columnspan=1, sticky="nsew", padx=(10,))
             column_4_label.grid(row=2, column=0, columnspan=1, sticky="nsew", padx=(10,))
             filter_format_label.grid(row=3, column=0, columnspan=1, sticky="nsew", padx=(10,)) 
+            result_format_label.grid(row=4, column=0, columnspan=1, sticky="nsew", padx=(10,))
             self.column_2_options.grid(row=0, column=1, columnspan=1, sticky="nsew")
             self.column_3_options.grid(row=1, column=1, columnspan=1, sticky="nsew")
             self.column_4_options.grid(row=2, column=1, columnspan=1, sticky="nsew")
             filter_format_options.grid(row=3, column=1, columnspan=1, sticky="nsew")
-            deck_stats_label.grid(row=4, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            deck_stats_checkbox.grid(row=4, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            missing_cards_label.grid(row=5, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            missing_cards_checkbox.grid(row=5, column=1, columnspan=1, sticky="nsew", padx=(5,)) 
-            auto_highest_label.grid(row=6, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            auto_highest_checkbox.grid(row=6, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            curve_bonus_label.grid(row=7, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            curve_bonus_checkbox.grid(row=7, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            color_bonus_label.grid(row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            color_bonus_checkbox.grid(row=8, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            bayesian_average_label.grid(row=9, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            bayesian_average_checkbox.grid(row=9, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            draft_log_label.grid(row=10, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            draft_log_checkbox.grid(row=10, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=11, column=0, columnspan=2, sticky="nsew")
+            result_format_options.grid(row=4, column=1, columnspan=1, sticky="nsew")
+            deck_stats_label.grid(row=5, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            deck_stats_checkbox.grid(row=5, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            missing_cards_label.grid(row=6, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            missing_cards_checkbox.grid(row=6, column=1, columnspan=1, sticky="nsew", padx=(5,)) 
+            auto_highest_label.grid(row=7, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            auto_highest_checkbox.grid(row=7, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            curve_bonus_label.grid(row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            curve_bonus_checkbox.grid(row=8, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            color_bonus_label.grid(row=9, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            color_bonus_checkbox.grid(row=9, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            bayesian_average_label.grid(row=10, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            bayesian_average_checkbox.grid(row=10, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            draft_log_label.grid(row=11, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            draft_log_checkbox.grid(row=11, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=12, column=0, columnspan=2, sticky="nsew")
             
             self.ControlTrace(True)
             
@@ -1334,6 +1346,7 @@ class WindowUI:
                 self.trace_ids.append(self.stat_options_selection.trace("w", self.UpdateDeckStatsCallback))
                 self.trace_ids.append(self.draft_log_checkbox_value.trace("w", self.UpdateSettingsCallback))
                 self.trace_ids.append(self.filter_format_selection.trace("w", self.UpdateSourceCallback))
+                self.trace_ids.append(self.result_format_selection.trace("w", self.UpdateSourceCallback))
         elif len(self.trace_ids):
            self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
            self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
@@ -1348,6 +1361,7 @@ class WindowUI:
            self.stat_options_selection.trace_vdelete("w", self.trace_ids[10])
            self.draft_log_checkbox_value.trace_vdelete("w", self.trace_ids[11])
            self.filter_format_selection.trace_vdelete("w", self.trace_ids[12])
+           self.result_format_selection.trace_vdelete("w", self.trace_ids[13])
            self.trace_ids = []
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)

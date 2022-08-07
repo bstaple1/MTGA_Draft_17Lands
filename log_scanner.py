@@ -920,7 +920,7 @@ class ArenaScanner:
         deck_colors = {}
         for colors in constants.DECK_FILTERS:
             deck_color = colors
-            if (label_type == constants.FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
+            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
                 deck_color = constants.COLOR_NAMES_DICT[deck_color]
             deck_colors[colors] = deck_color
         
@@ -930,7 +930,7 @@ class ArenaScanner:
                     for deck_color in deck_colors.keys():
                         if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
                             filter_label = deck_color
-                            if (label_type == constants.FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
+                            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
                                 filter_label = constants.COLOR_NAMES_DICT[deck_color]
                             ratings_string = filter_label + " (%s%%)" % (self.set_data["color_ratings"][colors])
                             deck_colors[deck_color] = ratings_string
