@@ -790,6 +790,8 @@ class FileExtractor:
                             sets[set_name][constants.SET_LIST_SCRYFALL] = [set_code.upper(), set["parent_set_code"].upper()]
                         else:
                             sets[set_name] = {key:[set_code.upper()] for key in [constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
+                    elif (set["set_type"] == constants.SET_TYPE_MASTERS) and (set["digital"] == False):
+                        continue
                     else:
                         sets[set_name] = {key:[set_code.upper()] for key in [constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
                         #Add mystic archives to strixhaven
@@ -799,7 +801,7 @@ class FileExtractor:
                     counter += 1
                     
                 # Only retrieve the last 20 sets
-                if counter >= 20:
+                if counter >= 25:
                     break
             except Exception as error:
                 file_logger.info(f"ProcessSetData Error: {error}")
