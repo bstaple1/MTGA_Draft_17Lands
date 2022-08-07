@@ -128,16 +128,15 @@ def FixedMap(style, option):
             if elm[:2] != ("!disabled", "!selected")]
 
 def TableFilterOptions(table, filter_a, filter_b, filter_c):
-    non_color_options = ["All GIHWR", "All IWD", "All ALSA"]
     filter_dict = {"FilterA" : filter_a, "FilterB" : filter_b, "FilterC" : filter_c}
     
     for key, value in filter_dict.items():
         if len(value) == 1: #Single color filter
-            if value[0] == "All Decks":
+            if value[0] == constants.FILTER_OPTION_ALL_DECKS:
                 table.heading(key, text = "All")
-            elif value[0] in non_color_options:
-                color, type = value[0].split(" ")
-                table.heading(key, text = type)
+            elif value[0] in constants.NON_COLORS_OPTIONS:
+                field = value[0]
+                table.heading(key, text = field)
             else:
                 table.heading(key, text = value)
         else: #Multi-color filters
@@ -894,7 +893,7 @@ class WindowUI:
                                                                    progress,
                                                                    list_box,
                                                                    sets,
-                                                                   2.00), text="ADD SET")
+                                                                   constants.DATA_SET_VERSION_3), text="ADD SET")
             
             
             for column in column_headers:
@@ -1275,9 +1274,8 @@ class WindowUI:
                 card_name = card_name if card_name[0] != '*' else card_name[1:]
                 if card_name == card["name"]:
                     try:
-                        non_color_options = ["All GIHWR", "All IWD", "All ALSA", "Tier"]
-                        if set(selected_color).issubset(non_color_options):
-                            color_list = ["All Decks"]
+                        if set(selected_color).issubset(constants.NON_COLORS_OPTIONS + [constants.FILTER_OPTION_TIER]):
+                            color_list = [constants.FILTER_OPTION_ALL_DECKS]
                         else:
                             color_list = selected_color
                         for count, color in enumerate(color_list):
@@ -1288,8 +1286,24 @@ class WindowUI:
                                 
                                 if "gih" in card["deck_colors"][color]:
                                     gih = card["deck_colors"][color]["gih"]
-                                    gihwr = CL.CalculateWinRate(card["deck_colors"][color], self.configuration.bayesian_average_enabled)
+                                    gihwr = CL.CalculateWinRate(card["deck_colors"][color]["gihwr"],
+                                                                gih,
+                                                                self.configuration.bayesian_average_enabled)
                                     color_dict[color]["gih"] = gih
+
+                                if ("ohwr" in card["deck_colors"][color]) and ("ngoh" in card["deck_colors"][color]):
+                                    ohwr = CL.CalculateWinRate(card["deck_colors"][color]["ohwr"],
+                                                                card["deck_colors"][color]["ngoh"],
+                                                                self.configuration.bayesian_average_enabled)
+                                    color_dict[color]["ohwr"] = ohwr
+                                    color_dict[color]["ngoh"] = card["deck_colors"][color]["ngoh"]
+
+                                if ("gpwr" in card["deck_colors"][color]) and ("ngp" in card["deck_colors"][color]):
+                                    gpwr = CL.CalculateWinRate(card["deck_colors"][color]["ohwr"],
+                                                                card["deck_colors"][color]["ngp"],
+                                                                self.configuration.bayesian_average_enabled)
+                                    color_dict[color]["gpwr"] = gpwr
+                                    color_dict[color]["ngp"] = card["deck_colors"][color]["ngp"]
                                 
                                 color_dict[color]["alsa"] = card["deck_colors"][color]["alsa"]
                                 color_dict[color]["iwd"] = card["deck_colors"][color]["iwd"]
@@ -1302,8 +1316,8 @@ class WindowUI:
                                     color_dict[color]["color_bonus"] = card["color_bonus"][count]
                                     
                             except Exception as error:
-                                color_dict[color] = {"alsa" : 0,
-                                                     "iwd" : 0,
+                                color_dict[color] = {"alsa"  : 0,
+                                                     "iwd"   : 0,
                                                      "gihwr" : 0}
                             
                         tooltip = CreateCardToolTip(table, event,
@@ -1468,7 +1482,26 @@ class CreateCardToolTip(object):
             self.tw.wm_geometry("+%d+%d" % (x, y))
    
             tt_frame = Frame(self.tw, borderwidth=5,relief="solid")
+
+            card_label = Label(tt_frame, text=self.card_name, font=("Consolas", 15, "bold"),)
+
+            filter_label = Label(tt_frame, justify="left", text="Filter:", font=("Consolas", 10, "bold"), anchor="w")
+            filter_value = Label(tt_frame, text="/".join(self.color_dict.keys()), font=("Consolas", 10))
+
+            alsa_values = [str(x['alsa']) for x in self.color_dict.values()]
+            alsa_label = Label(tt_frame, justify="left", text="Average Last Seen At:", font=("Consolas", 10, "bold"),anchor="w")
+            alsa_value = Label(tt_frame, text="/".join(alsa_values), font=("Consolas", 10))
             
+            iwd_values = [str(x['iwd']) for x in self.color_dict.values()]
+            iwd_label = Label(tt_frame, text="Improvement When Drawn:", font=("Consolas", 10, "bold"), anchor="w")
+            iwd_value = Label(tt_frame, text="/".join(iwd_values) + "pp", font=("Consolas", 10))
+
+            gihwr_values = [str(x['gihwr']) for x in self.color_dict.values()]
+            gihwr_label = Label(tt_frame, text="Games In Hand Win Rate:", font=("Consolas", 10, "bold"),anchor="w")
+            gihwr_value = Label(tt_frame, text="/".join(gihwr_values)+ "%", font=("Consolas", 10))
+                
+            index = 0
+            column_offset = 0
             #Add scryfall image
             if self.images_enabled:
                 from PIL import Image, ImageTk
@@ -1481,58 +1514,82 @@ class CreateCardToolTip(object):
                         im.thumbnail(size, Image.ANTIALIAS)
                         image = ImageTk.PhotoImage(im)
                         image_label = Label(tt_frame, image=image)
-                        columnspan = 1 if len(self.image) == 2 else 2
-                        image_label.grid(column=count, row=8, columnspan=columnspan)
+                        image_label.grid(column=count, row=1, columnspan=1, rowspan=15)
                         self.images.append(image)
-            
+                        column_offset += 1
 
-            card_label = Label(tt_frame, justify="left", text=self.card_name, font=("Consolas", 12, "bold"))
+            card_label.grid(column=0, row=0, columnspan=column_offset + 2)
+            index += 2
+            filter_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+            filter_value.grid(column=column_offset + 1, row=index, columnspan=1)
+            index += 1
+            alsa_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+            alsa_value.grid(column=column_offset + 1, row=index, columnspan=1)
+            index += 1
+            iwd_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+            iwd_value.grid(column=column_offset + 1, row=index, columnspan=1)
+            index += 1
+            gihwr_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+            gihwr_value.grid(column=column_offset + 1, row=index, columnspan=1)
+            index += 1
 
-            filter_label = Label(tt_frame, justify="left", text="Filter:", font=("Consolas", 10, "bold"))
-            filter_value = Label(tt_frame, text="/".join(self.color_dict.keys()), font=("Consolas", 10))
-
-            alsa_values = [str(x['alsa']) for x in self.color_dict.values()]
-            alsa_label = Label(tt_frame, justify="left", text="Average Last Seen At:", font=("Consolas", 10, "bold"))
-            alsa_value = Label(tt_frame, text="/".join(alsa_values), font=("Consolas", 10))
-            
-            iwd_values = [str(x['iwd']) for x in self.color_dict.values()]
-            iwd_label = Label(tt_frame, text="Improvement When Drawn:", font=("Consolas", 10, "bold"))
-            iwd_value = Label(tt_frame, text="/".join(iwd_values) + "pp", font=("Consolas", 10))
-
-            gihwr_values = [str(x['gihwr']) for x in self.color_dict.values()]
-            gihwr_label = Label(tt_frame, text="Games In Hand Win Rate:", font=("Consolas", 10, "bold"))
-            gihwr_value = Label(tt_frame, text="/".join(gihwr_values)+ "%", font=("Consolas", 10))
-            
             if any("gih" in x for x in self.color_dict.values()):
                 gih_values = [str(x['gih']) for x in self.color_dict.values()]
                 gih_label = Label(tt_frame, text="Number of Games In Hand:", font=("Consolas", 10, "bold"))
                 gih_value = Label(tt_frame, text="/".join(gih_values), font=("Consolas", 10))    
-                gih_label.grid(column=0, row=5, columnspan=1)
-                gih_value.grid(column=1, row=5, columnspan=1)
+                gih_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                gih_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1
+
+            if any("ohwr" in x for x in self.color_dict.values()):
+                ohwr_values = [str(x['ohwr']) for x in self.color_dict.values()]
+                ohwr_label = Label(tt_frame, text="Opening Hand Win Rate:", font=("Consolas", 10, "bold"))
+                ohwr_value = Label(tt_frame, text="/".join(ohwr_values) + "%", font=("Consolas", 10))    
+                ohwr_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                ohwr_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1   
+
+            if any("ngoh" in x for x in self.color_dict.values()):
+                ngoh_values = [str(x['ngoh']) for x in self.color_dict.values()]
+                ngoh_label = Label(tt_frame, text="Number of Games in Opening Hand:", font=("Consolas", 10, "bold"))
+                ngoh_value = Label(tt_frame, text="/".join(ngoh_values), font=("Consolas", 10))    
+                ngoh_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                ngoh_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1    
+
+            if any("gpwr" in x for x in self.color_dict.values()):
+                gpwr_values = [str(x['gpwr']) for x in self.color_dict.values()]
+                gpwr_label = Label(tt_frame, text="Games Played Win Rate:", font=("Consolas", 10, "bold"))
+                gpwr_value = Label(tt_frame, text="/".join(gpwr_values) + "%", font=("Consolas", 10))    
+                gpwr_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                gpwr_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1  
+
+            if any("ngp" in x for x in self.color_dict.values()):
+                ngp_values = [str(x['ngp']) for x in self.color_dict.values()]
+                ngp_label = Label(tt_frame, text="Number of Games Played:", font=("Consolas", 10, "bold"))
+                ngp_value = Label(tt_frame, text="/".join(ngp_values), font=("Consolas", 10))    
+                ngp_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                ngp_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1  
             
             if any("curve_bonus" in x for x in self.color_dict.values()):
                 curve_bonus_values = [str(x['curve_bonus']) for x in self.color_dict.values()]
                 curve_bonus_label = Label(tt_frame, text="Curve Bonus:", font=("Consolas", 10, "bold"))
                 curve_bonus_value = Label(tt_frame, text="+" + "/".join(curve_bonus_values), font=("Consolas", 10))
-                curve_bonus_label.grid(column=0, row=6, columnspan=1)
-                curve_bonus_value.grid(column=1, row=6, columnspan=1)
+                curve_bonus_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                curve_bonus_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1
                 
             if any("color_bonus" in x for x in self.color_dict.values()):
                 color_bonus_values = [str(x['color_bonus']) for x in self.color_dict.values()]
                 color_bonus_label = Label(tt_frame, text="Color Bonus:", font=("Consolas", 10, "bold"))
                 color_bonus_value = Label(tt_frame, text="+" + "/".join(color_bonus_values), font=("Consolas", 10))
-                color_bonus_label.grid(column=0, row=7, columnspan=1)
-                color_bonus_value.grid(column=1, row=7, columnspan=1)
-                
-            card_label.grid(column=0, row=0, columnspan=2)
-            filter_label.grid(column=0, row=1, columnspan=1)
-            filter_value.grid(column=1, row=1, columnspan=1)
-            alsa_label.grid(column=0, row=2, columnspan=1)
-            alsa_value.grid(column=1, row=2, columnspan=1)
-            iwd_label.grid(column=0, row=3, columnspan=1)
-            iwd_value.grid(column=1, row=3, columnspan=1)
-            gihwr_label.grid(column=0, row=4, columnspan=1)
-            gihwr_value.grid(column=1, row=4, columnspan=1)
+                color_bonus_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
+                color_bonus_value.grid(column=column_offset + 1, row=index, columnspan=1)
+                index += 1
+
+
             tt_frame.pack()
             
             

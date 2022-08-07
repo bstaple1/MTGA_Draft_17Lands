@@ -918,7 +918,7 @@ class ArenaScanner:
         
     def RetrieveColorWinRate(self, label_type):
         deck_colors = {}
-        for colors in constants.DECK_FILTERS:
+        for colors in constants.COLUMN_OPTIONS:
             deck_color = colors
             if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
                 deck_color = constants.COLOR_NAMES_DICT[deck_color]
@@ -934,6 +934,9 @@ class ArenaScanner:
                                 filter_label = constants.COLOR_NAMES_DICT[deck_color]
                             ratings_string = filter_label + " (%s%%)" % (self.set_data["color_ratings"][colors])
                             deck_colors[deck_color] = ratings_string
+                if self.set_data["meta"]["version"] < constants.DATA_SET_VERSION_3:
+                    for option in constants.WIN_RATE_OPTIONS_VERSION_3:
+                        deck_colors.pop(option)
         except Exception as error:
             scanner_logger.info(f"RetrieveColorWinRate Error: {error}")
 

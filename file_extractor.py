@@ -182,7 +182,7 @@ def FileIntegrityCheck(filename):
             version = json_data["meta"]["version"]
             if version == 1:
                 start_date, end_date = json_data["meta"]["date_range"].split("->")
-            elif version == 2:
+            else:
                 start_date = json_data["meta"]["start_date"] 
                 end_date = json_data["meta"]["end_date"] 
                 
@@ -195,9 +195,9 @@ def FileIntegrityCheck(filename):
                 types = cards[card]["types"]
                 mana_cost = cards[card]["mana_cost"]
                 image = cards[card]["image"]
-                gihwr = cards[card]["deck_colors"]["All Decks"]["gihwr"]
-                alsa = cards[card]["deck_colors"]["All Decks"]["alsa"]
-                iwd = cards[card]["deck_colors"]["All Decks"]["iwd"]
+                gihwr = cards[card]["deck_colors"][constants.FILTER_OPTION_ALL_DECKS]["gihwr"]
+                alsa = cards[card]["deck_colors"][constants.FILTER_OPTION_ALL_DECKS]["alsa"]
+                iwd = cards[card]["deck_colors"][constants.FILTER_OPTION_ALL_DECKS]["iwd"]
                 break
                 
             if len(cards.keys()) < 100:
@@ -554,7 +554,14 @@ class FileExtractor:
         for card in self.card_dict:
             self.card_dict[card]["deck_colors"] = {}
             for color in self.deck_colors:
-                self.card_dict[card]["deck_colors"][color] = {"gihwr" : constants.DEFAULT_GIHWR_AVERAGE, "iwd" : 0.0, "alsa" : 0.0, "gih" : 0.0}
+                self.card_dict[card]["deck_colors"][color] = {"gihwr" : constants.DEFAULT_GIHWR_AVERAGE, 
+                                                              "iwd"   : 0.0, 
+                                                              "alsa"  : 0.0, 
+                                                              "gih"   : 0.0,
+                                                              "ohwr"  : 0.0,
+                                                              "ngoh"  : 0.0,
+                                                              "gpwr"  : 0.0,
+                                                              "ngp"   : 0.0}
 
     def Session17Lands(self, root, progress, initial_progress):
         current_progress = 0
@@ -571,7 +578,7 @@ class FileExtractor:
                     try:
                         url = f"https://www.17lands.com/card_ratings/data?expansion={set}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}"
                         
-                        if color != "All Decks":
+                        if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(url, context=self.context).read()
                         
@@ -638,6 +645,10 @@ class FileExtractor:
         for card in cards:
             try:
                 card_name = card["name"]
+                ohwr = card["opening_hand_win_rate"]
+                ngoh = int(card["opening_hand_game_count"])
+                gpwr = card["win_rate"]
+                ngp = int(card["game_count"])
                 gihwr = card["ever_drawn_win_rate"]
                 iwd = card["drawn_improvement_win_rate"]
                 alsa = card["avg_seen"]
@@ -646,16 +657,23 @@ class FileExtractor:
                 if card["url_back"]:
                     images.append(card["url_back"])
                     
-                gihwr = gihwr if gihwr != None else "0.0"
+                ohwr = round(float(ohwr) * 100.0, 2) if ohwr != None else 0.0
+                gpwr = round(float(gpwr) * 100.0, 2) if gpwr != None else 0.0
+                gihwr = round(float(gihwr) * 100.0, 2) if gihwr != None else 0.0
+                iwd = round(float(iwd) * 100, 2) if iwd != None else 0.0
 
-                gihwr = round(float(gihwr) * 100.0, 2)
-                
-                iwd = round(float(card["drawn_improvement_win_rate"]) * 100, 2)
                 alsa = round(float(card["avg_seen"]), 2)
                 if card_name not in self.card_ratings:
                     self.card_ratings[card_name] = {"ratings" : [], "images" : images}
 
-                self.card_ratings[card_name]["ratings"].append({colors : {"gihwr" : gihwr, "iwd" : iwd, "alsa" : alsa, "gih" : gih}}) 
+                self.card_ratings[card_name]["ratings"].append({colors : {"gihwr" : gihwr, 
+                                                                          "iwd"   : iwd, 
+                                                                          "alsa"  : alsa, 
+                                                                          "gih"   : gih,
+                                                                          "ohwr"  : ohwr,
+                                                                          "ngoh"  : ngoh,
+                                                                          "gpwr"  : gpwr,
+                                                                          "ngp"   : ngp}}) 
             except Exception as error:
                 result = False
                 file_logger.info(f"Retrieve17Lands Error: {error}")
@@ -760,9 +778,13 @@ class FileExtractor:
                 for deck_color in deck_colors:
                     for key, value in deck_color.items():
                         card["deck_colors"][key] = {"gihwr" :  value["gihwr"], 
-                                                     "alsa" : value["alsa"],
-                                                     "iwd" : value["iwd"],
-                                                     "gih" : value["gih"]}
+                                                     "alsa" :  value["alsa"],
+                                                     "iwd"  :  value["iwd"],
+                                                     "gih"  :  value["gih"],
+                                                     "ohwr" :  value["ohwr"],
+                                                     "ngoh" :  value["ngoh"],
+                                                     "gpwr" :  value["gpwr"],
+                                                     "ngp"  :  value["ngp"]}
         except Exception as error:
             file_logger.info(f"ProcessCardRatings Error: {error}")
 
