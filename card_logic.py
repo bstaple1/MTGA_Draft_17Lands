@@ -20,6 +20,7 @@ class Config:
     column_2 : str=constants.COLUMN_2_DEFAULT
     column_3 : str=constants.COLUMN_3_DEFAULT
     column_4 : str=constants.COLUMN_4_DEFAULT
+    deck_filter : str=constants.DECK_FILTER_DEFAULT
     filter_format : str=constants.DECK_FILTER_FORMAT_COLORS
     result_format : str=constants.RESULT_FORMAT_WIN_RATE
     missing_enabled : bool=True
@@ -214,15 +215,15 @@ def ColorCmc(deck):
     
     return cmc_total, count, distribution
     
-def ColorFilter(deck, color_selection, configuration):
-    filtered_color_list = [color_selection]
+def OptionFilter(deck, option_selection, configuration):
+    filtered_color_list = [option_selection]
     try:
-        if color_selection == constants.FILTER_OPTION_AUTO:
+        if constants.FILTER_OPTION_AUTO in option_selection:
             filtered_color_list = AutoColors(deck, 2, configuration)
         else:
-            filtered_color_list = [color_selection]
+            filtered_color_list = [option_selection]
     except Exception as error:
-        logic_logger.info(f"ColorFilter Error: {error}")
+        logic_logger.info(f"OptionFilter Error: {error}")
     return filtered_color_list
     
 def DeckColors(deck, colors_max, configuration):
@@ -316,9 +317,9 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
             logic_logger.info(f"CalculateColorAffinity Error: {error}")
     return colors 
 
-def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curve_bonus, color_bonus):
+def CardFilter(card_list, deck, filtered_colors, fields,  limits, tier_list, configuration, curve_bonus, color_bonus):
     filtered_list = []
-    ratings_filter_dict = {"rating_filter_a" : filtered["filtered_a"], "rating_filter_b" : filtered["filtered_b"], "rating_filter_c" : filtered["filtered_c"]}
+    ratings_filter_dict = {"rating_filter_a" : fields["filtered_a"], "rating_filter_b" : fields["filtered_b"], "rating_filter_c" : fields["filtered_c"]}
     
     deck_colors = DeckColors(deck, 2, configuration)
     deck_colors = deck_colors.keys()
@@ -331,90 +332,38 @@ def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curv
             selected_card["rating_filter_c"] = 0.0
             selected_card["curve_bonus"] = []
             selected_card["color_bonus"] = []
-            selected_card["selected_color"] = ""
 
-            for key, value in ratings_filter_dict.items():
-                enable_curve_bonus = False
-                enable_color_bonus = False
-                #Only include the color and curve bonuses for filter c
-                if key == "rating_filter_c":
-                    enable_curve_bonus = curve_bonus
-                    enable_color_bonus = color_bonus
-                if len(value) == 1:
-                    if value[0] in constants.NON_COLORS_OPTIONS:
-                        colors = ratings_filter_dict["rating_filter_c"][0] if ratings_filter_dict["rating_filter_c"][0] in card["deck_colors"].keys() else constants.FILTER_OPTION_ALL_DECKS
-                        field = value[0]
-                        if field in constants.WIN_RATE_OPTIONS:
-                            count = constants.WIN_RATE_FIELDS_DICT[field]
-                            #selected_card[key] = CalculateWinRate(card["deck_colors"][deck_color][field.lower()],
-                            #                                      card["deck_colors"][deck_color][count],
-                            #                                      configuration.bayesian_average_enabled)
+            for key, option in ratings_filter_dict.items():
+               
+                for color in filtered_colors:
+                    if color in card["deck_colors"].keys():
+                        if constants.FILTER_OPTION_TIER in option:
+                            card_name = card["name"].split(" // ")
+                            selected_card[key] = tier_list[option]["ratings"][card_name[0]]
+                        elif (option in constants.WIN_RATE_OPTIONS) and (option.lower() in card["deck_colors"][color]):
+                            rated_colors = []
+                            #rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
                             rating_data = FormattedResult(card,
-                                                          field.lower(), 
-                                                          count,
+                                                          option.lower(), 
+                                                          constants.WIN_RATE_FIELDS_DICT[option],
                                                           limits, 
                                                           configuration, 
-                                                          colors, 
+                                                          color, 
                                                           deck, 
                                                           deck_colors, 
-                                                          enable_curve_bonus, 
-                                                          enable_color_bonus)
-                            selected_card[key] = rating_data["result"]
-                            
-                        else:
-                            selected_card[key] = card["deck_colors"][colors][field.lower()]
-                    elif constants.FILTER_OPTION_TIER in value[0]:
-                        card_name = card["name"].split(" // ")
-                        selected_card[key] = tier_list[value[0]]["ratings"][card_name[0]]
-                    else:
-                        for deck_color in card["deck_colors"].keys():
-                            if deck_color == value[0]:
-                                rating_data = FormattedResult(card, 
-                                                              constants.DATA_FIELD_GIHWR.lower(), 
-                                                              constants.WIN_RATE_FIELDS_DICT[constants.DATA_FIELD_GIHWR],
-                                                              limits, 
-                                                              configuration, 
-                                                              value[0], 
-                                                              deck, 
-                                                              deck_colors, 
-                                                              enable_color_bonus, 
-                                                              enable_color_bonus)
-                                selected_card[key] = rating_data["result"]
-                                if key == "rating_filter_c":
-                                    if "curve_bonus" in rating_data:
-                                        selected_card["curve_bonus"].append(rating_data["curve_bonus"])
-                                        
-                                    if "color_bonus" in rating_data:
-                                        selected_card["color_bonus"].append(rating_data["color_bonus"])
-                else:
-                    rated_colors = []
-                    
-                    for colors in value:
-                        rating_data = {"result" : 0}
-                        for deck_color in card["deck_colors"].keys():
-                            if deck_color == colors:
-                                #rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
-                                rating_data = FormattedResult(card,
-                                                              constants.DATA_FIELD_GIHWR.lower(), 
-                                                              constants.WIN_RATE_FIELDS_DICT[constants.DATA_FIELD_GIHWR],
-                                                              limits, 
-                                                              configuration, 
-                                                              colors, 
-                                                              deck, 
-                                                              deck_colors, 
-                                                              enable_curve_bonus, 
-                                                              enable_color_bonus)
-                                break
-                        rated_colors.append(rating_data["result"])
-                        if key == "rating_filter_c":
+                                                          curve_bonus, 
+                                                          color_bonus)
+
+                            rated_colors.append(rating_data["result"])
                             if "curve_bonus" in rating_data:
                                 selected_card["curve_bonus"].append(rating_data["curve_bonus"])
-                                        
                             if "color_bonus" in rating_data:
                                 selected_card["color_bonus"].append(rating_data["color_bonus"])
-                    if len(rated_colors):
-                        selected_card[key] = sorted(rated_colors, reverse = True)[0]
-                        #selected_card[key] = round(sum(rated_colors)/float(len(rated_colors)), 1) #Find the average of all of the ratings
+
+                            if len(rated_colors):
+                                selected_card[key] = sorted(rated_colors, reverse = True)[0]
+                        elif option.lower() in card["deck_colors"][color]:
+                            selected_card[key] = card["deck_colors"][color][option.lower()]
             filtered_list.append(selected_card)
         except Exception as error:
             logic_logger.info(f"CardFilter Error: {error}")
@@ -795,8 +744,8 @@ def SuggestDeck(taken_cards, limits, configuration):
     try:
         deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Calculate the base ratings
-        filtered = {"filtered_a" : [constants.FILTER_OPTION_ALL_DECKS], "filtered_b" : [constants.FILTER_OPTION_ALL_DECKS], "filtered_c" : [constants.FILTER_OPTION_ALL_DECKS]}
-        filtered_cards = CardFilter(taken_cards, taken_cards, filtered, limits, None, configuration, False, False)
+        fields = {"filtered_a" : constants.DATA_FIELD_GIHWR, "filtered_b" : constants.DATA_FIELD_GIHWR, "filtered_c" : constants.DATA_FIELD_GIHWR}
+        filtered_cards = CardFilter(taken_cards, taken_cards, [constants.FILTER_OPTION_ALL_DECKS], fields, limits, None, configuration, False, False)
         #Identify the top color combinations
         colors = DeckColors(taken_cards, colors_max, configuration)
         colors = colors.keys()
@@ -844,8 +793,8 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
     sideboard_list = cards[:] #Copy by value
     try:
         #filter cards using the correct deck's colors
-        filtered = {"filtered_a" : [color], "filtered_b" : [color], "filtered_c" : [color]}
-        filtered_cards = CardFilter(cards, cards, filtered, limits, None, configuration, False, False)
+        fields = {"filtered_a" : constants.DATA_FIELD_GIHWR, "filtered_b" : constants.DATA_FIELD_GIHWR, "filtered_c" : constants.DATA_FIELD_GIHWR}
+        filtered_cards = CardFilter(cards, cards, [color], fields, limits, None, configuration, False, False)
         
         #identify a splashable color
         color +=(ColorSplash(filtered_cards, color, configuration))
@@ -946,6 +895,7 @@ def ReadConfig():
         config.images_enabled = config_data["features"]["images_enabled"]
         config.database_size = config_data["card_data"]["database_size"]
         config.table_width = int(config_data["settings"]["table_width"])
+        config.deck_filter = config_data["settings"]["deck_filter"]
         config.column_2 = config_data["settings"]["column_2"]
         config.column_3 = config_data["settings"]["column_3"]
         config.column_4 = config_data["settings"]["column_4"]
@@ -973,6 +923,7 @@ def WriteConfig(config):
         config_data["settings"]["column_2"] = config.column_2
         config_data["settings"]["column_3"] = config.column_3
         config_data["settings"]["column_4"] = config.column_4
+        config_data["settings"]["deck_filter"] = config.deck_filter
         config_data["settings"]["filter_format"] = config.filter_format
         config_data["settings"]["result_format"] = config.result_format
         config_data["settings"]["missing_enabled"] = config.missing_enabled
@@ -1007,6 +958,7 @@ def ResetConfig():
         data["settings"]["column_2"] = config.column_2
         data["settings"]["column_3"] = config.column_3
         data["settings"]["column_4"] = config.column_4
+        data["settings"]["deck_filter"] = config.deck_filter
         data["settings"]["filter_format"] = config.filter_format
         data["settings"]["result_format"] = config.result_format
         data["settings"]["missing_enabled"] = config.missing_enabled
