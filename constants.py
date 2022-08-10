@@ -148,6 +148,8 @@ SET_LIST_17LANDS = "17Lands"
 
 SUPPORTED_SET_TYPES = [SET_TYPE_EXPANSION, SET_TYPE_ALCHEMY, SET_TYPE_MASTERS]
 
+TABLE_STYLE = "Treeview"
+
 DEBUG_LOG_FOLDER = os.path.join(os.getcwd(), "Debug")
 DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
 

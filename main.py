@@ -176,7 +176,31 @@ def CopyClipboard(copy):
         ui_logger.info(f"CopyClipboard Error: {error}")
     return 
     
+def CreateHeader(frame, height, headers, total_width, include_header, table_style):
+    header_labels = tuple(headers.keys())
+    show_header = "headings" if include_header else ""
+    list_box = Treeview(frame, columns = header_labels, show = show_header, style = table_style)
+    list_box.config(height=height)
 
+    try:
+        list_box.tag_configure("darkgrey", background="#808080")
+        list_box.tag_configure("custombold", font=("Cascadia Bold", 7))
+        list_box.tag_configure("customfont", font=("Cascadia", 7))
+        list_box.tag_configure("tt_white", font=("Cascadia", 9), background = "#FFFFFF", foreground = "#000000")
+        list_box.tag_configure("tt_black", font=("Cascadia", 9), background = "#BFBFBF", foreground = "#000000")
+        list_box.tag_configure("whitecard", font=("Cascadia", 7, "bold"), background = "#FFFFFF", foreground = "#000000")
+        list_box.tag_configure("redcard", font=("Cascadia", 7, "bold"), background = "#FF6C6C", foreground = "#000000")
+        list_box.tag_configure("bluecard", font=("Cascadia", 7, "bold"), background = "#6078F3", foreground = "#000000")
+        list_box.tag_configure("blackcard", font=("Cascadia", 7, "bold"), background = "#BFBFBF", foreground = "#000000")
+        list_box.tag_configure("greencard", font=("Cascadia", 7, "bold"), background = "#60DC68", foreground = "#000000")
+        list_box.tag_configure("goldcard", font=("Cascadia", 7, "bold"), background = "#F0E657", foreground = "#000000")
+        for column in header_labels:
+            list_box.column(column, stretch = NO, anchor = headers[column]["anchor"], width = int(headers[column]["width"] * total_width))
+            list_box.heading(column, text = column, anchor = CENTER)
+        list_box["show"] = show_header  # use after setting column's size
+    except Exception as error:
+        ui_logger.info(f"CreateHeader Error: {error}")
+    return list_box
         
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
@@ -283,14 +307,17 @@ class WindowUI:
                   "FilterA"  : {"width" : .18, "anchor" : CENTER},
                   "FilterB"  : {"width" : .18, "anchor" : CENTER},
                   "FilterC"  : {"width" : .18, "anchor" : CENTER}}
-        self.pack_table = self.CreateHeader(self.pack_table_frame, 0, headers, self.configuration.table_width)
+        style = Style() 
+        style.configure("Treeview.Heading", font=("Cascadia", 7))          
+                  
+        self.pack_table = CreateHeader(self.pack_table_frame, 0, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
         
         self.missing_frame = Frame(self.root)
         self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font='Helvetica 9 bold')
        
         self.missing_table_frame = Frame(self.root, width=10)
 
-        self.missing_table = self.CreateHeader(self.missing_table_frame, 0, headers, self.configuration.table_width)
+        self.missing_table = CreateHeader(self.missing_table_frame, 0, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
         
         self.stat_frame = Frame(self.root)
         stat_header = {"Colors"   : {"width" : .19, "anchor" : W},
@@ -301,7 +328,7 @@ class WindowUI:
                        "5"        : {"width" : .11, "anchor" : CENTER},
                        "6+"       : {"width" : .11, "anchor" : CENTER},
                        "Total"    : {"width" : .15, "anchor" : CENTER}}
-        self.stat_table = self.CreateHeader(self.root, 0, stat_header, self.configuration.table_width)
+        self.stat_table = CreateHeader(self.root, 0, stat_header, self.configuration.table_width, True, constants.TABLE_STYLE)
         self.stat_label = Label(self.stat_frame, text = "Deck Stats:", font='Helvetica 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
@@ -351,30 +378,6 @@ class WindowUI:
         self.root.attributes("-topmost", True)
 
         self.VersionCheck()
-
-    def CreateHeader(self, frame, height, headers, total_width):
-        header_labels = tuple(headers.keys())
-        list_box = Treeview(frame, columns = header_labels, show = 'headings')
-        list_box.config(height=height)
-        style = Style() 
-        style.configure("Treeview.Heading", font=("Cascadia", 7))
-        try:
-            list_box.tag_configure("darkgrey", background="#808080")
-            list_box.tag_configure("custombold", font=("Cascadia Bold", 7))
-            list_box.tag_configure("customfont", font=("Cascadia", 7))
-            list_box.tag_configure("whitecard", font=("Cascadia", 7, "bold"), background = "#FFFFFF", foreground = "#000000")
-            list_box.tag_configure("redcard", font=("Cascadia", 7, "bold"), background = "#FF6C6C", foreground = "#000000")
-            list_box.tag_configure("bluecard", font=("Cascadia", 7, "bold"), background = "#6078F3", foreground = "#000000")
-            list_box.tag_configure("blackcard", font=("Cascadia", 7, "bold"), background = "#BFBFBF", foreground = "#000000")
-            list_box.tag_configure("greencard", font=("Cascadia", 7, "bold"), background = "#60DC68", foreground = "#000000")
-            list_box.tag_configure("goldcard", font=("Cascadia", 7, "bold"), background = "#F0E657", foreground = "#000000")
-            for count, column in enumerate(header_labels):
-                list_box.column(column, stretch = NO, anchor = headers[column]["anchor"], width = int(headers[column]["width"] * total_width))
-                list_box.heading(column, text = column, anchor = CENTER)
-            list_box["show"] = "headings"  # use after setting column's size
-        except Exception as error:
-            ui_logger.info(f"CreateHeader Error: {error}")
-        return list_box
 
     def UpdatePackTable(self, card_list, taken_cards, filtered):
         try:
@@ -952,7 +955,7 @@ class WindowUI:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = self.CreateHeader(compare_table_frame, 20, headers, self.configuration.table_width)
+            compare_table = CreateHeader(compare_table_frame, 20, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -1000,7 +1003,7 @@ class WindowUI:
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            taken_table = self.CreateHeader(taken_table_frame, 20, headers, self.configuration.table_width)
+            taken_table = CreateHeader(taken_table_frame, 20, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
             taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=taken_table.yview)
             
@@ -1060,7 +1063,7 @@ class WindowUI:
             suggest_table_frame = Frame(popup)
             suggest_scrollbar = Scrollbar(suggest_table_frame, orient=VERTICAL)
             suggest_scrollbar.pack(side=RIGHT, fill=Y)
-            suggest_table = self.CreateHeader(suggest_table_frame, 20, headers, 380)
+            suggest_table = CreateHeader(suggest_table_frame, 20, headers, 380, True, constants.TABLE_STYLE)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
             
@@ -1481,24 +1484,78 @@ class CreateCardToolTip(object):
    
             tt_frame = Frame(self.tw, borderwidth=5,relief="solid")
 
-            card_label = Label(tt_frame, text=self.card_name, font=("Consolas", 15, "bold"),)
+            Grid.rowconfigure(tt_frame, 2, weight = 1)
 
-            filter_label = Label(tt_frame, justify="left", text="Filter:", font=("Consolas", 10, "bold"), anchor="w")
-            filter_value = Label(tt_frame, text="/".join(self.color_dict.keys()), font=("Consolas", 10))
-
-            alsa_values = [str(x['alsa']) for x in self.color_dict.values()]
-            alsa_label = Label(tt_frame, justify="left", text="Average Last Seen At:", font=("Consolas", 10, "bold"),anchor="w")
-            alsa_value = Label(tt_frame, text="/".join(alsa_values), font=("Consolas", 10))
+            card_label = Label(tt_frame, text=self.card_name, font=("Cascadia", 15, "bold", ),relief="groove",anchor="c",)
             
-            iwd_values = [str(x['iwd']) for x in self.color_dict.values()]
-            iwd_label = Label(tt_frame, text="Improvement When Drawn:", font=("Consolas", 10, "bold"), anchor="w")
-            iwd_value = Label(tt_frame, text="/".join(iwd_values) + "pp", font=("Consolas", 10))
-
-            gihwr_values = [str(x['gihwr']) for x in self.color_dict.values()]
-            gihwr_label = Label(tt_frame, text="Games In Hand Win Rate:", font=("Consolas", 10, "bold"),anchor="w")
-            gihwr_value = Label(tt_frame, text="/".join(gihwr_values)+ "%", font=("Consolas", 10))
+            if len(self.color_dict) == 2:
+                headers = {"Label"    : {"width" : .70, "anchor" : W},
+                           "Value1"   : {"width" : .15, "anchor" : CENTER},
+                           "Value2"   : {"width" : .15, "anchor" : CENTER}}
+                width = 400
+            else:
+                headers = {"Label"    : {"width"  : .80, "anchor" : W},
+                           "Value1"    : {"width" : .20, "anchor" : CENTER}}
+                width = 340
                 
-            index = 0
+            style = Style() 
+            style.configure("Tooltip.Treeview", rowheight=25)      
+            
+            stats_main_table = CreateHeader(tt_frame, 0, headers, width, False, "Tooltip.Treeview")
+            main_field_list = []
+            
+            stats_count_table = CreateHeader(tt_frame, 0, headers, width, False, "Tooltip.Treeview")
+            count_field_list = []
+            
+            bonus_table = CreateHeader(tt_frame, 0, headers, width, False, "Tooltip.Treeview")
+            bonus_field_list = []
+            
+            values = ["Filter:"] + list(self.color_dict.keys())
+            main_field_list.append(tuple(values))
+            
+            values = ["Average Last Seen At:"] + [f"{x['alsa']}" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            values = ["Improvement When Drawn:"] + [f"{x['iwd']}pp" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            values = ["Games In Hand Win Rate:"] + [f"{x['gihwr']}%" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            if any("ohwr" in x for x in self.color_dict.values()):
+                values = ["Opening Hand Win Rate:"] + [f"{x['ohwr']}%" for x in self.color_dict.values()]
+                main_field_list.append(tuple(values))
+
+            if any("gpwr" in x for x in self.color_dict.values()):
+                values = ["Games Played Win Rate:"] + [f"{x['gpwr']}%" for x in self.color_dict.values()]
+                main_field_list.append(tuple(values))
+            
+            if any("gih" in x for x in self.color_dict.values()):
+                values = ["Number of Games In Hand:"] + [f"{x['gih']}" for x in self.color_dict.values()]
+                count_field_list.append(tuple(values))
+                
+            if any("ngoh" in x for x in self.color_dict.values()):
+                values = ["Number of Games in Opening Hand:"] + [f"{x['ngoh']}" for x in self.color_dict.values()]
+                count_field_list.append(tuple(values))
+                
+            if any("ngp" in x for x in self.color_dict.values()):
+                values = ["Number of Games Played:"] + [f"{x['ngp']}" for x in self.color_dict.values()]
+                count_field_list.append(tuple(values))
+                
+            if any("curve_bonus" in x for x in self.color_dict.values()):
+                values = ["Curve Bonus:"] + [f"+{x['curve_bonus']}" for x in self.color_dict.values()]
+                bonus_field_list.append(tuple(values))
+                
+            if any("color_bonus" in x for x in self.color_dict.values()):
+                values = ["Color Bonus:"] + [f"+{x['color_bonus']}" for x in self.color_dict.values()]
+                bonus_field_list.append(tuple(values))
+
+
+            if len(main_field_list):
+                stats_main_table.config(height = len(main_field_list) + 1)
+            else:
+                stats_main_table.config(height=1)
+
             column_offset = 0
             #Add scryfall image
             if self.images_enabled:
@@ -1512,84 +1569,32 @@ class CreateCardToolTip(object):
                         im.thumbnail(size, Image.ANTIALIAS)
                         image = ImageTk.PhotoImage(im)
                         image_label = Label(tt_frame, image=image)
-                        image_label.grid(column=count, row=1, columnspan=1, rowspan=15)
+                        image_label.grid(column=count, row=1, columnspan=1, rowspan=3)
                         self.images.append(image)
                         column_offset += 1
-
-            card_label.grid(column=0, row=0, columnspan=column_offset + 2)
-            index += 2
-            filter_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-            filter_value.grid(column=column_offset + 1, row=index, columnspan=1)
-            index += 1
-            alsa_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-            alsa_value.grid(column=column_offset + 1, row=index, columnspan=1)
-            index += 1
-            iwd_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-            iwd_value.grid(column=column_offset + 1, row=index, columnspan=1)
-            index += 1
-            gihwr_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-            gihwr_value.grid(column=column_offset + 1, row=index, columnspan=1)
-            index += 1
-
-            if any("gih" in x for x in self.color_dict.values()):
-                gih_values = [str(x['gih']) for x in self.color_dict.values()]
-                gih_label = Label(tt_frame, text="Number of Games In Hand:", font=("Consolas", 10, "bold"))
-                gih_value = Label(tt_frame, text="/".join(gih_values), font=("Consolas", 10))    
-                gih_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                gih_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1
-
-            if any("ohwr" in x for x in self.color_dict.values()):
-                ohwr_values = [str(x['ohwr']) for x in self.color_dict.values()]
-                ohwr_label = Label(tt_frame, text="Opening Hand Win Rate:", font=("Consolas", 10, "bold"))
-                ohwr_value = Label(tt_frame, text="/".join(ohwr_values) + "%", font=("Consolas", 10))    
-                ohwr_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                ohwr_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1   
-
-            if any("ngoh" in x for x in self.color_dict.values()):
-                ngoh_values = [str(x['ngoh']) for x in self.color_dict.values()]
-                ngoh_label = Label(tt_frame, text="Number of Games in Opening Hand:", font=("Consolas", 10, "bold"))
-                ngoh_value = Label(tt_frame, text="/".join(ngoh_values), font=("Consolas", 10))    
-                ngoh_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                ngoh_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1    
-
-            if any("gpwr" in x for x in self.color_dict.values()):
-                gpwr_values = [str(x['gpwr']) for x in self.color_dict.values()]
-                gpwr_label = Label(tt_frame, text="Games Played Win Rate:", font=("Consolas", 10, "bold"))
-                gpwr_value = Label(tt_frame, text="/".join(gpwr_values) + "%", font=("Consolas", 10))    
-                gpwr_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                gpwr_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1  
-
-            if any("ngp" in x for x in self.color_dict.values()):
-                ngp_values = [str(x['ngp']) for x in self.color_dict.values()]
-                ngp_label = Label(tt_frame, text="Number of Games Played:", font=("Consolas", 10, "bold"))
-                ngp_value = Label(tt_frame, text="/".join(ngp_values), font=("Consolas", 10))    
-                ngp_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                ngp_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1  
             
-            if any("curve_bonus" in x for x in self.color_dict.values()):
-                curve_bonus_values = [str(x['curve_bonus']) for x in self.color_dict.values()]
-                curve_bonus_label = Label(tt_frame, text="Curve Bonus:", font=("Consolas", 10, "bold"))
-                curve_bonus_value = Label(tt_frame, text="+" + "/".join(curve_bonus_values), font=("Consolas", 10))
-                curve_bonus_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                curve_bonus_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1
+            card_label.grid(column=0, row=0, columnspan=column_offset + 2, sticky=NSEW)
+
+            for count, row_values in enumerate(main_field_list):
+                row_tag = "tt_black" if count % 2 else "tt_white"
+                stats_main_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
+
+            stats_main_table.grid(row = 1, column = column_offset, sticky=NSEW)
+
+            for count, row_values in enumerate(count_field_list):
+                row_tag = "tt_black" if count % 2 else "tt_white"
+                stats_count_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
+
+            stats_count_table.grid(row = 2, column = column_offset, sticky=NSEW)
+
+            if bonus_field_list:
+                for count, row_values in enumerate(bonus_field_list):
+                    row_tag = "tt_black" if count % 2 else "tt_white"
+                    bonus_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
+                Grid.rowconfigure(tt_frame, 3, weight = 1)
+                bonus_table.grid(row = 3, column = column_offset, sticky=NSEW)
                 
-            if any("color_bonus" in x for x in self.color_dict.values()):
-                color_bonus_values = [str(x['color_bonus']) for x in self.color_dict.values()]
-                color_bonus_label = Label(tt_frame, text="Color Bonus:", font=("Consolas", 10, "bold"))
-                color_bonus_value = Label(tt_frame, text="+" + "/".join(color_bonus_values), font=("Consolas", 10))
-                color_bonus_label.grid(column=column_offset, row=index, columnspan=1, sticky=W)
-                color_bonus_value.grid(column=column_offset + 1, row=index, columnspan=1)
-                index += 1
-
-
             tt_frame.pack()
-            
             
             self.tw.attributes("-topmost", True)
         except Exception as error:

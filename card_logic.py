@@ -498,15 +498,21 @@ def CardRating(card_data, winrate_field, winrate_count, limits, configuration, f
             
         if "lower" in limits:
             lower_limit = limits["lower"]
+
+        if (enable_curve_bonus) and (filter != constants.FILTER_OPTION_ALL_DECKS):
+            rating_data["curve_bonus"] = 0.0
+
+        if (enable_color_bonus) and (filter == constants.FILTER_OPTION_ALL_DECKS):
+            rating_data["color_bonus"] = 0.0
         
         if (gihwr != 0) and (upper_limit != lower_limit):
             #Curve bonus
             pick_number = len(deck)
-            if (enable_curve_bonus) and (filter != constants.FILTER_OPTION_ALL_DECKS):
+            if "curve_bonus" in rating_data:
                 rating_data["curve_bonus"] = CurveBonus(deck, card_data, pick_number, filter, configuration)
                 
             #Color bonus
-            if (enable_color_bonus) and (filter == constants.FILTER_OPTION_ALL_DECKS):
+            if "color_bonus" in rating_data:
                 rating_data["color_bonus"] = ColorBonus(deck, deck_colors, card_data, configuration.bayesian_average_enabled)
         
             #Calculate the ALSA bonus
