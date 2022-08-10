@@ -46,7 +46,10 @@ TIER_FILE_PREFIX = "Tier_"
 
 DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
 
-DRAFT_START_STRING = "[UnityCrossThreadLogger]==> Event_Join "
+DRAFT_START_STRING_EVENT_JOIN = "[UnityCrossThreadLogger]==> Event_Join "
+DRAFT_START_STRING_BOT_DRAFT = "[UnityCrossThreadLogger]==> BotDraft_DraftStatus "
+
+DRAFT_START_STRINGS = [DRAFT_START_STRING_EVENT_JOIN, DRAFT_START_STRING_BOT_DRAFT]
 
 DATA_SOURCES_NONE = {"None" : ""}
 

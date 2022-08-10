@@ -107,12 +107,13 @@ class ArenaScanner:
                     if not line:
                         break
                     offset = log.tell()
-                    if constants.DRAFT_START_STRING in line:
-                        self.search_offset = offset
-                        string_offset = line.find(constants.DRAFT_START_STRING)
-                        event_data = json.loads(line[string_offset + len(constants.DRAFT_START_STRING):])
-                        update, event_type = self.DraftStartSearchV1(event_data)
-                        event_line = line
+                    for start_string in constants.DRAFT_START_STRINGS:
+                        if start_string in line:
+                            self.search_offset = offset
+                            string_offset = line.find(start_string)
+                            event_data = json.loads(line[string_offset + len(start_string):])
+                            update, event_type = self.DraftStartSearchV1(event_data)
+                            event_line = line
                         
 
             if update:

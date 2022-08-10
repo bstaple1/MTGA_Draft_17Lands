@@ -142,21 +142,21 @@ def TableFilterOptions(table, filter_a, filter_b, filter_c):
         else: #Multi-color filters
             table.heading(key, text = "/".join(value))
 
-def CopySuggested(deck_colors, deck, set_data, color_options, set):
+def CopySuggested(deck_colors, deck, set_data, color_options):
     colors = color_options[deck_colors.get()]
     deck_string = ""
     try:
-        deck_string = CL.CopyDeck(deck[colors]["deck_cards"],deck[colors]["sideboard_cards"],set_data["card_ratings"], set)
+        deck_string = CL.CopyDeck(deck[colors]["deck_cards"],deck[colors]["sideboard_cards"],set_data["card_ratings"])
         CopyClipboard(deck_string)
     except Exception as error:
         ui_logger.info(f"CopySuggested Error: {error}")
     return 
     
-def CopyTaken(taken_cards, set_data, set, color):
+def CopyTaken(taken_cards, set_data, color):
     deck_string = ""
     try:
         stacked_cards = CL.StackCards(taken_cards, color)
-        deck_string = CL.CopyDeck(stacked_cards, None, set_data["card_ratings"], set)
+        deck_string = CL.CopyDeck(stacked_cards, None, set_data["card_ratings"])
         CopyClipboard(deck_string)
 
     except Exception as error:
@@ -990,7 +990,6 @@ class WindowUI:
             
             copy_button = Button(popup, command=lambda:CopyTaken(taken_cards,
                                                                  self.draft.set_data,
-                                                                 self.draft.draft_set,
                                                                  filtered["filtered_c"]),
                                                                  text="Copy to Clipboard")
             
@@ -1050,8 +1049,7 @@ class WindowUI:
             copy_button = Button(popup, command=lambda:CopySuggested(deck_colors_value,
                                                                      suggested_decks,
                                                                      self.draft.set_data,
-                                                                     deck_color_options,
-                                                                     self.draft.draft_set),
+                                                                     deck_color_options),
                                                                      text="Copy to Clipboard")
             
             headers = {"Card"  : {"width" : .40, "anchor" : W},
@@ -1299,7 +1297,7 @@ class WindowUI:
                                     color_dict[color]["ngoh"] = card["deck_colors"][color]["ngoh"]
 
                                 if ("gpwr" in card["deck_colors"][color]) and ("ngp" in card["deck_colors"][color]):
-                                    gpwr = CL.CalculateWinRate(card["deck_colors"][color]["ohwr"],
+                                    gpwr = CL.CalculateWinRate(card["deck_colors"][color]["gpwr"],
                                                                 card["deck_colors"][color]["ngp"],
                                                                 self.configuration.bayesian_average_enabled)
                                     color_dict[color]["gpwr"] = gpwr

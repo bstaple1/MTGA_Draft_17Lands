@@ -342,23 +342,43 @@ def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curv
                     enable_color_bonus = color_bonus
                 if len(value) == 1:
                     if value[0] in constants.NON_COLORS_OPTIONS:
-                        deck_color = ratings_filter_dict["rating_filter_c"][0] if ratings_filter_dict["rating_filter_c"][0] in card["deck_colors"].keys() else constants.FILTER_OPTION_ALL_DECKS
+                        colors = ratings_filter_dict["rating_filter_c"][0] if ratings_filter_dict["rating_filter_c"][0] in card["deck_colors"].keys() else constants.FILTER_OPTION_ALL_DECKS
                         field = value[0]
                         if field in constants.WIN_RATE_OPTIONS:
                             count = constants.WIN_RATE_FIELDS_DICT[field]
-                            selected_card[key] = CalculateWinRate(card["deck_colors"][deck_color][field.lower()],
-                                                                  card["deck_colors"][deck_color][count],
-                                                                  configuration.bayesian_average_enabled)
+                            #selected_card[key] = CalculateWinRate(card["deck_colors"][deck_color][field.lower()],
+                            #                                      card["deck_colors"][deck_color][count],
+                            #                                      configuration.bayesian_average_enabled)
+                            rating_data = FormattedResult(card,
+                                                          field.lower(), 
+                                                          count,
+                                                          limits, 
+                                                          configuration, 
+                                                          colors, 
+                                                          deck, 
+                                                          deck_colors, 
+                                                          enable_curve_bonus, 
+                                                          enable_color_bonus)
+                            selected_card[key] = rating_data["result"]
                             
                         else:
-                            selected_card[key] = card["deck_colors"][deck_color][field.lower()]
+                            selected_card[key] = card["deck_colors"][colors][field.lower()]
                     elif constants.FILTER_OPTION_TIER in value[0]:
                         card_name = card["name"].split(" // ")
                         selected_card[key] = tier_list[value[0]]["ratings"][card_name[0]]
                     else:
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == value[0]:
-                                rating_data = FormattedResult(card, limits, configuration, value[0], deck, deck_colors, enable_color_bonus, enable_color_bonus)
+                                rating_data = FormattedResult(card, 
+                                                              constants.DATA_FIELD_GIHWR.lower(), 
+                                                              constants.WIN_RATE_FIELDS_DICT[constants.DATA_FIELD_GIHWR],
+                                                              limits, 
+                                                              configuration, 
+                                                              value[0], 
+                                                              deck, 
+                                                              deck_colors, 
+                                                              enable_color_bonus, 
+                                                              enable_color_bonus)
                                 selected_card[key] = rating_data["result"]
                                 if key == "rating_filter_c":
                                     if "curve_bonus" in rating_data:
@@ -374,7 +394,16 @@ def CardFilter(card_list, deck, filtered, limits, tier_list, configuration, curv
                         for deck_color in card["deck_colors"].keys():
                             if deck_color == colors:
                                 #rating_data = CardRating(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
-                                rating_data = FormattedResult(card, limits, configuration, colors, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
+                                rating_data = FormattedResult(card,
+                                                              constants.DATA_FIELD_GIHWR.lower(), 
+                                                              constants.WIN_RATE_FIELDS_DICT[constants.DATA_FIELD_GIHWR],
+                                                              limits, 
+                                                              configuration, 
+                                                              colors, 
+                                                              deck, 
+                                                              deck_colors, 
+                                                              enable_curve_bonus, 
+                                                              enable_color_bonus)
                                 break
                         rated_colors.append(rating_data["result"])
                         if key == "rating_filter_c":
@@ -444,22 +473,23 @@ def CalculateWinRate(winrate, count, bayesian_enabled):
         logic_logger.info(f"CalculateWinRate Error: {error}")
     return calculated_winrate
     
-def FormattedResult(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
+def FormattedResult(card_data, winrate_field, winrate_count, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
     rating_data = {"result" : 0}
     #Produce a result that matches the Result Format setting
     if configuration.result_format == constants.RESULT_FORMAT_RATING:
-        rating_data = CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
+        rating_data = CardRating(card_data, winrate_field, winrate_count, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus)
     else:
-        rating_data["result"] = CalculateWinRate(card_data["deck_colors"][filter]["gihwr"],
-                                                 card_data["deck_colors"][filter]["gih"],
+        rating_data["result"] = CalculateWinRate(card_data["deck_colors"][filter][winrate_field],
+                                                 card_data["deck_colors"][filter][winrate_count],
                                                  configuration.bayesian_average_enabled)
         
     return rating_data
-def CardRating(card_data, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
+    
+def CardRating(card_data, winrate_field, winrate_count, limits, configuration, filter, deck, deck_colors, enable_curve_bonus, enable_color_bonus):
     rating_data = {"result" : 0}
     try:
-        gihwr = CalculateWinRate(card_data["deck_colors"][filter]["gihwr"],
-                                 card_data["deck_colors"][filter]["gih"],
+        gihwr = CalculateWinRate(card_data["deck_colors"][filter][winrate_field],
+                                 card_data["deck_colors"][filter][winrate_count],
                                  configuration.bayesian_average_enabled)
         upper_limit = 0
         lower_limit = 0
@@ -610,7 +640,7 @@ def DeckRating(deck, deck_type, color, bayesian_enabled):
     
     return rating
     
-def CopyDeck(deck, sideboard, set_cards, set):
+def CopyDeck(deck, sideboard, set_cards):
     deck_copy = ""
     starting_index = 0
     total_deck = len(deck)
@@ -619,34 +649,15 @@ def CopyDeck(deck, sideboard, set_cards, set):
     try:
         #Copy Deck
         deck_copy = "Deck\n"
-        starting_index = min(set_cards.keys())
         #identify the arena_id for the cards
         for card in deck:
-            for index, set_card in enumerate(set_cards):
-                if card["name"] in basic_lands:
-                    deck_copy += ("%d %s\n" % (card["count"],card["name"]))
-                    card_count += 1
-                    break;
-                elif set_cards[set_card]["name"] == card["name"]:
-                    deck_copy += ("%d %s (%s) %d\n" % (card["count"],card["name"],set, (index + 1)))
-                    card_count += 1
-                    break
+            deck_copy += ("%d %s\n" % (card["count"],card["name"]))
         
         #Copy sideboard
         if sideboard != None:
-            deck_copy += "\n"
-            starting_index = min(set_cards.keys())
-            #identify the arena_id for the cards
+            deck_copy += "\nSideboard\n"
             for card in sideboard:
-                for index, set_card in enumerate(set_cards):
-                    if card["name"] in basic_lands:
-                        deck_copy += ("%d %s\n" % (card["count"],card["name"]))
-                        card_count += 1
-                        break;
-                    elif set_cards[set_card]["name"] == card["name"]:
-                        deck_copy += ("%d %s (%s) %d\n" % (card["count"],card["name"],set, (index + 1)))
-                        card_count += 1
-                        break
+                deck_copy += ("%d %s\n" % (card["count"],card["name"]))
         
     except Exception as error:
         logic_logger.info(f"CopyDeck Error: {error}")
