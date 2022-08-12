@@ -131,7 +131,7 @@ def TableFilterOptions(table, filter_a, filter_b, filter_c):
     filter_dict = {"FilterA" : filter_a, "FilterB" : filter_b, "FilterC" : filter_c}
     
     for key, value in filter_dict.items():
-        table.heading(key, text = value)
+        table.heading(key, text = value.upper())
 
 def CopySuggested(deck_colors, deck, set_data, color_options):
     colors = color_options[deck_colors.get()]
@@ -143,10 +143,10 @@ def CopySuggested(deck_colors, deck, set_data, color_options):
         ui_logger.info(f"CopySuggested Error: {error}")
     return 
     
-def CopyTaken(taken_cards, set_data, color):
+def CopyTaken(taken_cards, set_data):
     deck_string = ""
     try:
-        stacked_cards = CL.StackCards(taken_cards, color)
+        stacked_cards = CL.StackCards(taken_cards)
         deck_string = CL.CopyDeck(stacked_cards, None, set_data["card_ratings"])
         CopyClipboard(deck_string)
 
@@ -167,7 +167,7 @@ def CopyClipboard(copy):
         ui_logger.info(f"CopyClipboard Error: {error}")
     return 
     
-def CreateHeader(frame, height, headers, total_width, include_header, table_style):
+def CreateHeader(frame, height, headers, total_width, include_header, fixed_width, table_style):
     header_labels = tuple(headers.keys())
     show_header = "headings" if include_header else ""
     list_box = Treeview(frame, columns = header_labels, show = show_header, style = table_style)
@@ -179,6 +179,8 @@ def CreateHeader(frame, height, headers, total_width, include_header, table_styl
         list_box.tag_configure("customfont", font=("Cascadia", 7))
         list_box.tag_configure("tt_white", font=("Cascadia", 9), background = "#FFFFFF", foreground = "#000000")
         list_box.tag_configure("tt_black", font=("Cascadia", 9), background = "#BFBFBF", foreground = "#000000")
+        list_box.tag_configure("taken_odd", font=("Helvetica Neue", 9), background = "#3d3d3d", foreground = "#e6ecec")
+        list_box.tag_configure("taken_even", font=("Helvetica Neue", 9), background = "#333333", foreground = "#e6ecec")
         list_box.tag_configure("whitecard", font=("Cascadia", 7, "bold"), background = "#FFFFFF", foreground = "#000000")
         list_box.tag_configure("redcard", font=("Cascadia", 7, "bold"), background = "#FF6C6C", foreground = "#000000")
         list_box.tag_configure("bluecard", font=("Cascadia", 7, "bold"), background = "#6078F3", foreground = "#000000")
@@ -186,13 +188,28 @@ def CreateHeader(frame, height, headers, total_width, include_header, table_styl
         list_box.tag_configure("greencard", font=("Cascadia", 7, "bold"), background = "#60DC68", foreground = "#000000")
         list_box.tag_configure("goldcard", font=("Cascadia", 7, "bold"), background = "#F0E657", foreground = "#000000")
         for column in header_labels:
-            list_box.column(column, stretch = NO, anchor = headers[column]["anchor"], width = int(headers[column]["width"] * total_width))
-            list_box.heading(column, text = column, anchor = CENTER)
+            if fixed_width:
+                list_box.column(column, stretch = NO, anchor = headers[column]["anchor"], width = int(headers[column]["width"] * total_width))
+            else:
+                list_box.column(column, stretch = NO, anchor = headers[column]["anchor"])
+            list_box.heading(column, text = column, anchor = CENTER, command=lambda _col=column: TableColumnSort(list_box, _col, False))
         list_box["show"] = show_header  # use after setting column's size
     except Exception as error:
         ui_logger.info(f"CreateHeader Error: {error}")
     return list_box
         
+def TableColumnSort(table, column, reverse):
+    try:
+        row_list = [(float(table.set(k, column)), k) for k in table.get_children('')]
+    except ValueError:
+        row_list = [(table.set(k, column), k) for k in table.get_children('')]
+    row_list.sort(reverse=reverse)
+
+    for index, (value, k) in enumerate(row_list):
+        table.move(k, "", index)
+
+    table.heading(column, command=lambda: TableColumnSort(table, column, not reverse))
+
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
         self.root = root
@@ -207,6 +224,7 @@ class WindowUI:
         
         self.deck_limits = {}
         self.tier_data = {}
+        self.options_dict = constants.COLUMNS_OPTIONS_DICT
         self.deck_colors = self.draft.RetrieveColorWinRate(configuration.filter_format)
         self.data_sources = self.draft.RetrieveDataSources()
         self.tier_sources = self.draft.RetrieveTierSource()
@@ -263,17 +281,17 @@ class WindowUI:
         self.bayesian_average_checkbox_value = IntVar(self.root)
         self.draft_log_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
-        self.column_2_list = constants.COLUMN_OPTIONS
+        self.column_2_list = self.options_dict.keys()
         self.column_3_selection = StringVar(self.root)
-        self.column_3_list = constants.COLUMN_OPTIONS
+        self.column_3_list = self.options_dict.keys()
         self.column_4_selection = StringVar(self.root)
-        self.column_4_list = constants.COLUMN_OPTIONS
+        self.column_4_list = self.options_dict.keys()
         self.filter_format_selection = StringVar(self.root)
         self.filter_format_list = constants.DECK_FILTER_FORMAT_LIST
         self.result_format_selection = StringVar(self.root)
         self.result_format_list = constants.RESULT_FORMAT_LIST
         self.deck_filter_selection = StringVar(self.root)
-        self.deck_filter_list = self.deck_colors
+        self.deck_filter_list = self.deck_colors.keys()
 
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
@@ -303,14 +321,14 @@ class WindowUI:
         style = Style() 
         style.configure("Treeview.Heading", font=("Cascadia", 7))          
                   
-        self.pack_table = CreateHeader(self.pack_table_frame, 0, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
+        self.pack_table = CreateHeader(self.pack_table_frame, 0, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE)
         
         self.missing_frame = Frame(self.root)
         self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font='Helvetica 9 bold')
        
         self.missing_table_frame = Frame(self.root, width=10)
 
-        self.missing_table = CreateHeader(self.missing_table_frame, 0, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
+        self.missing_table = CreateHeader(self.missing_table_frame, 0, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE)
         
         self.stat_frame = Frame(self.root)
         stat_header = {"Colors"   : {"width" : .19, "anchor" : W},
@@ -321,7 +339,7 @@ class WindowUI:
                        "5"        : {"width" : .11, "anchor" : CENTER},
                        "6+"       : {"width" : .11, "anchor" : CENTER},
                        "Total"    : {"width" : .15, "anchor" : CENTER}}
-        self.stat_table = CreateHeader(self.root, 0, stat_header, self.configuration.table_width, True, constants.TABLE_STYLE)
+        self.stat_table = CreateHeader(self.root, 0, stat_header, self.configuration.table_width, True, True, constants.TABLE_STYLE)
         self.stat_label = Label(self.stat_frame, text = "Deck Stats:", font='Helvetica 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
@@ -372,11 +390,11 @@ class WindowUI:
 
         self.VersionCheck()
         
-    def DeckFilterColors(self, cards):
+    def DeckFilterColors(self, cards, selected_option):
         filtered_colors = constants.FILTER_OPTION_ALL_DECKS
 
         try:
-            selected_option = self.deck_filter_selection.get()
+            #selected_option = self.deck_filter_selection.get()
             selected_color = self.deck_colors[selected_option]
             filtered_colors = CL.OptionFilter(cards, selected_color, self.configuration)
 
@@ -422,9 +440,9 @@ class WindowUI:
             TableFilterOptions(self.pack_table, fields["filtered_a"], fields["filtered_b"], fields["filtered_c"])
                 
             for count, card in enumerate(filtered_list):
-                row_tag = CL.RowColorTag(card["colors"])
+                row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
                 
-                self.pack_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
+                self.pack_table.insert("",index = count, iid = count, values = (card[constants.DATA_FIELD_NAME], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
             self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_colors))
         except Exception as error:
             ui_logger.info(f"UpdatePackTable Error: {error}")
@@ -461,8 +479,8 @@ class WindowUI:
                     
                     filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
-                        row_tag = CL.RowColorTag(card["colors"])
-                        card_name = "*" + card["name"] if card["name"] in picked_cards else card["name"]
+                        row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                        card_name = "*" + card[constants.DATA_FIELD_NAME] if card[constants.DATA_FIELD_NAME] in picked_cards else card[constants.DATA_FIELD_NAME]
                         
                         self.missing_table.insert("",index = count, iid = count, values = (card_name, card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
                     self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_colors))
@@ -477,7 +495,7 @@ class WindowUI:
         try:
             added_card = entry_box.get()
             if len(added_card):
-                cards = [card_list[x] for x in card_list if card_list[x]["name"] == added_card and card_list[x] not in matching_cards]
+                cards = [card_list[x] for x in card_list if card_list[x][constants.DATA_FIELD_NAME] == added_card and card_list[x] not in matching_cards]
                 entry_box.delete(0,END)
                 if len(cards):
                     matching_cards.append(cards[0])
@@ -499,33 +517,60 @@ class WindowUI:
             TableFilterOptions(compare_table, fields["filtered_a"], fields["filtered_b"], fields["filtered_c"])
                 
             for count, card in enumerate(filtered_list):
-                row_tag = CL.RowColorTag(card["colors"])
-                compare_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
+                row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                compare_table.insert("",index = count, iid = count, values = (card[constants.DATA_FIELD_NAME], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
             compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_colors))
         except Exception as error:
             ui_logger.info(f"UpdateCompareTable Error: {error}")
 
-    def UpdateTakenTable(self, taken_table, taken_cards, filtered_colors, fields):
+    def UpdateTakenTable(self, taken_table, selected_option):
         try:
-            filtered_list = CL.CardFilter(taken_cards,
-                                          taken_cards,
-                                          filtered_colors,
-                                          fields,
-                                          self.deck_limits,
-                                          self.tier_data,
-                                          self.configuration,
-                                          False,
-                                          False)
-                    
-            filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
-            list_length = len(filtered_list)
+            taken_cards = self.draft.TakenCards()
+            filtered_colors = self.DeckFilterColors(taken_cards, selected_option.get())
+            stacked_cards = CL.StackCards(taken_cards)
+
+            for row in taken_table.get_children():
+                taken_table.delete(row)
+            #filtered_list = CL.CardFilter(taken_cards,
+            #                              taken_cards,
+            #                              filtered_colors,
+            #                              fields,
+            #                              self.deck_limits,
+            #                              self.tier_data,
+            #                              self.configuration,
+            #                              False,
+            #                              False)
+            #        
+            #filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             
             #Update the filtered column header with the filtered colors
-            TableFilterOptions(taken_table, fields["filtered_a"], fields["filtered_b"], fields["filtered_c"])
+            #TableFilterOptions(taken_table, fields["filtered_a"], fields["filtered_b"], fields["filtered_c"])
+
+
                 
-            for count, card in enumerate(filtered_list):
-                row_tag = CL.RowColorTag(card["colors"])
-                taken_table.insert("",index = count, iid = count, values = (card["name"], card["rating_filter_a"], card["rating_filter_b"], card["rating_filter_c"]), tag = (row_tag,))
+            for count, card in enumerate(stacked_cards):
+                data = {}
+                for field in constants.DATA_FIELDS_LIST:
+                    if field not in card[constants.DATA_FIELD_DECK_COLORS][filtered_colors[0]]:
+                        data[field] = "NA"
+                    elif field in constants.WIN_RATE_FIELDS_DICT:
+                        field_count = constants.WIN_RATE_FIELDS_DICT[field]
+                        data[field] = CL.CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][filtered_colors[0]][field],
+                                                          card[constants.DATA_FIELD_DECK_COLORS][filtered_colors[0]][field_count],
+                                                          self.configuration.bayesian_average_enabled)
+                    else:
+                        data[field] = card[constants.DATA_FIELD_DECK_COLORS][filtered_colors[0]][field]
+                #row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                row_tag = "taken_even" if count % 2 else "taken_odd"
+                taken_table.insert("",index = count, iid = count, values = (card[constants.DATA_FIELD_NAME],
+                                                                            "".join(card[constants.DATA_FIELD_COLORS]),                    
+                                                                            card[constants.DATA_FIELD_COUNT],
+                                                                            data[constants.DATA_FIELD_ALSA],
+                                                                            data[constants.DATA_FIELD_ATA],
+                                                                            data[constants.DATA_FIELD_GPWR],
+                                                                            data[constants.DATA_FIELD_OHWR],
+                                                                            data[constants.DATA_FIELD_GIHWR],
+                                                                            data[constants.DATA_FIELD_IWD]), tag = (row_tag,))
             taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_colors))
         except Exception as error:
             ui_logger.info(f"UpdateTakenTable Error: {error}")
@@ -534,17 +579,17 @@ class WindowUI:
         try:             
             color = color_options[selected_color.get()]
             suggested_deck = suggested_decks[color]["deck_cards"]
-            suggested_deck.sort(key=lambda x : x["cmc"], reverse = False)
+            suggested_deck.sort(key=lambda x : x[constants.DATA_FIELD_CMC], reverse = False)
             for row in suggest_table.get_children():
                 suggest_table.delete(row)
             
             for count, card in enumerate(suggested_deck):
-                row_tag = CL.RowColorTag(card["colors"])
-                suggest_table.insert("",index = count, values = (card["name"],
-                                                                 "%d" % card["count"],
-                                                                 card["colors"],
-                                                                 card["cmc"],
-                                                                 card["types"]), tag = (row_tag,))
+                row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                suggest_table.insert("",index = count, values = (card[constants.DATA_FIELD_NAME],
+                                                                 "%d" % card[constants.DATA_FIELD_COUNT],
+                                                                 card[constants.DATA_FIELD_COLORS],
+                                                                 card[constants.DATA_FIELD_CMC],
+                                                                 card[constants.DATA_FIELD_TYPES]), tag = (row_tag,))
             suggest_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
     
         except Exception as error:
@@ -653,11 +698,11 @@ class WindowUI:
                 self.filter_format_selection.set(constants.DECK_FILTER_FORMAT_COLORS)
             if self.result_format_selection.get() not in self.result_format_list:
                 self.result_format_selection.set(constants.RESULT_FORMAT_WIN_RATE)
-            if self.column_2_selection.get() not in constants.COLUMN_OPTIONS:
+            if self.column_2_selection.get() not in self.options_dict.keys():
                 self.column_2_selection.set(constants.COLUMN_2_DEFAULT)
-            if self.column_3_selection.get() not in constants.COLUMN_OPTIONS:
+            if self.column_3_selection.get() not in self.options_dict.keys():
                 self.column_3_selection.set(constants.COLUMN_3_DEFAULT)
-            if self.column_4_selection.get() not in constants.COLUMN_OPTIONS:
+            if self.column_4_selection.get() not in self.options_dict.keys():
                 self.column_4_selection.set(constants.COLUMN_4_DEFAULT)
             if self.deck_filter_selection.get() not in self.deck_colors.keys():
                 selection = [k for k in self.deck_colors.keys() if constants.DECK_FILTER_DEFAULT in k]
@@ -682,7 +727,7 @@ class WindowUI:
             self.column_4_list = []
             self.deck_filter_list = []
 
-            for key in constants.COLUMN_OPTIONS:
+            for key in self.options_dict.keys():
                 if column_2_menu:
                     column_2_menu.add_command(label=key, 
                                     command=lambda value=key: self.column_2_selection.set(value))
@@ -729,7 +774,7 @@ class WindowUI:
         self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
         self.deck_limits = self.draft.RetrieveColorLimits(False)
         self.deck_colors = self.draft.RetrieveColorWinRate(self.filter_format_selection.get())
-        self.tier_data = self.draft.RetrieveTierData(self.tier_sources, self.deck_colors)
+        self.tier_data = self.draft.RetrieveTierData(self.tier_sources, self.options_dict)
         
     def UpdateDraft(self):
         if self.draft.DraftStartSearch():
@@ -743,13 +788,13 @@ class WindowUI:
     def UpdateSettingsStorage(self):
         try:
             selection = self.column_2_selection.get()
-            self.configuration.column_2 = selection if selection in constants.COLUMN_OPTIONS else constants.COLUMN_2_DEFAULT
+            self.configuration.column_2 = self.options_dict[selection] if selection in self.options_dict else self.options_dict[constants.COLUMN_2_DEFAULT]
             selection = self.column_3_selection.get()
-            self.configuration.column_3 = selection if selection in constants.COLUMN_OPTIONS else constants.COLUMN_3_DEFAULT
+            self.configuration.column_3 = self.options_dict[selection] if selection in self.options_dict else self.options_dict[constants.COLUMN_3_DEFAULT]
             selection = self.column_4_selection.get()
-            self.configuration.column_4 = selection if selection in constants.COLUMN_OPTIONS else constants.COLUMN_4_DEFAULT
+            self.configuration.column_4 = self.options_dict[selection] if selection in self.options_dict else self.options_dict[constants.COLUMN_4_DEFAULT]
             selection = self.deck_filter_selection.get()
-            self.configuration.deck_filter = self.deck_colors[selection] if selection in self.deck_colors else self.deck_colors[constants.COLUMN_4_DEFAULT]
+            self.configuration.deck_filter = self.deck_colors[selection] if selection in self.deck_colors else self.deck_colors[constants.DECK_FILTER_DEFAULT]
             self.configuration.filter_format = self.filter_format_selection.get()
             self.configuration.result_format = self.result_format_selection.get()
 
@@ -767,9 +812,12 @@ class WindowUI:
     def UpdateSettingsData(self):
         self.ControlTrace(False)
         try:
-            self.column_2_selection.set(self.configuration.column_2 if self.configuration.column_2 in constants.COLUMN_OPTIONS else constants.COLUMN_2_DEFAULT) 
-            self.column_3_selection.set(self.configuration.column_3 if self.configuration.column_3 in constants.COLUMN_OPTIONS else constants.COLUMN_3_DEFAULT) 
-            self.column_4_selection.set(self.configuration.column_4 if self.configuration.column_4 in constants.COLUMN_OPTIONS else constants.COLUMN_4_DEFAULT) 
+            selection = [k for k,v in self.options_dict.items() if v == self.configuration.column_2]
+            self.column_2_selection.set(selection[0] if len(selection) else constants.COLUMN_2_DEFAULT)
+            selection = [k for k,v in self.options_dict.items() if v == self.configuration.column_3]
+            self.column_3_selection.set(selection[0] if len(selection) else constants.COLUMN_3_DEFAULT)
+            selection = [k for k,v in self.options_dict.items() if v == self.configuration.column_4]
+            self.column_4_selection.set(selection[0] if len(selection) else constants.COLUMN_4_DEFAULT)
             selection = [k for k,v in self.deck_colors.items() if v == self.configuration.deck_filter]
             self.deck_filter_selection.set(selection[0] if len(selection) else constants.DECK_FILTER_DEFAULT)
             self.filter_format_selection.set(self.configuration.filter_format)
@@ -810,12 +858,10 @@ class WindowUI:
               
         taken_cards = self.draft.TakenCards()
         
-        
-        
-        filtered = self.DeckFilterColors(taken_cards)
-        fields = {"filtered_a" : self.column_2_selection.get(),
-                  "filtered_b" : self.column_3_selection.get(),
-                  "filtered_c" : self.column_4_selection.get()}
+        filtered = self.DeckFilterColors(taken_cards, self.deck_filter_selection.get())
+        fields = {"filtered_a" : self.options_dict[self.column_2_selection.get()],
+                  "filtered_b" : self.options_dict[self.column_3_selection.get()],
+                  "filtered_c" : self.options_dict[self.column_4_selection.get()]}
         #filtered["filtered_a"] = CL.OptionFilter(taken_cards, self.deck_colors[self.column_2_selection.get()], self.configuration)
         #filtered["filtered_b"] = CL.OptionFilter(taken_cards, self.deck_colors[self.column_3_selection.get()], self.configuration)
         #filtered["filtered_c"] = CL.OptionFilter(taken_cards, self.deck_colors[self.column_4_selection.get()], self.configuration)
@@ -970,16 +1016,16 @@ class WindowUI:
 
             taken_cards = self.draft.TakenCards()
             
-            filtered = self.DeckFilterColors(taken_cards)
-            fields = {"filtered_a" : self.column_2_selection.get(),
-                      "filtered_b" : self.column_3_selection.get(),
-                      "filtered_c" : self.column_4_selection.get()}
+            filtered = self.DeckFilterColors(taken_cards, self.deck_filter_selection.get())
+            fields = {"filtered_a" : self.options_dict[self.column_2_selection.get()],
+                      "filtered_b" : self.options_dict[self.column_3_selection.get()],
+                      "filtered_c" : self.options_dict[self.column_4_selection.get()]}
             
             matching_cards = []
             
             card_frame = Frame(popup)
 
-            set_card_names = [v["name"] for k,v in self.draft.set_data["card_ratings"].items()]
+            set_card_names = [v[constants.DATA_FIELD_NAME] for k,v in self.draft.set_data["card_ratings"].items()]
             card_entry = AutocompleteEntry(
                          card_frame, 
                          completevalues=set_card_names
@@ -992,7 +1038,7 @@ class WindowUI:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = CreateHeader(compare_table_frame, 20, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
+            compare_table = CreateHeader(compare_table_frame, 20, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -1019,41 +1065,53 @@ class WindowUI:
     def TakenCardsPopup(self):
         popup = Toplevel()
         popup.wm_title("Taken Cards")
-        
         try:
             Grid.rowconfigure(popup, 1, weight = 1)
-            Grid.columnconfigure(popup, 0, weight = 1)
+            Grid.columnconfigure(popup, 1, weight = 1)
+
             taken_cards = self.draft.TakenCards()
-            filtered = self.DeckFilterColors(taken_cards)
-            fields = {"filtered_a" : self.column_2_selection.get(),
-                      "filtered_b" : self.column_3_selection.get(),
-                      "filtered_c" : self.column_4_selection.get()}
-            
             copy_button = Button(popup, command=lambda:CopyTaken(taken_cards,
-                                                                 self.draft.set_data,
-                                                                 filtered["filtered_c"]),
+                                                                 self.draft.set_data),
                                                                  text="Copy to Clipboard")
             
-            headers = {"Card"    : {"width" : .46, "anchor" : W},
-                       "FilterA"  : {"width" : .18, "anchor" : CENTER},
-                       "FilterB"  : {"width" : .18, "anchor" : CENTER},
-                       "FilterC"  : {"width" : .18, "anchor" : CENTER}}
+            headers = {constants.DATA_FIELD_NAME.upper()    : {"width" : .28, "anchor" : W},
+                       constants.DATA_FIELD_COLORS.upper()  : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_COUNT.upper()   : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_ALSA.upper()    : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_ATA.upper()     : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_GPWR.upper()    : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_OHWR.upper()    : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_GIHWR.upper()   : {"width" : .12, "anchor" : CENTER},
+                       constants.DATA_FIELD_IWD.upper()     : {"width" : .12, "anchor" : CENTER},
+            }
+
+            style = Style() 
+            style.configure("Taken.Treeview", rowheight=30)  
+
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            taken_table = CreateHeader(taken_table_frame, 20, headers, self.configuration.table_width, True, constants.TABLE_STYLE)
+            taken_table = CreateHeader(taken_table_frame, 20, headers, 600, True, True, "Taken.Treeview")
             taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=taken_table.yview)
             
-            copy_button.grid(row=0, column=0, stick="nsew")
-            taken_table_frame.grid(row=1, column=0, stick = "nsew")
+            taken_filter_label = Label(popup, text="Deck Filter:", font='Helvetica 9 bold', anchor="w")
+            taken_filter_selection = StringVar(popup)
+            taken_filter_selection.set(self.deck_filter_selection.get())
+            
+            taken_filter_options = OptionMenu(popup, taken_filter_selection, taken_filter_selection.get(), *self.deck_filter_list, style="my.TMenubutton")
+            taken_filter_selection.trace("w", lambda *args, taken=taken_table, selection=taken_filter_selection : self.UpdateTakenTable(taken, selection))
+            #deck_filter_options.config(width=15)
+            
+            
+            taken_filter_label.grid(row=0, column=0, sticky="nsew")
+            taken_filter_options.grid(row=0, column=1, sticky="nsew")
+            copy_button.grid(row=1, column=0, columnspan = 2, sticky="nsew")
+            taken_table_frame.grid(row=2, column=0, columnspan = 2, sticky = "nsew")
             taken_table.pack(expand = True, fill = "both")
             
+            self.UpdateTakenTable(taken_table, taken_filter_selection)
             
-            self.UpdateTakenTable(taken_table,
-                                  taken_cards,
-                                  filtered,
-                                  fields)
             popup.attributes("-topmost", True)
         except Exception as error:
             ui_logger.info(f"TakenCardsPopup Error: {error}")
@@ -1102,15 +1160,15 @@ class WindowUI:
             suggest_table_frame = Frame(popup)
             suggest_scrollbar = Scrollbar(suggest_table_frame, orient=VERTICAL)
             suggest_scrollbar.pack(side=RIGHT, fill=Y)
-            suggest_table = CreateHeader(suggest_table_frame, 20, headers, 380, True, constants.TABLE_STYLE)
+            suggest_table = CreateHeader(suggest_table_frame, 20, headers, 380, True, True, constants.TABLE_STYLE)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
             
-            deck_colors_label.grid(row=0,column=0,columnspan=1,stick="nsew")
-            deck_colors_entry.grid(row=0,column=1,columnspan=1,stick="nsew")
-            deck_colors_button.grid(row=1,column=0,columnspan=2,stick="nsew")
-            copy_button.grid(row=2,column=0,columnspan=2,stick="nsew")
-            suggest_table_frame.grid(row=3, column=0, columnspan = 2, stick = 'nsew')
+            deck_colors_label.grid(row=0,column=0,columnspan=1,sticky="nsew")
+            deck_colors_entry.grid(row=0,column=1,columnspan=1,sticky="nsew")
+            deck_colors_button.grid(row=1,column=0,columnspan=2,sticky="nsew")
+            copy_button.grid(row=2,column=0,columnspan=2,sticky="nsew")
+            suggest_table_frame.grid(row=3, column=0, columnspan = 2, sticky = 'nsew')
             
             suggest_table.pack(expand = True, fill = 'both')
             
@@ -1312,7 +1370,7 @@ class WindowUI:
             card_name = table.item(item, "value")[0]
             for card in card_list:
                 card_name = card_name if card_name[0] != '*' else card_name[1:]
-                if card_name == card["name"]:
+                if card_name == card[constants.DATA_FIELD_NAME]:
                     try:
                         if set(selected_color).issubset(constants.NON_COLORS_OPTIONS):
                             color_list = [constants.FILTER_OPTION_ALL_DECKS]
@@ -1322,41 +1380,20 @@ class WindowUI:
                             color_list = selected_color
                         for count, color in enumerate(color_list):
                             try:
-                                color_dict[color] = {"alsa"  : "NA",
-                                                     "iwd"   : "NA",
-                                                     "gihwr" : "NA",
-                                                     "gih"   : "NA",
-                                                     "ohwr"  : "NA",
-                                                     "ngoh"  : "NA",
-                                                     "gpwr"  : "NA",
-                                                     "ngp"   : "NA"}
-                                
-                                gihwr = card["deck_colors"][color]["gihwr"]
-                                
-                                if "gih" in card["deck_colors"][color]:
-                                    gih = card["deck_colors"][color]["gih"]
-                                    gihwr = CL.CalculateWinRate(card["deck_colors"][color]["gihwr"],
-                                                                gih,
-                                                                self.configuration.bayesian_average_enabled)
-                                    color_dict[color]["gih"] = gih
+                                color_dict[color] = {x : "NA" for x in constants.DATA_FIELDS_LIST}
 
-                                if ("ohwr" in card["deck_colors"][color]) and ("ngoh" in card["deck_colors"][color]):
-                                    ohwr = CL.CalculateWinRate(card["deck_colors"][color]["ohwr"],
-                                                                card["deck_colors"][color]["ngoh"],
-                                                                self.configuration.bayesian_average_enabled)
-                                    color_dict[color]["ohwr"] = ohwr
-                                    color_dict[color]["ngoh"] = card["deck_colors"][color]["ngoh"]
-
-                                if ("gpwr" in card["deck_colors"][color]) and ("ngp" in card["deck_colors"][color]):
-                                    gpwr = CL.CalculateWinRate(card["deck_colors"][color]["gpwr"],
-                                                                card["deck_colors"][color]["ngp"],
-                                                                self.configuration.bayesian_average_enabled)
-                                    color_dict[color]["gpwr"] = gpwr
-                                    color_dict[color]["ngp"] = card["deck_colors"][color]["ngp"]
-                                
-                                color_dict[color]["alsa"] = card["deck_colors"][color]["alsa"]
-                                color_dict[color]["iwd"] = card["deck_colors"][color]["iwd"]
-                                color_dict[color]["gihwr"] = gihwr
+                                for k in color_dict[color].keys():
+                                    if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                                        if k in constants.WIN_RATE_FIELDS_DICT.keys():
+                                            count_field = constants.WIN_RATE_FIELDS_DICT[k]
+                                            if count_field in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                                                color_dict[color][k] = CL.CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
+                                                                                           card[constants.DATA_FIELD_DECK_COLORS][color][count_field],
+                                                                                           self.configuration.bayesian_average_enabled)
+                                            else:
+                                                color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
+                                        else:
+                                            color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
                                 
                                 if "curve_bonus" in card.keys() and len(card["curve_bonus"]):
                                     color_dict[color]["curve_bonus"] = card["curve_bonus"][count]
@@ -1367,11 +1404,12 @@ class WindowUI:
                             except Exception as error:
                                 ui_logger.info(f"OnClickTable Error: {error}")
                             
-                        tooltip = CreateCardToolTip(table, event,
-                                                           card["name"],
-                                                           color_dict,
-                                                           card["image"],
-                                                           self.configuration.images_enabled)
+                        CreateCardToolTip(table, 
+                                          event,
+                                          card[constants.DATA_FIELD_NAME],
+                                          color_dict,
+                                          card[constants.DATA_SECTION_IMAGES],
+                                          self.configuration.images_enabled)
                     except Exception as error:
                         ui_logger.info(f"OnClickTable Error: {error}")
                     break
@@ -1545,55 +1583,52 @@ class CreateCardToolTip(object):
             style = Style() 
             style.configure("Tooltip.Treeview", rowheight=25)      
             
-            stats_main_table = CreateHeader(tt_frame, 0, headers, width, False, "Tooltip.Treeview")
+            stats_main_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview")
             main_field_list = []
             
-            stats_count_table = CreateHeader(tt_frame, 0, headers, width, False, "Tooltip.Treeview")
+            stats_count_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview")
             count_field_list = []
             
-            bonus_table = CreateHeader(tt_frame, 0, headers, width, False, "Tooltip.Treeview")
+            bonus_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview")
             bonus_field_list = []
             
             values = ["Filter:"] + list(self.color_dict.keys())
             main_field_list.append(tuple(values))
-            
-            values = ["Average Last Seen At:"] + [f"{x['alsa']}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-            
-            values = ["Improvement When Drawn:"] + [f"{x['iwd']}pp" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-            
-            values = ["Games In Hand Win Rate:"] + [f"{x['gihwr']}%" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-            
-            if any("ohwr" in x for x in self.color_dict.values()):
-                values = ["Opening Hand Win Rate:"] + [f"{x['ohwr']}%" for x in self.color_dict.values()]
-                main_field_list.append(tuple(values))
 
-            if any("gpwr" in x for x in self.color_dict.values()):
-                values = ["Games Played Win Rate:"] + [f"{x['gpwr']}%" for x in self.color_dict.values()]
-                main_field_list.append(tuple(values))
+            values = ["Average Taken At:"] + [f"{x[constants.DATA_FIELD_ATA]}" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
             
-            if any("gih" in x for x in self.color_dict.values()):
-                values = ["Number of Games In Hand:"] + [f"{x['gih']}" for x in self.color_dict.values()]
-                count_field_list.append(tuple(values))
+            values = ["Average Last Seen At:"] + [f"{x[constants.DATA_FIELD_ALSA]}" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            values = ["Improvement When Drawn:"] + [f"{x[constants.DATA_FIELD_IWD]}pp" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            values = ["Games In Hand Win Rate:"] + [f"{x[constants.DATA_FIELD_GIHWR]}%" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            values = ["Opening Hand Win Rate:"] + [f"{x[constants.DATA_FIELD_OHWR]}%" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+
+            values = ["Games Played Win Rate:"] + [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+            
+            values = ["Number of Games In Hand:"] + [f"{x[constants.DATA_FIELD_GIH]}" for x in self.color_dict.values()]
+            count_field_list.append(tuple(values))
                 
-            if any("ngoh" in x for x in self.color_dict.values()):
-                values = ["Number of Games in Opening Hand:"] + [f"{x['ngoh']}" for x in self.color_dict.values()]
-                count_field_list.append(tuple(values))
+            values = ["Number of Games in Opening Hand:"] + [f"{x[constants.DATA_FIELD_NGOH]}" for x in self.color_dict.values()]
+            count_field_list.append(tuple(values))
                 
-            if any("ngp" in x for x in self.color_dict.values()):
-                values = ["Number of Games Played:"] + [f"{x['ngp']}" for x in self.color_dict.values()]
-                count_field_list.append(tuple(values))
-                
+            values = ["Number of Games Played:"] + [f"{x[constants.DATA_FIELD_NGP]}" for x in self.color_dict.values()]
+            count_field_list.append(tuple(values))
+
             if any("curve_bonus" in x for x in self.color_dict.values()):
                 values = ["Curve Bonus:"] + [f"+{x['curve_bonus']}" for x in self.color_dict.values()]
                 bonus_field_list.append(tuple(values))
-                
-            if any("color_bonus" in x for x in self.color_dict.values()):
+
+            if any("color_bonus" in x for x in self.color_dict.values()):  
                 values = ["Color Bonus:"] + [f"+{x['color_bonus']}" for x in self.color_dict.values()]
                 bonus_field_list.append(tuple(values))
-
 
             if len(main_field_list):
                 stats_main_table.config(height = len(main_field_list) + 1)

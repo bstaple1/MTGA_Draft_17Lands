@@ -950,7 +950,7 @@ class ArenaScanner:
             if pack_index < len(self.picked_cards):
                 for card in self.picked_cards[pack_index]:
                     try:
-                        picked_cards.append(self.set_data["card_ratings"][card]["name"])
+                        picked_cards.append(self.set_data["card_ratings"][card][constants.DATA_FIELD_NAME])
                     except Exception as error:
                         scanner_logger.info(f"PickedCards Error: {error}")
             
@@ -994,7 +994,7 @@ class ArenaScanner:
         
         return taken_cards
         
-    def RetrieveTierData(self, files, deck_colors):
+    def RetrieveTierData(self, files, options):
         tier_data = {}
         count = 0
         try:
@@ -1007,7 +1007,7 @@ class ArenaScanner:
                             tier_label = data["meta"]["label"]
                             tier_label = f'{tier_label[:8]}...' if len(tier_label) > 11 else tier_label #Truncate label if it's too long
                             tier_key = f'{tier_id} ({tier_label})'
-                            deck_colors[tier_key] = tier_id
+                            options[tier_key] = tier_id
                             tier_data[tier_id] = data
                             count += 1
              

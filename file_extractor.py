@@ -189,15 +189,15 @@ def FileIntegrityCheck(filename):
             #Check 2B) Card data is present
             cards = json_data["card_ratings"]
             for card in cards:
-                name = cards[card]["name"]
-                colors = cards[card]["colors"]
-                cmc = cards[card]["cmc"]
-                types = cards[card]["types"]
+                name = cards[card][constants.DATA_FIELD_NAME]
+                colors = cards[card][constants.DATA_FIELD_COLORS]
+                cmc = cards[card][constants.DATA_FIELD_CMC]
+                types = cards[card][constants.DATA_FIELD_TYPES]
                 mana_cost = cards[card]["mana_cost"]
-                image = cards[card]["image"]
-                gihwr = cards[card]["deck_colors"][constants.FILTER_OPTION_ALL_DECKS]["gihwr"]
-                alsa = cards[card]["deck_colors"][constants.FILTER_OPTION_ALL_DECKS]["alsa"]
-                iwd = cards[card]["deck_colors"][constants.FILTER_OPTION_ALL_DECKS]["iwd"]
+                image = cards[card][constants.DATA_SECTION_IMAGES]
+                gihwr = cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIHWR]
+                alsa = cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
+                iwd = cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_IWD]
                 break
                 
             if len(cards.keys()) < 100:
@@ -372,16 +372,16 @@ class FileExtractor:
                                 linked_id = int(card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
                                 if linked_id < group_id:
                                     #The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
-                                    #self.card_dict[card["linkedFaces"][0]]["name"].append(card["titleId"])
+                                    #self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
                                     types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
                                     self.card_dict[linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(types)
                                     continue
     
-                            self.card_dict[group_id] = {"name" : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], "image" : []}
-                            self.card_dict[group_id]["types"] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                            self.card_dict[group_id]["colors"] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
+                            self.card_dict[group_id] = {constants.DATA_FIELD_NAME : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES : []}
+                            self.card_dict[group_id][constants.DATA_FIELD_TYPES] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
+                            self.card_dict[group_id][constants.DATA_FIELD_COLORS] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
                             mana_cost, cmc = DecodeManaCost(card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("",0)
-                            self.card_dict[group_id]["cmc"] = cmc
+                            self.card_dict[group_id][constants.DATA_FIELD_CMC] = cmc
                             self.card_dict[group_id]["mana_cost"] = mana_cost
 
                             result = True
@@ -451,13 +451,13 @@ class FileExtractor:
         
     def RetrieveLocalCardEnumerators(self, data):
         result = True
-        card_enumerators = {"colors" : {}, "types" : {}}
+        card_enumerators = {constants.DATA_FIELD_COLORS : {}, constants.DATA_FIELD_TYPES : {}}
         try:
             for row in data:
                     if row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES:
-                        card_enumerators["types"][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
+                        card_enumerators[constants.DATA_FIELD_TYPES][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
                     elif row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR:
-                        card_enumerators["colors"][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
+                        card_enumerators[constants.DATA_FIELD_COLORS][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
 
         except Exception as error:
             result = False
@@ -470,12 +470,12 @@ class FileExtractor:
         try:
             for card in self.card_dict:
                 try:
-                    self.card_dict[card]["name"] = " // ".join(card_text[str(x)] for x in self.card_dict[card]["name"])     
-                    self.card_dict[card]["types"] = list(set([card_text[card_enumerators["types"][str(x)]] for x in self.card_dict[card]["types"]]))
-                    self.card_dict[card]["colors"] = [constants.CARD_COLORS_DICT[card_text[card_enumerators["colors"][str(x)]]] for x in self.card_dict[card]["colors"]]
-                    if "Creature" in self.card_dict[card]["types"]:
-                        index = self.card_dict[card]["types"].index("Creature")
-                        self.card_dict[card]["types"].insert(0, self.card_dict[card]["types"].pop(index))
+                    self.card_dict[card][constants.DATA_FIELD_NAME] = " // ".join(card_text[str(x)] for x in self.card_dict[card][constants.DATA_FIELD_NAME])     
+                    self.card_dict[card][constants.DATA_FIELD_TYPES] = list(set([card_text[card_enumerators[constants.DATA_FIELD_TYPES][str(x)]] for x in self.card_dict[card][constants.DATA_FIELD_TYPES]]))
+                    self.card_dict[card][constants.DATA_FIELD_COLORS] = [constants.CARD_COLORS_DICT[card_text[card_enumerators[constants.DATA_FIELD_COLORS][str(x)]]] for x in self.card_dict[card][constants.DATA_FIELD_COLORS]]
+                    if "Creature" in self.card_dict[card][constants.DATA_FIELD_TYPES]:
+                        index = self.card_dict[card][constants.DATA_FIELD_TYPES].index("Creature")
+                        self.card_dict[card][constants.DATA_FIELD_TYPES].insert(0, self.card_dict[card][constants.DATA_FIELD_TYPES].pop(index))
                     result = True
                 except Exception as error:
                     pass
@@ -552,16 +552,22 @@ class FileExtractor:
         self.card_ratings = {}
 
         for card in self.card_dict:
-            self.card_dict[card]["deck_colors"] = {}
+            self.card_dict[card][constants.DATA_FIELD_DECK_COLORS] = {}
             for color in self.deck_colors:
-                self.card_dict[card]["deck_colors"][color] = {"gihwr" : constants.DEFAULT_GIHWR_AVERAGE, 
-                                                              "iwd"   : 0.0, 
-                                                              "alsa"  : 0.0, 
-                                                              "gih"   : 0.0,
-                                                              "ohwr"  : 0.0,
-                                                              "ngoh"  : 0.0,
-                                                              "gpwr"  : 0.0,
-                                                              "ngp"   : 0.0}
+                self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = {x : 0.0 for x in constants.DATA_FIELD_17LANDS_DICT.keys() if x != constants.DATA_SECTION_IMAGES}
+                #color_data = {}
+                #for k in constants.DATA_FIELD_17LANDS_DICT.keys():
+                #    if k != constants.DATA_SECTION_IMAGES:
+                #        color_data[k] = 0.0
+                #self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = color_data
+                #self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = {constants.DATA_FIELD_GIHWR : constants.DEFAULT_GIHWR_AVERAGE, 
+                #                                              constants.DATA_FIELD_IWD   : 0.0, 
+                #                                              constants.DATA_FIELD_ALSA  : 0.0, 
+                #                                              constants.DATA_FIELD_GIH   : 0.0,
+                #                                              constants.DATA_FIELD_OHWR  : 0.0,
+                #                                              constants.DATA_FIELD_NGOH  : 0.0,
+                #                                              constants.DATA_FIELD_GPWR  : 0.0,
+                #                                              constants.DATA_FIELD_NGP   : 0.0}
 
     def Session17Lands(self, root, progress, initial_progress):
         current_progress = 0
@@ -602,8 +608,6 @@ class FileExtractor:
          
             if set == "stx":
                 break
-            #if set == "dbl" and result:
-            #    break
         for card in self.card_dict:
             self.ProcessCardRatings(self.card_dict[card])
         self.combined_data["card_ratings"] = self.card_dict
@@ -639,41 +643,35 @@ class FileExtractor:
         except Exception as error:
             file_logger.info(url) 
             file_logger.info(f"SessionColorRatings Error: {error}") 
+            
     def Retrieve17Lands(self, colors, cards):  
         result = True
 
         for card in cards:
             try:
-                card_name = card["name"]
-                ohwr = card["opening_hand_win_rate"]
-                ngoh = int(card["opening_hand_game_count"])
-                gpwr = card["win_rate"]
-                ngp = int(card["game_count"])
-                gihwr = card["ever_drawn_win_rate"]
-                iwd = card["drawn_improvement_win_rate"]
-                alsa = card["avg_seen"]
-                gih = int(card["ever_drawn_game_count"])
-                images = [card["url"]]
-                if card["url_back"]:
-                    images.append(card["url_back"])
-                    
-                ohwr = round(float(ohwr) * 100.0, 2) if ohwr != None else 0.0
-                gpwr = round(float(gpwr) * 100.0, 2) if gpwr != None else 0.0
-                gihwr = round(float(gihwr) * 100.0, 2) if gihwr != None else 0.0
-                iwd = round(float(iwd) * 100, 2) if iwd != None else 0.0
+                card_data = {constants.DATA_SECTION_RATINGS : [], constants.DATA_SECTION_IMAGES : []}
+                color_data = {colors : {}}
+                for k, v in constants.DATA_FIELD_17LANDS_DICT.items():
+                    if k == constants.DATA_SECTION_IMAGES:
+                        for field in v:
+                            if field in card and len(card[field]):
+                                card_data[constants.DATA_SECTION_IMAGES].append(card[field])
+                    elif v in card:
+                        if (k in constants.WIN_RATE_OPTIONS) or (k == constants.DATA_FIELD_IWD):
+                            color_data[colors][k] = round(float(card[v]) * 100.0, 2) if card[v] != None else 0.0
+                        elif ((k == constants.DATA_FIELD_ATA) or 
+                              (k == constants.DATA_FIELD_ALSA)):
+                            color_data[colors][k] = round(float(card[v]), 2)
+                        else:
+                            color_data[colors][k] = int(card[v])
 
-                alsa = round(float(card["avg_seen"]), 2)
+                card_name = card[constants.DATA_FIELD_NAME]
+                
                 if card_name not in self.card_ratings:
-                    self.card_ratings[card_name] = {"ratings" : [], "images" : images}
-
-                self.card_ratings[card_name]["ratings"].append({colors : {"gihwr" : gihwr, 
-                                                                          "iwd"   : iwd, 
-                                                                          "alsa"  : alsa, 
-                                                                          "gih"   : gih,
-                                                                          "ohwr"  : ohwr,
-                                                                          "ngoh"  : ngoh,
-                                                                          "gpwr"  : gpwr,
-                                                                          "ngp"   : ngp}}) 
+                    self.card_ratings[card_name] = card_data
+                    
+                self.card_ratings[card_name][constants.DATA_SECTION_RATINGS].append(color_data)
+ 
             except Exception as error:
                 result = False
                 file_logger.info(f"Retrieve17Lands Error: {error}")
@@ -741,22 +739,22 @@ class FileExtractor:
                 arena_id = card_data["arena_id"]
 
                 self.card_dict[arena_id] = {
-                    "name" : card_data["name"],
-                    "cmc" : card_data["cmc"],
-                    "colors" : card_data["color_identity"],
-                    "types" : ExtractTypes(card_data["type_line"]),
+                    constants.DATA_FIELD_NAME : card_data[constants.DATA_FIELD_NAME],
+                    constants.DATA_FIELD_CMC : card_data[constants.DATA_FIELD_CMC],
+                    constants.DATA_FIELD_COLORS : card_data["color_identity"],
+                    constants.DATA_FIELD_TYPES : ExtractTypes(card_data["type_line"]),
                     "mana_cost" : 0,
-                    "image" : [],
+                    constants.DATA_SECTION_IMAGES : [],
                 }
 
                 if "card_faces" in card_data:
                     self.card_dict[arena_id]["mana_cost"] = card_data["card_faces"][0]["mana_cost"]
-                    self.card_dict[arena_id]["image"].append(card_data["card_faces"][0]["image_uris"]["normal"])
-                    self.card_dict[arena_id]["image"].append(card_data["card_faces"][1]["image_uris"]["normal"])
+                    self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(card_data["card_faces"][0]["image_uris"]["normal"])
+                    self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(card_data["card_faces"][1]["image_uris"]["normal"])
                         
                 else:
                     self.card_dict[arena_id]["mana_cost"] = card_data["mana_cost"]
-                    self.card_dict[arena_id]["image"] = [card_data["image_uris"]["normal"]]
+                    self.card_dict[arena_id][constants.DATA_SECTION_IMAGES] = [card_data["image_uris"]["normal"]]
 
                 result = True
 
@@ -768,23 +766,25 @@ class FileExtractor:
         
     def ProcessCardRatings (self, card):
         try:
-            card_sides = card["name"].split(" // ") 
+            card_sides = card[constants.DATA_FIELD_NAME].split(" // ") 
             matching_cards = [x for x in self.card_ratings.keys() if x in card_sides]
             if(matching_cards):
                 ratings_card_name = matching_cards[0]
-                deck_colors = self.card_ratings[ratings_card_name]["ratings"]
+                deck_colors = self.card_ratings[ratings_card_name][constants.DATA_SECTION_RATINGS]
                 
-                card["image"] = self.card_ratings[ratings_card_name]["images"]
+                card[constants.DATA_SECTION_IMAGES] = self.card_ratings[ratings_card_name][constants.DATA_SECTION_IMAGES]
                 for deck_color in deck_colors:
                     for key, value in deck_color.items():
-                        card["deck_colors"][key] = {"gihwr" :  value["gihwr"], 
-                                                     "alsa" :  value["alsa"],
-                                                     "iwd"  :  value["iwd"],
-                                                     "gih"  :  value["gih"],
-                                                     "ohwr" :  value["ohwr"],
-                                                     "ngoh" :  value["ngoh"],
-                                                     "gpwr" :  value["gpwr"],
-                                                     "ngp"  :  value["ngp"]}
+                        for field in value:
+                            card[constants.DATA_FIELD_DECK_COLORS][key][field] = value[field]
+                        #card[constants.DATA_FIELD_DECK_COLORS][key] = {constants.DATA_FIELD_GIHWR :  value[constants.DATA_FIELD_GIHWR], 
+                        #                                               constants.DATA_FIELD_ALSA  :  value[constants.DATA_FIELD_ALSA],
+                        #                                               constants.DATA_FIELD_IWD   :  value[constants.DATA_FIELD_IWD],
+                        #                                               constants.DATA_FIELD_GIH   :  value[constants.DATA_FIELD_GIH],
+                        #                                               constants.DATA_FIELD_OHWR  :  value[constants.DATA_FIELD_OHWR],
+                        #                                               constants.DATA_FIELD_NGOH  :  value[constants.DATA_FIELD_NGOH],
+                        #                                               constants.DATA_FIELD_GPWR  :  value[constants.DATA_FIELD_GPWR],
+                        #                                               constants.DATA_FIELD_NGP   :  value[constants.DATA_FIELD_NGP]}
         except Exception as error:
             file_logger.info(f"ProcessCardRatings Error: {error}")
 
@@ -794,7 +794,7 @@ class FileExtractor:
         counter = 0
         for set in data:
             try:
-                set_name = set["name"]
+                set_name = set[constants.DATA_FIELD_NAME]
                 set_code = set["code"]
                 
                 if set_code == "dbl":

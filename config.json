@@ -8,9 +8,9 @@
     },
     "settings": {
         "table_width": 270,
-        "column_2": "ALSA",
-        "column_3": "IWD",
-        "column_4": "GIHWR",
+        "column_2": "alsa",
+        "column_3": "iwd",
+        "column_4": "gihwr",
         "deck_filter": "Auto",
         "filter_format": "Colors",
         "result_format": "Win Rate (%)",
