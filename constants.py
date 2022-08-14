@@ -48,6 +48,7 @@ DATA_FIELD_NAME = "name"
 DATA_FIELD_TYPES = "types"
 DATA_FIELD_DECK_COLORS = "deck_colors"
 DATA_FIELD_COUNT = "count"
+DATA_FIELD_DISABLED = "disabled"
 
 DATA_FIELDS_LIST = [DATA_FIELD_GIHWR, 
                     DATA_FIELD_OHWR, 
@@ -87,6 +88,8 @@ FIELD_LABEL_IWD = "IWD"
 FIELD_LABEL_OHWR = "OHWR"
 FIELD_LABEL_GPWR = "GPWR"
 FIELD_LABEL_GIHWR = "GIHWR"
+FIELD_LABEL_DISABLED = "DISABLED"
+FIELD_LABEL_COLORS = "COLORS"
 
 DATA_SET_VERSION_3 = 3.0
 
@@ -99,6 +102,10 @@ DECK_FILTERS = [FILTER_OPTION_AUTO] + DECK_COLORS
 COLUMN_2_DEFAULT = FIELD_LABEL_ALSA
 COLUMN_3_DEFAULT = FIELD_LABEL_IWD
 COLUMN_4_DEFAULT = FIELD_LABEL_GIHWR
+COLUMN_5_DEFAULT = FIELD_LABEL_DISABLED
+COLUMN_6_DEFAULT = FIELD_LABEL_DISABLED
+COLUMN_7_DEFAULT = FIELD_LABEL_DISABLED
+
 DECK_FILTER_DEFAULT = FILTER_OPTION_AUTO
 
 DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
@@ -289,11 +296,33 @@ DATA_FIELD_17LANDS_DICT = {
     DATA_SECTION_IMAGES : [DATA_FIELD_17LANDS_IMAGE, DATA_FIELD_17LANDS_IMAGE_BACK]
 }
 
-COLUMNS_OPTIONS_DICT = {
-    FIELD_LABEL_ATA   : DATA_FIELD_ATA,
-    FIELD_LABEL_ALSA  : DATA_FIELD_ALSA,
-    FIELD_LABEL_IWD   : DATA_FIELD_IWD,
-    FIELD_LABEL_OHWR  : DATA_FIELD_OHWR,
-    FIELD_LABEL_GPWR  : DATA_FIELD_GPWR,
-    FIELD_LABEL_GIHWR : DATA_FIELD_GIHWR,
+COLUMNS_OPTIONS_MAIN_DICT = {
+    FIELD_LABEL_ATA      : DATA_FIELD_ATA,
+    FIELD_LABEL_ALSA     : DATA_FIELD_ALSA,
+    FIELD_LABEL_IWD      : DATA_FIELD_IWD,
+    FIELD_LABEL_OHWR     : DATA_FIELD_OHWR,
+    FIELD_LABEL_GPWR     : DATA_FIELD_GPWR,
+    FIELD_LABEL_GIHWR    : DATA_FIELD_GIHWR,
+    FIELD_LABEL_COLORS   : DATA_FIELD_COLORS,
 }
+
+COLUMNS_OPTIONS_EXTRA_DICT = {
+    FIELD_LABEL_DISABLED : DATA_FIELD_DISABLED,
+    FIELD_LABEL_ATA      : DATA_FIELD_ATA,
+    FIELD_LABEL_ALSA     : DATA_FIELD_ALSA,
+    FIELD_LABEL_IWD      : DATA_FIELD_IWD,
+    FIELD_LABEL_OHWR     : DATA_FIELD_OHWR,
+    FIELD_LABEL_GPWR     : DATA_FIELD_GPWR,
+    FIELD_LABEL_GIHWR    : DATA_FIELD_GIHWR,
+    FIELD_LABEL_COLORS   : DATA_FIELD_COLORS,
+}
+
+STATS_HEADER_CONFIG = {"Colors"   : {"width" : .19, "anchor" : "w"},
+                       "1"        : {"width" : .11, "anchor" : "c"},
+                       "2"        : {"width" : .11, "anchor" : "c"},
+                       "3"        : {"width" : .11, "anchor" : "c"},
+                       "4"        : {"width" : .11, "anchor" : "c"},
+                       "5"        : {"width" : .11, "anchor" : "c"},
+                       "6+"       : {"width" : .11, "anchor" : "c"},
+                       "Total"    : {"width" : .15, "anchor" : "c"}}
+                       
