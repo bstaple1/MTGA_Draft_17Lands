@@ -26,6 +26,7 @@ class Config:
     deck_filter : str=constants.DECK_FILTER_DEFAULT
     filter_format : str=constants.DECK_FILTER_FORMAT_COLORS
     result_format : str=constants.RESULT_FORMAT_WIN_RATE
+    card_colors_enabled: bool=False
     missing_enabled : bool=True
     stats_enabled : bool=False
     hotkey_enabled : bool=True
@@ -378,19 +379,19 @@ def CardFilter(card_list, deck, filtered_colors, fields,  limits, tier_list, con
     return filtered_list
 
 def RowColorTag(colors):
-    row_tag = "goldcard"
+    row_tag = constants.CARD_ROW_COLOR_GOLD_TAG
     if len(colors) > 1:
-        row_tag = "goldcard"
+        row_tag = constants.CARD_ROW_COLOR_GOLD_TAG
     elif "R" in colors:
-        row_tag = "redcard"
+        row_tag = constants.CARD_ROW_COLOR_RED_TAG
     elif "U" in colors:
-        row_tag = "bluecard"
+        row_tag = constants.CARD_ROW_COLOR_BLUE_TAG
     elif "B" in colors:
-        row_tag = "blackcard"
+        row_tag = constants.CARD_ROW_COLOR_BLACK_TAG
     elif "W" in colors:
-        row_tag = "whitecard"
+        row_tag = constants.CARD_ROW_COLOR_WHITE_TAG
     elif "G" in colors:
-        row_tag = "greencard"
+        row_tag = constants.CARD_ROW_COLOR_GREEN_TAG
     return row_tag
     
 def RatingsLimits(cards, bayesian_enabled):
@@ -919,6 +920,7 @@ def ReadConfig():
         config.taken_ohwr_enabled = config_data["settings"]["taken_ohwr_enabled"]
         config.taken_iwd_enabled = config_data["settings"]["taken_iwd_enabled"]
         config.taken_gndwr_enabled = config_data["settings"]["taken_gndwr_enabled"]
+        config.card_colors_enabled = config_data["settings"]["card_colors_enabled"]
         config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
         config.draft_log_enabled = config_data["settings"]["draft_log_enabled"]
     except Exception as error:
@@ -953,6 +955,7 @@ def WriteConfig(config):
         config_data["settings"]["taken_ohwr_enabled"] = config.taken_ohwr_enabled
         config_data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
         config_data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
+        config_data["settings"]["card_colors_enabled"] = config.card_colors_enabled
         config_data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
         config_data["settings"]["draft_log_enabled"] = config.draft_log_enabled
         
@@ -999,6 +1002,7 @@ def ResetConfig():
         data["settings"]["taken_ohwr_enabled"] = config.taken_ohwr_enabled
         data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
         data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
+        data["settings"]["card_colors_enabled"] = config.card_colors_enabled
         
         data["card_logic"] = {}
         data["card_logic"]["alsa_weight"] = config.alsa_weight

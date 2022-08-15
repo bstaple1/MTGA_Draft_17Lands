@@ -232,6 +232,15 @@ DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
 TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
 TEMP_LOCALIZATION_FILE = os.path.join(TEMP_FOLDER, "temp_localization.json")
 
+BW_ROW_COLOR_ODD_TAG = "bw_odd"
+BW_ROW_COLOR_EVEN_TAG = "bw_even"
+CARD_ROW_COLOR_WHITE_TAG = "white_card"
+CARD_ROW_COLOR_RED_TAG = "red_card"
+CARD_ROW_COLOR_BLUE_TAG = "blue_card"
+CARD_ROW_COLOR_BLACK_TAG = "black_card"
+CARD_ROW_COLOR_GREEN_TAG = "green_card"
+CARD_ROW_COLOR_GOLD_TAG = "gold_card"
+
 #Dictionaries
 ## Used to identify the limited type based on log string
 LIMITED_TYPES_DICT = {
@@ -337,4 +346,18 @@ STATS_HEADER_CONFIG = {"Colors"   : {"width" : .19, "anchor" : "w"},
                        "5"        : {"width" : .11, "anchor" : "c"},
                        "6+"       : {"width" : .11, "anchor" : "c"},
                        "Total"    : {"width" : .15, "anchor" : "c"}}
+                       
+ROW_TAGS_BW_DICT = {
+    BW_ROW_COLOR_ODD_TAG      : ("Helvetica Neue", "#3d3d3d", "#e6ecec"),
+    BW_ROW_COLOR_EVEN_TAG     : ("Helvetica Neue", "#333333", "#e6ecec"),
+}
+
+ROW_TAGS_COLORS_DICT = {
+    CARD_ROW_COLOR_WHITE_TAG  : ("Helvetica Neue", "#E9E9E9", "#000000"),
+    CARD_ROW_COLOR_RED_TAG    : ("Helvetica Neue", "#FF6C6C", "#000000"),
+    CARD_ROW_COLOR_BLUE_TAG   : ("Helvetica Neue", "#6078F3", "#000000"),
+    CARD_ROW_COLOR_BLACK_TAG  : ("Helvetica Neue", "#BFBFBF", "#000000"),
+    CARD_ROW_COLOR_GREEN_TAG  : ("Helvetica Neue", "#60DC68", "#000000"),
+    CARD_ROW_COLOR_GOLD_TAG   : ("Helvetica Neue", "#F0E657", "#000000"),
+}
                        

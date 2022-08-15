@@ -29,7 +29,8 @@
         "taken_gpwr_enabled": false,
         "taken_ohwr_enabled": false,
         "taken_gndwr_enabled": false,
-        "taken_iwd_enabled": false
+        "taken_iwd_enabled": false,
+        "card_colors_enabled": false
     },
     "card_logic": {
         "alsa_weight": 0.0,

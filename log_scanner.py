@@ -1000,8 +1000,9 @@ class ArenaScanner:
         
         return taken_cards
         
-    def RetrieveTierData(self, files, options):
+    def RetrieveTierData(self, files):
         tier_data = {}
+        tier_options = {}
         count = 0
         try:
             for file in files:
@@ -1013,10 +1014,10 @@ class ArenaScanner:
                             tier_label = data["meta"]["label"]
                             tier_label = f'{tier_label[:8]}...' if len(tier_label) > 11 else tier_label #Truncate label if it's too long
                             tier_key = f'{tier_id} ({tier_label})'
-                            options[tier_key] = tier_id
+                            tier_options[tier_key] = tier_id
                             tier_data[tier_id] = data
                             count += 1
              
         except Exception as error:
             scanner_logger.info(f"RetrieveTierData Error: {error}")  
-        return tier_data
+        return tier_data, tier_options
