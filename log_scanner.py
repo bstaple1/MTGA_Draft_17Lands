@@ -189,7 +189,11 @@ class ArenaScanner:
             
     #Wrapper function for performing a search based on the draft type
     def DraftDataSearch(self):
-        
+        update = False
+        previous_pick = self.current_pick
+        previous_pack = self.current_pack
+        previous_picked = self.current_picked_pick
+
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
                 self.DraftPackSearchPremierP1P1()
@@ -209,8 +213,15 @@ class ArenaScanner:
             self.DraftPackSearchTraditional()
             self.DraftPickedSearchTraditional()
         elif (self.draft_type == constants.LIMITED_TYPE_SEALED) or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL):
-            self.SealedPackSearch()
-        return
+            update = self.SealedPackSearch()
+
+        if not update:
+            if ((previous_pack != self.current_pack) or 
+                (previous_pick != self.current_pick) or
+                (previous_picked != self.current_picked_pick)):
+                update = True
+
+        return update
         
     def DraftPackSearchPremierP1P1(self):
         offset = self.pack_offset
@@ -562,9 +573,7 @@ class ArenaScanner:
                                     break
         
                             except Exception as error:
-                                self.logger.info(f"DraftPackSearchQuick Error: {error}")
-            if log.closed == False:
-                log.close() 
+                                self.logger.info(f"DraftPackSearchQuick Error: {error}") 
         except Exception as error:
             self.logger.info(f"DraftPackSearchQuick Error: {error}")
         
@@ -619,9 +628,7 @@ class ArenaScanner:
                                 break
                             
                         except Exception as error:
-                            self.logger.info(f"DraftPickedSearchQuick Error: {error}")
-            if log.closed == False:
-                log.close()      
+                            self.logger.info(f"DraftPickedSearchQuick Error: {error}")     
         except Exception as error:
             self.logger.info(f"DraftPickedSearchQuick Error: {error}")
             
@@ -808,9 +815,7 @@ class ArenaScanner:
         offset = self.pack_offset
         draft_data = object()
         draft_string = "EventGrantCardPool"
-        pack_cards = []
-        pack = 0
-        pick = 0
+        update = False
         #Identify and print out the log lines that contain the draft packs
         try:
             with open(self.arena_file, 'r') as log:
@@ -825,6 +830,7 @@ class ArenaScanner:
                     string_offset = line.find(draft_string)
                     
                     if string_offset != -1:
+                        update = True
                         self.pack_offset = offset
                         start_offset = line.find("{\"CurrentModule\"")
                         self.logger.info(line)
@@ -845,7 +851,7 @@ class ArenaScanner:
              
         except Exception as error:
             self.logger.info(f"SealedPackSearch Error: {error}") 
-        return pack_cards
+        return update
         
     def RetrieveDataSources(self):
         data_sources = OrderedDict()

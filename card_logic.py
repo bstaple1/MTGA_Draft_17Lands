@@ -27,7 +27,7 @@ class Config:
     filter_format : str=constants.DECK_FILTER_FORMAT_COLORS
     result_format : str=constants.RESULT_FORMAT_WIN_RATE
     missing_enabled : bool=True
-    stats_enabled : bool=True
+    stats_enabled : bool=False
     hotkey_enabled : bool=True
     images_enabled : bool=True
     auto_highest_enabled : bool=True
@@ -35,6 +35,12 @@ class Config:
     color_bonus_enabled : bool=False
     bayesian_average_enabled : bool=False
     draft_log_enabled: bool=False
+    taken_alsa_enabled: bool=False
+    taken_ata_enabled: bool=False
+    taken_gpwr_enabled: bool=False
+    taken_ohwr_enabled: bool=False
+    taken_gndwr_enabled: bool=False
+    taken_iwd_enabled: bool=False
     minimum_creatures : int=13
     minimum_noncreatures : int=6
     ratings_threshold : int=500
@@ -329,13 +335,13 @@ def CardFilter(card_list, deck, filtered_colors, fields,  limits, tier_list, con
     for card in card_list:
         try:
             selected_card = card
-            selected_card["results"] = [0.0] * len(fields)
-            selected_card["curve_bonus"] = []
-            selected_card["color_bonus"] = []
+            selected_card["results"] = ["NA"] * len(fields)
+            selected_card["curve_bonus"] = [0.0] * len(filtered_colors) if curve_bonus else []
+            selected_card["color_bonus"] = [0.0] * len(filtered_colors) if color_bonus else []
 
             for count, option in enumerate(fields.values()):
                
-                for color in filtered_colors:
+                for color_index, color in enumerate(filtered_colors):
                     if constants.FILTER_OPTION_TIER in option:
                         card_name = card[constants.DATA_FIELD_NAME].split(" // ")
                         if card_name[0] in tier_list[option][constants.DATA_SECTION_RATINGS]:
@@ -354,9 +360,9 @@ def CardFilter(card_list, deck, filtered_colors, fields,  limits, tier_list, con
                                                       color_bonus)
                         rated_colors.append(rating_data["result"])
                         if "curve_bonus" in rating_data:
-                            selected_card["curve_bonus"].append(rating_data["curve_bonus"])
+                            selected_card["curve_bonus"][color_index] = rating_data["curve_bonus"]
                         if "color_bonus" in rating_data:
-                            selected_card["color_bonus"].append(rating_data["color_bonus"])
+                            selected_card["color_bonus"][color_index] = rating_data["color_bonus"]
                         if len(rated_colors):
                             selected_card["results"][count] = sorted(rated_colors, reverse = True)[0]
                     elif option in card[constants.DATA_FIELD_DECK_COLORS][color]:
@@ -907,6 +913,12 @@ def ReadConfig():
         config.auto_highest_enabled = config_data["settings"]["auto_highest_enabled"]
         config.curve_bonus_enabled = config_data["settings"]["curve_bonus_enabled"]
         config.color_bonus_enabled = config_data["settings"]["color_bonus_enabled"]
+        config.taken_alsa_enabled = config_data["settings"]["taken_alsa_enabled"]
+        config.taken_ata_enabled = config_data["settings"]["taken_ata_enabled"]
+        config.taken_gpwr_enabled = config_data["settings"]["taken_gpwr_enabled"]
+        config.taken_ohwr_enabled = config_data["settings"]["taken_ohwr_enabled"]
+        config.taken_iwd_enabled = config_data["settings"]["taken_iwd_enabled"]
+        config.taken_gndwr_enabled = config_data["settings"]["taken_gndwr_enabled"]
         config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
         config.draft_log_enabled = config_data["settings"]["draft_log_enabled"]
     except Exception as error:
@@ -935,6 +947,12 @@ def WriteConfig(config):
         config_data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
         config_data["settings"]["curve_bonus_enabled"] = config.curve_bonus_enabled
         config_data["settings"]["color_bonus_enabled"] = config.color_bonus_enabled
+        config_data["settings"]["taken_alsa_enabled"] = config.taken_alsa_enabled
+        config_data["settings"]["taken_ata_enabled"] = config.taken_ata_enabled
+        config_data["settings"]["taken_gpwr_enabled"] = config.taken_gpwr_enabled
+        config_data["settings"]["taken_ohwr_enabled"] = config.taken_ohwr_enabled
+        config_data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
+        config_data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
         config_data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
         config_data["settings"]["draft_log_enabled"] = config.draft_log_enabled
         
@@ -975,6 +993,12 @@ def ResetConfig():
         data["settings"]["color_bonus_enabled"] = config.color_bonus_enabled
         data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
         data["settings"]["draft_log_enabled"] = config.draft_log_enabled
+        data["settings"]["taken_alsa_enabled"] = config.taken_alsa_enabled
+        data["settings"]["taken_ata_enabled"] = config.taken_ata_enabled
+        data["settings"]["taken_gpwr_enabled"] = config.taken_gpwr_enabled
+        data["settings"]["taken_ohwr_enabled"] = config.taken_ohwr_enabled
+        data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
+        data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
         
         data["card_logic"] = {}
         data["card_logic"]["alsa_weight"] = config.alsa_weight

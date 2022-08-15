@@ -555,19 +555,7 @@ class FileExtractor:
             self.card_dict[card][constants.DATA_FIELD_DECK_COLORS] = {}
             for color in self.deck_colors:
                 self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = {x : 0.0 for x in constants.DATA_FIELD_17LANDS_DICT.keys() if x != constants.DATA_SECTION_IMAGES}
-                #color_data = {}
-                #for k in constants.DATA_FIELD_17LANDS_DICT.keys():
-                #    if k != constants.DATA_SECTION_IMAGES:
-                #        color_data[k] = 0.0
-                #self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = color_data
-                #self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = {constants.DATA_FIELD_GIHWR : constants.DEFAULT_GIHWR_AVERAGE, 
-                #                                              constants.DATA_FIELD_IWD   : 0.0, 
-                #                                              constants.DATA_FIELD_ALSA  : 0.0, 
-                #                                              constants.DATA_FIELD_GIH   : 0.0,
-                #                                              constants.DATA_FIELD_OHWR  : 0.0,
-                #                                              constants.DATA_FIELD_NGOH  : 0.0,
-                #                                              constants.DATA_FIELD_GPWR  : 0.0,
-                #                                              constants.DATA_FIELD_NGP   : 0.0}
+
 
     def Session17Lands(self, root, progress, initial_progress):
         current_progress = 0

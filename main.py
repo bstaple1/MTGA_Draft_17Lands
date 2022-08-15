@@ -180,10 +180,12 @@ def CreateHeader(frame, height, headers, total_width, include_header, fixed_widt
     list_box.config(height=height)
 
     try:
-        list_box.tag_configure("taken_odd", font=("Helvetica Neue", 9), background = "#3d3d3d", foreground = "#e6ecec")
-        list_box.tag_configure("taken_even", font=("Helvetica Neue", 9), background = "#333333", foreground = "#e6ecec")
+        list_box.tag_configure("taken_odd", font=("Helvetica Neue", 8), background = "#3d3d3d", foreground = "#e6ecec")
+        list_box.tag_configure("taken_even", font=("Helvetica Neue", 8), background = "#333333", foreground = "#e6ecec")
         list_box.tag_configure("tt_odd", font=("Helvetica Neue", 9), background = "#BFBFBF", foreground = "#000000")
         list_box.tag_configure("tt_even", font=("Helvetica Neue", 9), background = "#FFFFFF", foreground = "#000000")
+        list_box.tag_configure("main_odd", font=("Helvetica Neue", 7), background = "#3d3d3d", foreground = "#e6ecec")
+        list_box.tag_configure("main_even", font=("Helvetica Neue", 7), background = "#333333", foreground = "#e6ecec")
         list_box.tag_configure("whitecard", font=("Cascadia", 7, "bold"), background = "#FFFFFF", foreground = "#000000")
         list_box.tag_configure("redcard", font=("Cascadia", 7, "bold"), background = "#FF6C6C", foreground = "#000000")
         list_box.tag_configure("bluecard", font=("Cascadia", 7, "bold"), background = "#6078F3", foreground = "#000000")
@@ -216,6 +218,12 @@ def TableColumnSort(table, column, reverse):
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
         self.root = root
+        style = Style()
+        style.configure("TButton", foreground="black")  
+        style.configure("TEntry", foreground="black")  
+        #style.theme_use('alt')
+        self.root.tk.call("source", "custom_dark.tcl")
+        #self.root.tk.call("set_theme", "dark")
         self.configuration = configuration
         self.filename = filename
         self.step_through = step_through
@@ -257,11 +265,11 @@ class WindowUI:
         self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
         self.root.config(menu=self.menubar)
         
-        style = Style()
+        #style = Style()
         style.map("Treeview", 
                 foreground=FixedMap(style, "foreground"),
                 background=FixedMap(style, "background"))
-                
+
         current_draft_label_frame = Frame(self.root)
         self.current_draft_label = Label(current_draft_label_frame, text="Current Draft:", font='Helvetica 9 bold', anchor="e")
         
@@ -284,6 +292,12 @@ class WindowUI:
         self.color_bonus_checkbox_value = IntVar(self.root)
         self.bayesian_average_checkbox_value = IntVar(self.root)
         self.draft_log_checkbox_value = IntVar(self.root)
+        self.taken_alsa_checkbox_value = IntVar(self.root)
+        self.taken_ata_checkbox_value = IntVar(self.root)
+        self.taken_gpwr_checkbox_value = IntVar(self.root)
+        self.taken_ohwr_checkbox_value = IntVar(self.root)
+        self.taken_gndwr_checkbox_value = IntVar(self.root)
+        self.taken_iwd_checkbox_value = IntVar(self.root)
         self.column_2_selection = StringVar(self.root)
         self.column_2_list = self.main_options_dict.keys()
         self.column_3_selection = StringVar(self.root)
@@ -302,6 +316,7 @@ class WindowUI:
         self.result_format_list = constants.RESULT_FORMAT_LIST
         self.deck_filter_selection = StringVar(self.root)
         self.deck_filter_list = self.deck_colors.keys()
+        self.taken_filter_selection = StringVar(self.root)
 
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
@@ -315,6 +330,7 @@ class WindowUI:
         self.column_5_options = None
         self.column_6_options = None
         self.column_7_options = None
+        self.taken_table = None
         
         deck_colors_option_frame = Frame(self.root)
         self.deck_colors_options = OptionMenu(deck_colors_option_frame, self.deck_filter_selection, self.deck_filter_selection.get(), *self.deck_filter_list, style="my.TMenubutton")
@@ -335,7 +351,7 @@ class WindowUI:
                    "Column6"  : {"width" : .18, "anchor" : CENTER},
                    "Column7"  : {"width" : .18, "anchor" : CENTER}}
         style = Style() 
-        style.configure("Treeview.Heading", font=("Cascadia", 6))        
+        style.configure("Treeview.Heading", font=("Cascadia", 7), foreground="black")        
                   
         self.pack_table = CreateHeader(self.pack_table_frame, 0, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         
@@ -365,7 +381,7 @@ class WindowUI:
         self.stat_options.config(width=11) 
         
         citation_label = Label(self.root, text="Powered by 17Lands*", font='Helvetica 9 ', anchor="e", borderwidth=2, relief="groove")
-        hotkey_label = Label(self.root, text="CTRL+G to Minimize", font='Helvetica 8 ', anchor="e")
+        hotkey_label = Label(self.root, text="CTRL+G to Minimize", font='Helvetica 8 ', anchor="e" )
         footnote_label = Label(self.root, text="*This application is not endorsed by 17Lands", font='Helvetica 8 ', anchor="e")
         
         citation_label.grid(row = 0, column = 0, columnspan = 2) 
@@ -403,7 +419,7 @@ class WindowUI:
         self.UpdateSettingsData()
 
         self.root.attributes("-topmost", True)
-
+        self.InitializeUI()
         self.VersionCheck()
         
     def DeckFilterColors(self, cards, selected_option):
@@ -450,7 +466,7 @@ class WindowUI:
             if list_length:
                 self.pack_table.config(height = list_length)
             else:
-                self.pack_table.config(height=1)
+                self.pack_table.config(height=0)
                 
             #Update the filtered column header with the filtered colors
             last_field_index =TableColumnControl(self.pack_table, fields)
@@ -458,7 +474,8 @@ class WindowUI:
             filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True) 
                 
             for count, card in enumerate(filtered_list):
-                row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                #row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                row_tag = "taken_even" if count % 2 else "taken_odd"
                 field_values = tuple(card["results"])
                 self.pack_table.insert("",index = count, iid = count, values = field_values, tag = (row_tag,))
             self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.pack_table, card_list=card_list, selected_color=filtered_colors))
@@ -482,7 +499,7 @@ class WindowUI:
                 if list_length:
                     self.missing_table.config(height = list_length)
                 else:
-                    self.missing_table.config(height=1) 
+                    self.missing_table.config(height=0) 
                 
                 if list_length:
                     filtered_list = CL.CardFilter(missing_cards,
@@ -499,7 +516,8 @@ class WindowUI:
 
                     #filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
-                        row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                        #row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                        row_tag = "taken_even" if count % 2 else "taken_odd"
                         for index, field in enumerate(fields.values()):
                             if field == constants.DATA_FIELD_NAME:
                                 card["results"][index] = f'*{card["results"][index]}' if card["results"][index] in picked_cards else card["results"][index]
@@ -529,8 +547,8 @@ class WindowUI:
                                           self.deck_limits,
                                           self.tier_data,
                                           self.configuration,
-                                          self.configuration.curve_bonus_enabled,
-                                          self.configuration.color_bonus_enabled)
+                                          False,
+                                          False)
                     
             compare_table.delete(*compare_table.get_children())
 
@@ -540,41 +558,64 @@ class WindowUI:
             filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True) 
                 
             for count, card in enumerate(filtered_list):
-                row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                #row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                row_tag = "taken_even" if count % 2 else "taken_odd"
                 field_values = tuple(card["results"])
                 compare_table.insert("",index = count, iid = count, values = field_values, tag = (row_tag,))
             compare_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=compare_table, card_list=matching_cards, selected_color=filtered_colors))
         except Exception as error:
             ui_logger.info(f"UpdateCompareTable Error: {error}")
 
-    def UpdateTakenTable(self, taken_table, selected_option, fields):
+    def UpdateTakenTable(self, *args):
         try:
-            taken_cards = self.draft.TakenCards()
-            filtered_colors = self.DeckFilterColors(taken_cards, selected_option.get())
-            stacked_cards = CL.StackCards(taken_cards)
+            while(True):
+                if self.taken_table == None:
+                    break
 
-            for row in taken_table.get_children():
-                taken_table.delete(row)
+                fields = {"Column1"    : constants.DATA_FIELD_NAME,
+                          "Column2"    : constants.DATA_FIELD_COLORS,
+                          "Column3"    : constants.DATA_FIELD_COUNT,
+                          "Column4"    : (constants.DATA_FIELD_ALSA if self.taken_alsa_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column5"    : (constants.DATA_FIELD_ATA if self.taken_ata_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column6"    : (constants.DATA_FIELD_GPWR if self.taken_gpwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column7"    : (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column8"    : (constants.DATA_FIELD_IWD if self.taken_iwd_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column9"    : (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column10"   : constants.DATA_FIELD_GIHWR}
 
-            filtered_list = CL.CardFilter(stacked_cards,
-                                          taken_cards,
-                                          filtered_colors,
-                                          fields,
-                                          self.deck_limits,
-                                          self.tier_data,
-                                          self.configuration,
-                                          False,
-                                          False)
 
-            TableColumnControl(taken_table, fields)
+                taken_cards = self.draft.TakenCards()
+                filtered_colors = self.DeckFilterColors(taken_cards, self.taken_filter_selection.get())
+                stacked_cards = CL.StackCards(taken_cards)
 
-            filtered_list = sorted(filtered_list, key=lambda d: d["results"][-2], reverse=True)  
-               
-            for count, card in enumerate(filtered_list):
-                field_values = tuple(card["results"])
-                row_tag = "taken_even" if count % 2 else "taken_odd"
-                taken_table.insert("",index = count, iid = count, values = field_values, tag = (row_tag,))
-            taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=taken_table, card_list=taken_cards, selected_color=filtered_colors))
+                for row in self.taken_table.get_children():
+                    self.taken_table.delete(row)
+
+                filtered_list = CL.CardFilter(stacked_cards,
+                                              taken_cards,
+                                              filtered_colors,
+                                              fields,
+                                              self.deck_limits,
+                                              self.tier_data,
+                                              self.configuration,
+                                              False,
+                                              False)
+
+                last_field_index = TableColumnControl(self.taken_table, fields)
+
+                filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True)  
+
+                if len(filtered_list):
+                    self.taken_table.config(height = len(filtered_list))
+                else:
+                    self.taken_table.config(height=1)
+
+                for count, card in enumerate(filtered_list):
+                    field_values = tuple(card["results"])
+                    row_tag = "taken_even" if count % 2 else "taken_odd"
+                    self.taken_table.insert("",index = count, iid = count, values = field_values, tag = (row_tag,))
+                self.taken_table.bind("<<TreeviewSelect>>", lambda event: self.OnClickTable(event, table=self.taken_table, card_list=filtered_list, selected_color=filtered_colors))
+                break
         except Exception as error:
             ui_logger.info(f"UpdateTakenTable Error: {error}")
             
@@ -585,9 +626,16 @@ class WindowUI:
             suggested_deck.sort(key=lambda x : x[constants.DATA_FIELD_CMC], reverse = False)
             for row in suggest_table.get_children():
                 suggest_table.delete(row)
+
+            list_length = len(suggested_deck)
+            if list_length:
+                suggest_table.config(height = list_length)
+            else:
+                suggest_table.config(height=0)
             
             for count, card in enumerate(suggested_deck):
-                row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                #row_tag = CL.RowColorTag(card[constants.DATA_FIELD_COLORS])
+                row_tag = "taken_even" if count % 2 else "taken_odd"
                 suggest_table.insert("",index = count, values = (card[constants.DATA_FIELD_NAME],
                                                                  "%d" % card[constants.DATA_FIELD_COUNT],
                                                                  card[constants.DATA_FIELD_COLORS],
@@ -635,7 +683,7 @@ class WindowUI:
             if list_length:
                 self.stat_table.config(height = list_length)
             else:
-                self.stat_table.config(height=1)
+                self.stat_table.config(height=0)
             
             count = 0
             for color,values in colors_filtered.items():
@@ -720,6 +768,9 @@ class WindowUI:
             if self.deck_filter_selection.get() not in self.deck_colors.keys():
                 selection = [k for k in self.deck_colors.keys() if constants.DECK_FILTER_DEFAULT in k]
                 self.deck_filter_selection.set(selection[0] if len(selection) else constants.DECK_FILTER_DEFAULT)
+            if self.taken_filter_selection.get() not in self.deck_colors.keys():
+                selection = [k for k in self.deck_colors.keys() if constants.DECK_FILTER_DEFAULT in k]
+                self.taken_filter_selection.set(selection[0] if len(selection) else constants.DECK_FILTER_DEFAULT)            
             
             deck_colors_menu = self.deck_colors_options["menu"]
             deck_colors_menu.delete(0, "end")
@@ -828,7 +879,8 @@ class WindowUI:
             self.UpdateSourceOptions(True)
             self.UpdateDraftData()
 
-        self.draft.DraftDataSearch() 
+        update = self.draft.DraftDataSearch() 
+        return update
 
     def UpdateSettingsStorage(self):
         try:
@@ -856,6 +908,12 @@ class WindowUI:
             self.configuration.color_bonus_enabled = bool(self.color_bonus_checkbox_value.get())
             self.configuration.bayesian_average_enabled = bool(self.bayesian_average_checkbox_value.get())
             self.configuration.draft_log_enabled = bool(self.draft_log_checkbox_value.get())
+            self.configuration.taken_alsa_enabled = bool(self.taken_alsa_checkbox_value.get())
+            self.configuration.taken_ata_enabled = bool(self.taken_ata_checkbox_value.get())
+            self.configuration.taken_gpwr_enabled = bool(self.taken_gpwr_checkbox_value.get())
+            self.configuration.taken_ohwr_enabled = bool(self.taken_ohwr_checkbox_value.get())
+            self.configuration.taken_iwd_enabled = bool(self.taken_iwd_checkbox_value.get())
+            self.configuration.taken_gndwr_enabled = bool(self.taken_gndwr_checkbox_value.get())
             CL.WriteConfig(self.configuration)
         except Exception as error:
             ui_logger.info(f"UpdateSettingsStorage Error: {error}")
@@ -886,6 +944,12 @@ class WindowUI:
             self.color_bonus_checkbox_value.set(self.configuration.color_bonus_enabled)
             self.bayesian_average_checkbox_value.set(self.configuration.bayesian_average_enabled)
             self.draft_log_checkbox_value.set(self.configuration.draft_log_enabled)
+            self.taken_alsa_checkbox_value.set(self.configuration.taken_alsa_enabled)
+            self.taken_ata_checkbox_value.set(self.configuration.taken_ata_enabled)
+            self.taken_gpwr_checkbox_value.set(self.configuration.taken_gpwr_enabled)
+            self.taken_ohwr_checkbox_value.set(self.configuration.taken_ohwr_enabled)
+            self.taken_gndwr_checkbox_value.set(self.configuration.taken_gndwr_enabled)
+            self.taken_iwd_checkbox_value.set(self.configuration.taken_iwd_enabled)
         except Exception as error:
             self.column_2_selection.set(constants.COLUMN_2_DEFAULT) 
             self.column_3_selection.set(constants.COLUMN_3_DEFAULT)
@@ -901,15 +965,48 @@ class WindowUI:
             self.color_bonus_checkbox_value.set(False)
             self.bayesian_average_checkbox_value.set(False)
             self.draft_log_checkbox_value.set(False)
+            self.taken_alsa_checkbox_value.set(True)
+            self.taken_ata_checkbox_value.set(True)
+            self.taken_gpwr_checkbox_value.set(True)
+            self.taken_ohwr_checkbox_value.set(True)
+            self.taken_gndwr_checkbox_value.set(True)
+            self.taken_iwd_checkbox_value.set(True)
+            ui_logger.info(f"UpdateSettingsData Error: {error}")
         self.ControlTrace(True) 
         
         self.draft.LogEnable(self.configuration.draft_log_enabled)
+    
+    def InitializeUI(self):
+        self.UpdateSourceOptions(False)
+        self.UpdateColumnOptions()
         
-        
+        self.EnableDeckStates(self.deck_stats_checkbox_value.get())
+        self.EnableMissingCards(self.missing_cards_checkbox_value.get())
+        self.UpdateCurrentDraft(self.draft.draft_sets, self.draft.draft_type)
+        self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
+
+        fields = {"Column1"    : constants.DATA_FIELD_NAME,
+                  "Column2"    : self.main_options_dict[self.column_2_selection.get()],
+                  "Column3"    : self.main_options_dict[self.column_3_selection.get()],
+                  "Column4"    : self.main_options_dict[self.column_4_selection.get()],
+                  "Column5"    : self.extra_options_dict[self.column_5_selection.get()],
+                  "Column6"    : self.extra_options_dict[self.column_6_selection.get()],
+                  "Column7"    : self.extra_options_dict[self.column_7_selection.get()],}
+        self.UpdatePackTable([], [], self.deck_filter_selection.get(), fields)
+                             
+        self.UpdateMissingTable([],[],[],[],self.deck_filter_selection.get(),fields)   
+
+        self.UpdateDeckStatsCallback()
+
+
     def UpdateCallback(self, enable_draft_search):
+        update = True
         if enable_draft_search:
-            self.UpdateDraft()
+            update = self.UpdateDraft()
         
+        if not update:
+            return
+
         self.UpdateSourceOptions(False)
         self.UpdateColumnOptions()
         
@@ -945,6 +1042,7 @@ class WindowUI:
                                 fields)   
 
         self.UpdateDeckStatsCallback()
+        self.UpdateTakenTable()
 
     def UpdateDeckStatsCallback(self, *args):
         self.root.update_idletasks() 
@@ -957,23 +1055,13 @@ class WindowUI:
             if self.current_timestamp != self.previous_timestamp:
                 self.previous_timestamp = self.current_timestamp
                 
-                #previous_pick = self.draft.current_pick
-                #previous_pack = self.draft.current_pack
-                
                 while(True):
 
                     self.UpdateCallback(True)
-                    #if self.draft.current_pack < previous_pack:
-                    #    self.DraftReset(True)
-                    #    self.UpdateCallback(True)
-                    #if self.draft.step_through and (previous_pick != self.draft.current_pick):
                     if self.draft.step_through:
                         input("Continue?")
                     else:
                         break
-                        
-                    #previous_pick = self.draft.current_pick
-                    #previous_pack = self.draft.current_pack
         except Exception as error:
             ui_logger.info(f"UpdateUI Error: {error}")
             
@@ -995,14 +1083,18 @@ class WindowUI:
         try:
             sets = self.extractor.SetList()
         
-            column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
+            #column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
+            headers = {"Set"        : {"width" : .55, "anchor" : W},
+                       "Draft"      : {"width" : .15, "anchor" : CENTER},
+                       "Start Date" : {"width" : .15, "anchor" : CENTER},
+                       "End Date"   : {"width" : .15, "anchor" : CENTER}}
+            
+            
             list_box_frame = Frame(popup)
             list_box_scrollbar = Scrollbar(list_box_frame, orient=VERTICAL)
             list_box_scrollbar.pack(side=RIGHT, fill=Y)
             
-            list_box = Treeview(list_box_frame, columns = column_headers, show = 'headings')
-            list_box.tag_configure('gray', background='#cccccc')
-            list_box.tag_configure('bold', font=('Arial Bold', 10))
+            list_box = CreateHeader(list_box_frame, 0, headers, 400, True, True, constants.TABLE_STYLE, True)
             
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
@@ -1041,10 +1133,6 @@ class WindowUI:
                                                                    sets,
                                                                    constants.DATA_SET_VERSION_3), text="ADD SET")
             
-            
-            for column in column_headers:
-                list_box.column(column, anchor = CENTER, stretch = YES, width = 100)
-                list_box.heading(column, text = column, anchor = CENTER)
                 
             notice_label.grid(row=0, column=0, columnspan=8, sticky = 'nsew')
             list_box_frame.grid(row=1, column=0, columnspan=8, sticky = 'nsew')
@@ -1072,7 +1160,7 @@ class WindowUI:
         popup.wm_title("Card Compare")
         
         try:
-            Grid.rowconfigure(popup, 1, weight = 1)
+            Grid.rowconfigure(popup, 2, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
             
 
@@ -1108,7 +1196,7 @@ class WindowUI:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = CreateHeader(compare_table_frame, 20, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, True)
+            compare_table = CreateHeader(compare_table_frame, 0, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, True)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -1127,71 +1215,112 @@ class WindowUI:
                                                                               self.draft.set_data["card_ratings"],
                                                                               filtered,
                                                                               fields))
+
+            self.UpdateCompareTable(compare_table,
+                                    matching_cards,
+                                    card_entry,
+                                    self.draft.set_data["card_ratings"],
+                                    filtered,
+                                    fields)
             
             popup.attributes("-topmost", True)
         except Exception as error:
             ui_logger.info(f"CardComparePopup Error: {error}")
-            
+
+    def TakenCardsExit(self, popup):
+        self.taken_table = None
+        
+        popup.destroy()  
+
     def TakenCardsPopup(self):
         popup = Toplevel()
         popup.wm_title("Taken Cards")
+        popup.resizable(width = False, height = True)
+        popup.protocol("WM_DELETE_WINDOW", lambda window=popup: self.TakenCardsExit(window))
         try:
-            Grid.rowconfigure(popup, 2, weight = 1)
-            Grid.columnconfigure(popup, 1, weight = 1)
+            Grid.rowconfigure(popup, 3, weight = 1)
+            Grid.columnconfigure(popup, 6, weight = 1)
 
             taken_cards = self.draft.TakenCards()
             copy_button = Button(popup, command=lambda:CopyTaken(taken_cards,
                                                                  self.draft.set_data),
                                                                  text="Copy to Clipboard")
             
-            headers = {"Column1": {"width" : .28, "anchor" : W},
-                       "Column2": {"width" : .12, "anchor" : CENTER},
-                       "Column3": {"width" : .12, "anchor" : CENTER},
-                       "Column4": {"width" : .12, "anchor" : CENTER},
-                       "Column5": {"width" : .12, "anchor" : CENTER},
-                       "Column6": {"width" : .12, "anchor" : CENTER},
-                       "Column7": {"width" : .12, "anchor" : CENTER},
-                       "Column8": {"width" : .12, "anchor" : CENTER},
-                       "Column9": {"width" : .12, "anchor" : CENTER},
+            headers = {"Column1" : {"width" : .28, "anchor" : W},
+                       "Column2" : {"width" : .12, "anchor" : CENTER},
+                       "Column3" : {"width" : .12, "anchor" : CENTER},
+                       "Column4" : {"width" : .12, "anchor" : CENTER},
+                       "Column5" : {"width" : .12, "anchor" : CENTER},
+                       "Column6" : {"width" : .12, "anchor" : CENTER},
+                       "Column7" : {"width" : .12, "anchor" : CENTER},
+                       "Column8" : {"width" : .12, "anchor" : CENTER},
+                       "Column9" : {"width" : .12, "anchor" : CENTER},
+                       "Column10": {"width" : .12, "anchor" : CENTER},
             }
 
-            fields = {"Column1"    : constants.DATA_FIELD_NAME,
-                      "Column2"    : constants.DATA_FIELD_COLORS,
-                      "Column3"    : constants.DATA_FIELD_COUNT,
-                      "Column4"    : constants.DATA_FIELD_ALSA,
-                      "Column5"    : constants.DATA_FIELD_ATA,
-                      "Column6"    : constants.DATA_FIELD_GPWR,
-                      "Column7"    : constants.DATA_FIELD_OHWR,
-                      "Column8"    : constants.DATA_FIELD_GIHWR,
-                      "Column9"    : constants.DATA_FIELD_IWD}
-
             style = Style() 
-            style.configure("Taken.Treeview", rowheight=30)  
+            style.configure("Taken.Treeview", rowheight=25)  
 
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            taken_table = CreateHeader(taken_table_frame, 20, headers, 600, True, True, "Taken.Treeview", True)
-            taken_table.config(yscrollcommand=taken_scrollbar.set)
-            taken_scrollbar.config(command=taken_table.yview)
+            self.taken_table = CreateHeader(taken_table_frame, 0, headers, 600, True, True, "Taken.Treeview", False)
+            self.taken_table.config(yscrollcommand=taken_scrollbar.set)
+            taken_scrollbar.config(command=self.taken_table.yview)
             
             taken_filter_label = Label(popup, text="Deck Filter:", font='Helvetica 9 bold', anchor="w")
-            taken_filter_selection = StringVar(popup)
-            taken_filter_selection.set(self.deck_filter_selection.get())
+            self.taken_filter_selection.set(self.deck_filter_selection.get())
             taken_filter_list = self.deck_filter_list
             
-            taken_filter_options = OptionMenu(popup, taken_filter_selection, taken_filter_selection.get(), *taken_filter_list, style="my.TMenubutton")
-            taken_filter_selection.trace("w", lambda *args, taken=taken_table, selection=taken_filter_selection, fields=fields : self.UpdateTakenTable(taken, selection, fields))
-            #deck_filter_options.config(width=15)
+            taken_option = OptionMenu(popup, self.taken_filter_selection, self.taken_filter_selection.get(), *taken_filter_list, style="my.TMenubutton")
+
+            checkbox_frame = Frame(popup)
+            taken_alsa_checkbox = Checkbutton(checkbox_frame,
+                                              text = "ALSA",
+                                              variable=self.taken_alsa_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0)  
+            taken_ata_checkbox = Checkbutton(checkbox_frame,
+                                              text = "ATA",
+                                              variable=self.taken_ata_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0) 
+            taken_gpwr_checkbox = Checkbutton(checkbox_frame,
+                                              text = "GPWR",
+                                              variable=self.taken_gpwr_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0) 
+            taken_ohwr_checkbox = Checkbutton(checkbox_frame,
+                                              text = "OHWR",
+                                              variable=self.taken_ohwr_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0)  
+            taken_gndwr_checkbox = Checkbutton(checkbox_frame,
+                                              text = "GNDWR",
+                                              variable=self.taken_gndwr_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0) 
+            taken_iwd_checkbox = Checkbutton(checkbox_frame,
+                                              text = "IWD",
+                                              variable=self.taken_iwd_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0) 
+
+            taken_filter_label.grid(row=0, column=0, columnspan = 1, sticky="nsew")
+            taken_option.grid(row=0, column=1, columnspan = 6, sticky="nsew")
+
+            checkbox_frame.grid(row=1, column=0, columnspan = 7, sticky="nsew")
+            copy_button.grid(row=2, column=0, columnspan = 7, sticky="nsew")
+            taken_table_frame.grid(row=3, column=0, columnspan = 7, sticky = "nsew")
+            self.taken_table.pack(side=LEFT, expand = True, fill = "both")
+            taken_alsa_checkbox.pack(side=LEFT, expand = True, fill = "both")
+            taken_ata_checkbox.pack(side=LEFT, expand = True, fill = "both")
+            taken_gpwr_checkbox.pack(side=LEFT, expand = True, fill = "both")
+            taken_ohwr_checkbox.pack(side=LEFT, expand = True, fill = "both")
+            taken_gndwr_checkbox.pack(side=LEFT, expand = True, fill = "both")
+            taken_iwd_checkbox.pack(side=LEFT, expand = True, fill = "both")
             
-            
-            taken_filter_label.grid(row=0, column=0, sticky="nsew")
-            taken_filter_options.grid(row=0, column=1, sticky="nsew")
-            copy_button.grid(row=1, column=0, columnspan = 2, sticky="nsew")
-            taken_table_frame.grid(row=2, column=0, columnspan = 2, sticky = "nsew")
-            taken_table.pack(expand = True, fill = "both")
-            
-            self.UpdateTakenTable(taken_table, taken_filter_selection, fields)
+            self.UpdateTakenTable()
             
             popup.attributes("-topmost", True)
         except Exception as error:
@@ -1200,7 +1329,7 @@ class WindowUI:
     def SuggestDeckPopup(self):
         popup = Toplevel()
         popup.wm_title("Suggested Decks")
-        
+        popup.resizable(width = False, height = True)
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             
@@ -1238,10 +1367,14 @@ class WindowUI:
                        "Color" : {"width" : .10, "anchor" : CENTER},
                        "Cost"  : {"width" : .10, "anchor" : CENTER},
                        "Type"  : {"width" : .26, "anchor" : CENTER}}
+
+            style = Style() 
+            style.configure("Suggest.Treeview", rowheight=30) 
+
             suggest_table_frame = Frame(popup)
             suggest_scrollbar = Scrollbar(suggest_table_frame, orient=VERTICAL)
             suggest_scrollbar.pack(side=RIGHT, fill=Y)
-            suggest_table = CreateHeader(suggest_table_frame, 20, headers, 380, True, True, constants.TABLE_STYLE, False)
+            suggest_table = CreateHeader(suggest_table_frame, 0, headers, 380, True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
             
@@ -1285,7 +1418,7 @@ class WindowUI:
             column_6_label = Label(popup, text="Column 6:", font='Helvetica 9 bold', anchor="w")
             column_7_label = Label(popup, text="Column 7:", font='Helvetica 9 bold', anchor="w")
             filter_format_label = Label(popup, text="Deck Filter Format:", font='Helvetica 9 bold', anchor="w")
-            result_format_label = Label(popup, text="Result Format:", font='Helvetica 9 bold', anchor="w")
+            result_format_label = Label(popup, text="Win Rate Format:", font='Helvetica 9 bold', anchor="w")
             deck_stats_label = Label(popup, text="Enable Draft Stats:", font='Helvetica 9 bold', anchor="w")
             deck_stats_checkbox = Checkbutton(popup,
                                               variable=self.deck_stats_checkbox_value,
@@ -1463,8 +1596,14 @@ class WindowUI:
         self.root.update()
         file_list = FE.RetrieveLocalSetList(sets)
         
-        for file in file_list:
-            list_box.insert("", index = 0, values = file)
+        if len(file_list):
+            list_box.config(height = len(file_list))
+        else:
+            list_box.config(height=1)
+        
+        for count, file in enumerate(file_list):
+            row_tag = "taken_even" if count % 2 else "taken_odd"
+            list_box.insert("",index = count, iid = count, values = file, tag = (row_tag,))
             
     def OnClickTable(self, event, table, card_list, selected_color):
         color_dict = {}
@@ -1474,37 +1613,48 @@ class WindowUI:
                 card_name = card_name if card_name[0] != '*' else card_name[1:]
                 if card_name == card[constants.DATA_FIELD_NAME]:
                     try:
-                        if set(selected_color).issubset(constants.NON_COLORS_OPTIONS):
-                            color_list = [constants.FILTER_OPTION_ALL_DECKS]
-                        elif constants.FILTER_OPTION_TIER in selected_color[0]:
-                            color_list = [constants.FILTER_OPTION_ALL_DECKS]
-                        else:
-                            color_list = selected_color
-                        for count, color in enumerate(color_list):
-                            try:
-                                color_dict[color] = {x : "NA" for x in constants.DATA_FIELDS_LIST}
+                        for count, color in enumerate(selected_color):
+                            color_dict[color] = {x : "NA" for x in constants.DATA_FIELDS_LIST}
+                            for k in color_dict[color].keys():
+                                if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                                    color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
 
-                                for k in color_dict[color].keys():
-                                    if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
-                                        if k in constants.WIN_RATE_FIELDS_DICT.keys():
-                                            count_field = constants.WIN_RATE_FIELDS_DICT[k]
-                                            if count_field in card[constants.DATA_FIELD_DECK_COLORS][color]:
-                                                color_dict[color][k] = CL.CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
-                                                                                           card[constants.DATA_FIELD_DECK_COLORS][color][count_field],
-                                                                                           self.configuration.bayesian_average_enabled)
-                                            else:
-                                                color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
-                                        else:
-                                            color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
+                            if "curve_bonus" in card.keys() and len(card["curve_bonus"]):
+                                color_dict[color]["curve_bonus"] = card["curve_bonus"][count]
                                 
-                                if "curve_bonus" in card.keys() and len(card["curve_bonus"]):
-                                    color_dict[color]["curve_bonus"] = card["curve_bonus"][count]
-                                    
-                                if "color_bonus" in card.keys()  and len(card["color_bonus"]):
-                                    color_dict[color]["color_bonus"] = card["color_bonus"][count]
-                                    
-                            except Exception as error:
-                                ui_logger.info(f"OnClickTable Error: {error}")
+                            if "color_bonus" in card.keys()  and len(card["color_bonus"]):
+                                color_dict[color]["color_bonus"] = card["color_bonus"][count]
+                        #if set(selected_color).issubset(constants.NON_COLORS_OPTIONS):
+                        #    color_list = [constants.FILTER_OPTION_ALL_DECKS]
+                        #elif constants.FILTER_OPTION_TIER in selected_color[0]:
+                        #    color_list = [constants.FILTER_OPTION_ALL_DECKS]
+                        #else:
+                        #    color_list = selected_color
+                        #for count, color in enumerate(color_list):
+                        #    try:
+                        #        color_dict[color] = {x : "NA" for x in constants.DATA_FIELDS_LIST}
+#
+                        #        #for k in color_dict[color].keys():
+                        #        #    if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                        #        #        if k in constants.WIN_RATE_FIELDS_DICT.keys():
+                        #        #            count_field = constants.WIN_RATE_FIELDS_DICT[k]
+                        #        #            if count_field in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                        #        #                color_dict[color][k] = CL.CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
+                        #        #                                                           card[constants.DATA_FIELD_DECK_COLORS][color][count_field],
+                        #        #                                                           self.configuration.bayesian_average_enabled)
+                        #        #            else:
+                        #        #                color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
+                        #        #        else:
+                        #        #            color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
+                        #        #
+                        #        if "curve_bonus" in card.keys() and len(card["curve_bonus"]):
+                        #            color_dict[color]["curve_bonus"] = card["curve_bonus"][count]
+                        #            
+                        #        if "color_bonus" in card.keys()  and len(card["color_bonus"]):
+                        #            color_dict[color]["color_bonus"] = card["color_bonus"][count]
+                        #            
+                        #    except Exception as error:
+                        #        ui_logger.info(f"OnClickTable Error: {error}")
                             
                         CreateCardToolTip(table, 
                                           event,
@@ -1528,46 +1678,48 @@ class WindowUI:
             self.draft.LogSuspend(False)
         
     def ControlTrace(self, enabled):
-        if enabled:
-            if len(self.trace_ids) == 0:
-                self.trace_ids.append(self.column_2_selection.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.column_3_selection.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.column_4_selection.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.column_5_selection.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.column_6_selection.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.column_7_selection.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.auto_highest_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.color_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.bayesian_average_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.data_source_selection.trace("w", self.UpdateSourceCallback))
-                self.trace_ids.append(self.stat_options_selection.trace("w", self.UpdateDeckStatsCallback))
-                self.trace_ids.append(self.draft_log_checkbox_value.trace("w", self.UpdateSettingsCallback))
-                self.trace_ids.append(self.filter_format_selection.trace("w", self.UpdateSourceCallback))
-                self.trace_ids.append(self.result_format_selection.trace("w", self.UpdateSourceCallback))
-                self.trace_ids.append(self.deck_filter_selection.trace("w", self.UpdateSourceCallback))
-        elif len(self.trace_ids):
-            self.column_2_selection.trace_vdelete("w", self.trace_ids[0]) 
-            self.column_3_selection.trace_vdelete("w", self.trace_ids[1]) 
-            self.column_4_selection.trace_vdelete("w", self.trace_ids[2])
-            self.column_5_selection.trace_vdelete("w", self.trace_ids[3])
-            self.column_6_selection.trace_vdelete("w", self.trace_ids[4])
-            self.column_7_selection.trace_vdelete("w", self.trace_ids[5])
-            self.deck_stats_checkbox_value.trace_vdelete("w", self.trace_ids[6])
-            self.missing_cards_checkbox_value.trace_vdelete("w", self.trace_ids[7])
-            self.auto_highest_checkbox_value.trace_vdelete("w", self.trace_ids[8])
-            self.curve_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[9])
-            self.color_bonus_checkbox_value.trace_vdelete("w", self.trace_ids[10])
-            self.bayesian_average_checkbox_value.trace_vdelete("w", self.trace_ids[11])
-            self.data_source_selection.trace_vdelete("w", self.trace_ids[12])
-            self.stat_options_selection.trace_vdelete("w", self.trace_ids[13])
-            self.draft_log_checkbox_value.trace_vdelete("w", self.trace_ids[14])
-            self.filter_format_selection.trace_vdelete("w", self.trace_ids[15])
-            self.result_format_selection.trace_vdelete("w", self.trace_ids[16])
-            self.deck_filter_selection.trace_vdelete("w", self.trace_ids[17])
-            self.trace_ids = []
+        try:
+            trace_list = [
+                (self.column_2_selection, lambda : self.column_2_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.column_3_selection, lambda : self.column_3_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.column_4_selection, lambda : self.column_4_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.column_5_selection, lambda : self.column_5_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.column_6_selection, lambda : self.column_6_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.column_7_selection, lambda : self.column_7_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.deck_stats_checkbox_value, lambda : self.deck_stats_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.missing_cards_checkbox_value, lambda : self.missing_cards_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.auto_highest_checkbox_value, lambda : self.auto_highest_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.curve_bonus_checkbox_value, lambda : self.curve_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.color_bonus_checkbox_value, lambda : self.color_bonus_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.bayesian_average_checkbox_value, lambda : self.bayesian_average_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.data_source_selection, lambda : self.data_source_selection.trace("w", self.UpdateSourceCallback)),
+                (self.stat_options_selection, lambda : self.stat_options_selection.trace("w", self.UpdateDeckStatsCallback)),
+                (self.draft_log_checkbox_value, lambda : self.draft_log_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.filter_format_selection, lambda : self.filter_format_selection.trace("w", self.UpdateSourceCallback)),
+                (self.result_format_selection, lambda : self.result_format_selection.trace("w", self.UpdateSourceCallback)),
+                (self.deck_filter_selection, lambda : self.deck_filter_selection.trace("w", self.UpdateSourceCallback)),
+                (self.taken_alsa_checkbox_value, lambda : self.taken_alsa_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_ata_checkbox_value, lambda : self.taken_ata_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_gpwr_checkbox_value, lambda : self.taken_gpwr_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_ohwr_checkbox_value, lambda : self.taken_ohwr_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_gndwr_checkbox_value, lambda : self.taken_gndwr_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_iwd_checkbox_value, lambda : self.taken_iwd_checkbox_value.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_filter_selection, lambda : self.taken_filter_selection.trace("w", self.UpdateSettingsCallback)),
+            ]
+
+            if enabled:
+                if len(self.trace_ids) == 0:
+                    #self.trace_ids.append(self.taken_iwd_checkbox_value.trace("w",   self.UpdateTakenTable()))
+                    for (x,y) in trace_list:
+                        self.trace_ids.append(y())
+            elif len(self.trace_ids):
+                for count, (x,y) in enumerate(trace_list):
+                    x.trace_vdelete("w", self.trace_ids[count]) 
+                #self.deck_filter_selection.trace_vdelete("w", self.trace_ids[17])
+                self.trace_ids = []
+        except Exception as error:
+            ui_logger.info(f"ControlTrace Error: {error}")
+
     def DraftReset(self, full_reset):
         self.draft.ClearDraft(full_reset)
         
@@ -1599,8 +1751,8 @@ class WindowUI:
             update_flag = True
 
         if update_flag:
-           self.UpdateUI()
-           self.ControlTrace(True)
+            self.UpdateUI()
+            self.ControlTrace(True)
     def EnableDeckStates(self, enable):
         try:
             if enable:
@@ -1676,7 +1828,7 @@ class CreateCardToolTip(object):
 
             Grid.rowconfigure(tt_frame, 2, weight = 1)
 
-            card_label = Label(tt_frame, text=self.card_name, font=("Cascadia", 15, "bold", ),relief="groove",anchor="c",)
+            card_label = Label(tt_frame, text=self.card_name, font=("Helvetica Neue", 15, "bold", ), background = "#3d3d3d", foreground = "#e6ecec", relief="groove",anchor="c",)
             
             if len(self.color_dict) == 2:
                 headers = {"Label"    : {"width" : .70, "anchor" : W},
@@ -1689,16 +1841,16 @@ class CreateCardToolTip(object):
                 width = 340
                 
             style = Style() 
-            style.configure("Tooltip.Treeview", rowheight=25)      
+            style.configure("Tooltip.Treeview", rowheight=23)      
             
             stats_main_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
             main_field_list = []
             
-            stats_count_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
-            count_field_list = []
-            
-            bonus_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
-            bonus_field_list = []
+            #stats_count_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
+            #count_field_list = []
+            #
+            #bonus_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
+            #bonus_field_list = []
             
             values = ["Filter:"] + list(self.color_dict.keys())
             main_field_list.append(tuple(values))
@@ -1720,26 +1872,42 @@ class CreateCardToolTip(object):
 
             values = ["Games Played Win Rate:"] + [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
+
+            values = ["Games Not Drawn Win Rate:"] + [f"{x[constants.DATA_FIELD_GNDWR]}%" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+
+            main_field_list.append(tuple(["",""]))
             
             values = ["Number of Games In Hand:"] + [f"{x[constants.DATA_FIELD_GIH]}" for x in self.color_dict.values()]
-            count_field_list.append(tuple(values))
+            main_field_list.append(tuple(values))
                 
             values = ["Number of Games in Opening Hand:"] + [f"{x[constants.DATA_FIELD_NGOH]}" for x in self.color_dict.values()]
-            count_field_list.append(tuple(values))
+            main_field_list.append(tuple(values))
                 
             values = ["Number of Games Played:"] + [f"{x[constants.DATA_FIELD_NGP]}" for x in self.color_dict.values()]
-            count_field_list.append(tuple(values))
+            main_field_list.append(tuple(values))
+
+            values = ["Number of Games Not Drawn:"] + [f"{x[constants.DATA_FIELD_NGND]}" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
+
+            main_field_list.append(tuple(["",""]))
 
             if any("curve_bonus" in x for x in self.color_dict.values()):
                 values = ["Curve Bonus:"] + [f"+{x['curve_bonus']}" for x in self.color_dict.values()]
-                bonus_field_list.append(tuple(values))
+                main_field_list.append(tuple(values))
+            else:
+                main_field_list.append(tuple(["",""]))
 
             if any("color_bonus" in x for x in self.color_dict.values()):  
                 values = ["Color Bonus:"] + [f"+{x['color_bonus']}" for x in self.color_dict.values()]
-                bonus_field_list.append(tuple(values))
+                main_field_list.append(tuple(values))
+            else:
+                main_field_list.append(tuple(["",""]))
+
+            main_field_list.append(tuple(["",""]))
 
             if len(main_field_list):
-                stats_main_table.config(height = len(main_field_list) + 1)
+                stats_main_table.config(height = len(main_field_list))
             else:
                 stats_main_table.config(height=1)
 
@@ -1763,23 +1931,24 @@ class CreateCardToolTip(object):
             card_label.grid(column=0, row=0, columnspan=column_offset + 2, sticky=NSEW)
 
             for count, row_values in enumerate(main_field_list):
-                row_tag = "tt_even" if count % 2 else "tt_odd"
+                row_tag = "taken_even" if count % 2 else "taken_odd"
                 stats_main_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
+
 
             stats_main_table.grid(row = 1, column = column_offset, sticky=NSEW)
 
-            for count, row_values in enumerate(count_field_list):
-                row_tag = "tt_even" if count % 2 else "tt_odd"
-                stats_count_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
-
-            stats_count_table.grid(row = 2, column = column_offset, sticky=NSEW)
-
-            if bonus_field_list:
-                for count, row_values in enumerate(bonus_field_list):
-                    row_tag = "tt_even" if count % 2 else "tt_odd"
-                    bonus_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
-                Grid.rowconfigure(tt_frame, 3, weight = 1)
-                bonus_table.grid(row = 3, column = column_offset, sticky=NSEW)
+            #for count, row_values in enumerate(count_field_list):
+            #    row_tag = "taken_even" if count % 2 else "taken_odd"
+            #    stats_count_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
+#
+            #stats_count_table.grid(row = 2, column = column_offset, sticky=NSEW)
+#
+            #if bonus_field_list:
+            #    for count, row_values in enumerate(bonus_field_list):
+            #        row_tag = "taken_even" if count % 2 else "taken_odd"
+            #        bonus_table.insert("",index = count, iid = count, values = row_values, tag = (row_tag,))
+            #    Grid.rowconfigure(tt_frame, 3, weight = 1)
+            #    bonus_table.grid(row = 3, column = column_offset, sticky=NSEW)
                 
             tt_frame.pack()
             
