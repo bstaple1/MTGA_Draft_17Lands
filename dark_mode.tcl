@@ -1,3 +1,5 @@
+#This file is based on azure.tcl by rdbende https://github.com/rdbende/Azure-ttk-theme
+
 option add *tearOff 0
 
 array set colors {

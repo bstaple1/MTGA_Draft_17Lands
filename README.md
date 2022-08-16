@@ -7,10 +7,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
   * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.), although not all events have been tested.
 
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier.png?raw=true)
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier_Draft.png?raw=true)
 
 ## Run Steps: Windows Executable (Windows Only)
-- **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file, clone the repository, or download the latest executable (e.g., `MTGA_Draft_Tool_V0285_Setup.exe`) from the releases page (https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
+- **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file, clone the repository, or download the latest executable (e.g., `MTGA_Draft_Tool_V0285_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
@@ -34,8 +34,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
 - **Step 3:** Download and install the latest version of python 3.
-    - Windows: https://www.python.org/downloads/windows/.
-    - Mac: https://www.python.org/downloads/macos/.
+    - [Windows](https://www.python.org/downloads/windows/).
+    - [Mac](https://www.python.org/downloads/macos/).
 
 - **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python3.10 -m ensurepip --upgrade```.
 
@@ -60,7 +60,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
 
-- **Step 4:** Download Inno Setup from https://jrsoftware.org/isdl.php#stable
+- **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 
 - **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```pyinstaller main.py --onefile --noconsole -n MTGA_Draft_Tool```
     - Move the `MTGA_Draft_Tool.exe` file from the `dist` folder to the main `MTGA_Draft_17Lands` folder.
@@ -71,7 +71,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ## UI Features
 
 - **Current Draft:** Lists the current draft type (i.e., Premier, Quick, or Traditional) that the application has identified.
-    - The application has been tested with Premier, Quick, and Traditional drafts.
     - In the Arena logs, P1P1 doesn't appear for Premier and Traditional drafts until after P1P2.
 
 - **Data Source:** Lists the current draft type (i.e., Premier, Quick, or Traditional) from which the application is pulling the card data.
@@ -79,29 +78,28 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - This field will display "None" if the application is unable to find a valid data file for the current draft type and set.
   
 - **Deck Filter:** A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
-    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the color rating page on 17Lands. If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
-    - The "All Decks" option lists the combined rating across all of the deck color combinations
-        -The "Auto" option will keep the filter at "All Decks" for the first 15 picks and then switch over to the filter that best matches your taken cards. See the auto averaging note in the card logic section.
+    - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the [color ratings page on 17Lands](https://www.17lands.com/color_ratings). If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
+    - The `All Decks` option lists the combined rating across all of the deck color combinations
+        -The `Auto` option will keep the filter at `All Decks` for the first 15 picks and then switch over to the filter that best matches your taken cards. See the Auto Highest Rating note in the Card Logic section.
+        
 - **Pack, Pick Table:** This table lists the cards contained in the current pack. 
-    - The "All" column lists the card rating for the "All Decks" filter.
-        - The last column will list the card rating for the chosen Deck Filter option.
-        - The card rating is derived from the Games in Hand Win Rate, Average Last Seen At, and Improvement When Drawn fields from 17Lands. The individual values can be seen by clicking on the card in the table.
-        - For Premier and Traditional drafts, P1P1 doesn't appear in the logs until after P1P2. Use the Card Compare feature to perform the card analysis.
 	
 - **Missing Cards Table:** This table will list the cards missing from a pack that has already been seen. 
     - The user's chosen card will have an asterisk next to the name.
 	
-- **Deck Stats Table:** This table lists the card distribution and total for creatures, noncreatures, and all cards.
+- **Draft Stats Table:** This table lists the card distribution and total for creatures, noncreatures, and all cards that were taken during the draft.
     - The numbered columns represent the cost of the card (cmc).
 
 ## Menu Features
 
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Draft_Menus.png?raw=true)
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Settings_Dark.png?raw=true)
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Settings_Colors.png?raw=true)
 
-- **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Timestamp>.log` file to read the file.
+- **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
 
 - **Download Set Data:** Get to the Add Sets window by selecting `Data->View Sets`. Enter the set information and click on the ADD SET button to begin downloading the set data.
     - The download can take several minutes.
+    - 17Lands will timeout the request if too many requests are made within a short period of time.
     
 - **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`. 
     - This table lists the cards that were taken by the user throughout the draft.
@@ -114,7 +112,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Card Compare:** Get to the Card Compare window by selecting `Cards->Compare Cards`. This window will allow you to compare cards that you've entered in.
     - This feature can be used to quickly compare cards for P1P1 of the Premier and Traditional drafts.
 	
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Card_Compare.png?raw=true)
     
 ## Additional Features
 
@@ -126,58 +123,53 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Tier List:** A tier list can be added to the drop-downs by following the instructions in `./Tools/TierScraper17Lands/README.txt`.
 
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tier_List.png?raw=true)	
-
-- **Card Tooltips:** Clicking on any field that lists a card will display a tooltip that contains the following information: Card image, Average Last Seen At, Improvement When Drawn, and Games in Hand Win Rate.
-	
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Tooltip.png?raw=true)	
+- **Card Tooltips:** Clicking on any card row will display a tooltip that contains the card images (back and front) and the 17Lands data.
 	
 ## Settings
 
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Settings.png?raw=true)	
+- **Columns 2-7:** Set the field for columns 2-7 of the pack table, missing table, and compare table. 
+    - Columns 2,3, and 4 can't be disabled.
 
-- **Column 2:** Configure column 2 of the pack table, missing table, compare table, and taken table. Any filter can be used.
+- **Deck Filter Format:** Used to switch the Deck Filter to either the color permutations (i.e., UB, BG, WUG, etc.) or the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
 
-- **Column 3:** Configure column 3 of the pack table, missing table, compare table, and taken table. Any filter can be used.
+- **Win Rate Format:** Used to switch the results for the win rate fields (i.e., GIHWR, OHWR, GPWR, etc.) to either percentage (17Lands values) or ratings (5-point rating scale). See the Win Rate Ratings section for more details.
 
-- **Column 4:** Configure column 4 of the pack table, missing table, compare table, and taken table. Any filter can be used. This configures the same column as the deck filter drop-down in the main window.
+- **Enable Card Colors:** Sets the row color to the card color.
 
-- **Deck Filter Format:** Used to switch the Deck Filter, Column 2, Column 3, and Column 4 values to either the color permutations (i.e., UB, BG, WUG, etc.) or the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
-
-- **Enable Deck Stats:** Displays the deck stats table and drop-down in the main window.
+- **Enable Draft Stats:** Displays the draft stats table and drop-down in the main window.
 
 - **Enable Missing Cards:** Displays the missing cards table in the main window.
 
-- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter configuration for column 4. See the auto highest rating note in the card logic section.
+- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the card logic section.
 
-- **Enable Curve Bonus:** Enables the curve bonus logic for the `Auto` filter configuration for column 4. See the curve bonus note in the card logic section.
+- **Enable Curve Bonus:** Enables the curve bonus logic for the `Auto`. Requires the Win Rate Format to be set to Ratings. See the curve bonus note in the card logic section.
 
-- **Enable Color Bonus:** Enables the color bonus logic for the `Auto` and `All Decks` filter configurations for column 4. See the color bonus note in the card logic section.
+- **Enable Color Bonus:** Enables the color bonus logic for the `Auto` and `All Decks` filters. Requires the Win Rate Format to be set to Ratings. See the color bonus note in the card logic section.
 
-- **Enable Bayesian Average:** Enables the bayesian average logic for the card ratings. See the Bayesian average note in the card logic section.
+- **Enable Bayesian Average:** Enables the bayesian average logic for all win rate fields. See the Bayesian average note in the card logic section.
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
 ## Card Logic:
 
-- **Card Ratings:** The application will identify the upper and lower GIHWR values of all of the set cards across all of the filters and perform the following calculation to determine a card's rating: ((card_gihwr - lower_gihwr) / (upper_gihwr - lower_gihwr)) * 5.0
-    - Example: If the highest winrate of the set is 75.67% (Lae'zel, Githyanki Warrior (WR)) and the lowest winrate of the set is 41.73% (Ambitious Dragonborn (URG)), then the All Decks rating for The Hourglass Coven (71.97%) will be 4.5 (((71.97 - 41.73) / (75.67 - 41.73)) * 5.0 = 4.5)
+- **Win Rate Ratings:** The application will identify the upper and lower GIHWR values of all of the set cards across all of the filters and perform the following calculation to determine a card's rating: `((card_gihwr - lower_gihwr) / (upper_gihwr - lower_gihwr)) * 5.0`
+    - Example: If the highest win rate of the set is 75.67% (Lae'zel, Githyanki Warrior (WR)) and the lowest win rate of the set is 41.73% (Ambitious Dragonborn (URG)), then the All Decks rating for The Hourglass Coven (71.97%) will be 4.5 `(((71.97 - 41.73) / (75.67 - 41.73)) * 5.0 = 4.5)`
     - If the color and curve bonuses are enabled, then the application will add those bonuses to the card rating
 
-- **Bayesian Average:** A Bayesian average calculation applied to the Games In Hand Win Rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
-    - Enabled: The application will perform this calculation on the GIHWR data. The adjustment made by this calculation will disappear as the Number of Games In Hand reaches 200.
-    - Disabled: The application will not perform this calculation. If the Number of Games In Hand is fewer than 200, then the application will set the GIHWR to 0 (same as the 17Lands Card Ratings table).
+- **Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
+    - Enabled: The application will perform this calculation on all win rate data. The adjustment made by this calculation will disappear as the sample count (e.g, Number of Games In Hand for the Games in Hand Win Rate) reaches 200.
+    - Disabled: The application will not perform this calculation. If the sample count is fewer than 200, then the application will set the win rate to 0 (same as the 17Lands Card Ratings table).
 
-- **Auto Highest Rating:** If the `Auto` filter is set, then the application will attempt to identify the user's deck (using two-color pairs) after 16 cards have been picked. If the tool is unable to identify a definitive leading color pair, then it will display the highest pick rating of the top two color pairs. The column header will display both color pairs separated by a slash.
-    - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG rating of 3.5 and a UB rating of 0, then the displayed pick rating will be 3.5.
+- **Auto Highest Rating:** If the `Auto` filter is set, and the user has taken at least 16 cards, then the application will try and determine the leading color pair from the taken cards. If the tool is unable to identify a definitive leading color pair, then it will display the highest win rate of the top two color pairs for each win rate field (e.g., GIHWR, OHWR, etc.). The filter label will display both color pairs separated by a slash (e.g., `Auto (WB/BG)`).
+    - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG win rate of 66% and a UB rating of 15%, then the displayed win rate will be 66%.
 
-- **Curve Bonus:** If column 4 is set to a specific color filter, or the `Auto` filter is used, then the application will add a curve bonus if certain conditions are met.
+- **Curve Bonus:** If the Win Rate Format setting is set to Rating, then the application will add a curve bonus if certain requirements are met.
     - Curve Bonus Conditions:
         - If the identified, or configured, color pair has fewer than 13 creatures, then the application will add a curve bonus ranging from 0.1 - 1.0.
         - If the identified, or configured, color pair has fewer than 4 2-drops, 3 3-drops, 2 4-drops, and 1 5-drop, then it will add a curve bonus ranging from 0.1 - 0.5 to cards that fit the distribution.
         - If the identified, or configured, color pair identifies a card in a pack that could potentially replace a taken card (due to higher GIHWR or lower CMC), then it will add a curve bonus ranging from 0.1 - 0.25.
         
-- **Color Bonus:** If column 4 is set to `All Decks`, or `Auto` with fewer than 16 cards, then the application will add a color bonus based on the top 3 colors identified from the taken cards.
+- **Color Bonus:** If the Win Rate Format setting is set to Rating, and the Deck Filter is set to `All Decks` or `Auto(All Decks)`, then the application will add a color bonus based on the top 3 colors identified from the taken cards.
     - Color Bonus Factors:
         - The application will add a color bonus of 0.3 for each taken card that has a GIHWR equal to or above 65%
         - The application will add a color bonus of 0.2 for each taken card that has a GIHWR between 64.9% and 60%.
@@ -202,7 +194,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
             - The average CMC of all of the creatures must be 3.68 or less.      
             - The deck has 18 lands.
     - Notes:
-        - The CMC average and land requirements were derived from this article: https://strategy.channelfireball.com/all-strategy/mtg/channelmagic-articles/how-many-lands-do-you-need-to-consistently-hit-your-land-drops/
+        - The CMC average and land requirements were derived from this [article](https://strategy.channelfireball.com/all-strategy/mtg/channelmagic-articles/how-many-lands-do-you-need-to-consistently-hit-your-land-drops/)
         - The deck distribution and CMC requirements can result in the inclusion of some poor-performing cards.
             Example: If the user has a pool of white and blue cards, and the only 3-drops are Acquisition Octopus (53.7% for WU) and Guardians of Oboro (50.7% for WU), then the suggester will include those two cards to fulfill the 3-drop requirement (3 Aggro/3 Mid/3 Control).
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.

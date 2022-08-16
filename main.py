@@ -236,7 +236,7 @@ def TableColumnSort(table, column, reverse):
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
         self.root = root
-        self.root.tk.call("source", "custom_dark.tcl")
+        self.root.tk.call("source", "dark_mode.tcl")
         self.configuration = configuration
         self.filename = filename
         self.step_through = step_through
