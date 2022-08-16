@@ -54,9 +54,9 @@ class ArenaScanner:
         elif self.logging_enabled:
             self.logger.setLevel(logging.INFO)
 
-    def NewLog(self, set, event):
+    def NewLog(self, set, event, id):
         try:
-            log_name = f"DraftLog_{set}_{event}_{int(time.time())}.log"
+            log_name = f"DraftLog_{set}_{event}_{id}.log"
             log_path = os.path.join(constants.DRAFT_LOG_FOLDER, log_name)
             for handler in self.logger.handlers:
                 if isinstance(handler, logging.FileHandler):
@@ -93,12 +93,15 @@ class ArenaScanner:
         update = False
         event_type = ""
         event_line = ""
-
+        draft_id = ""
+        
         try:
             #Check if a new player.log was created (e.g. application was started before Arena was started)
-            if self.file_size > os.path.getsize(self.arena_file):
+            arena_file_size = os.path.getsize(self.arena_file)
+            if self.file_size > arena_file_size:
                 self.ClearDraft(True)
-            self.file_size = os.path.getsize(self.arena_file)
+                scanner_logger.info(f"New Arena log detected ({self.file_size}), ({arena_file_size})")
+            self.file_size = arena_file_size
             offset = self.search_offset
             with open(self.arena_file, 'r') as log:
                 log.seek(offset)
@@ -112,12 +115,12 @@ class ArenaScanner:
                             self.search_offset = offset
                             string_offset = line.find(start_string)
                             event_data = json.loads(line[string_offset + len(start_string):])
-                            update, event_type = self.DraftStartSearchV1(event_data)
+                            update, event_type, draft_id = self.DraftStartSearchV1(event_data)
                             event_line = line
                         
 
             if update:
-                self.NewLog(self.draft_sets[0], event_type)
+                self.NewLog(self.draft_sets[0], event_type, draft_id)
                 self.logger.info(event_line)
                 self.pick_offset = self.search_offset
                 self.pack_offset = self.search_offset
@@ -129,7 +132,9 @@ class ArenaScanner:
     def DraftStartSearchV1(self, event_data):
         update = False
         event_type = ""
+        draft_id = ""
         try:
+            draft_id = event_data["id"]
             request_data = json.loads(event_data["request"])
             payload_data = json.loads(request_data["Payload"])
             event_name = payload_data["EventName"]
@@ -165,7 +170,7 @@ class ArenaScanner:
         except Exception as error:
             scanner_logger.info(f"DraftStartSearchV1 Error: {error}")
             
-        return update, event_type
+        return update, event_type, draft_id
     def DraftStartSearchV2(self, event_data):
         try:
             request_data = json.loads(event_data["request"])

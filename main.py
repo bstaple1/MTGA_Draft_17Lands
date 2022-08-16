@@ -892,13 +892,16 @@ class WindowUI:
             self.extra_options_dict[key] = value
         
     def UpdateDraft(self):
+        update = False
         if self.draft.DraftStartSearch():
+            update = True
             self.data_sources = self.draft.RetrieveDataSources()
             self.tier_sources = self.draft.RetrieveTierSource()
             self.UpdateSourceOptions(True)
             self.UpdateDraftData()
 
-        update = self.draft.DraftDataSearch() 
+        if self.draft.DraftDataSearch():
+            update = True
         return update
 
     def UpdateSettingsStorage(self):
@@ -1086,6 +1089,7 @@ class WindowUI:
                         break
         except Exception as error:
             ui_logger.info(f"UpdateUI Error: {error}")
+            self.DraftReset(True)
             
         self.root.after(1000, self.UpdateUI)
         
@@ -1925,15 +1929,18 @@ class CreateCardToolTip(object):
                 size = 280, 390
                 self.images = []
                 for count, picture in enumerate(self.image):
-                    if picture:
-                        raw_data = urllib.request.urlopen(picture).read()
-                        im = Image.open(io.BytesIO(raw_data))
-                        im.thumbnail(size, Image.ANTIALIAS)
-                        image = ImageTk.PhotoImage(im)
-                        image_label = Label(tt_frame, image=image)
-                        image_label.grid(column=count, row=1, columnspan=1, rowspan=3)
-                        self.images.append(image)
-                        column_offset += 1
+                    try:
+                        if picture:
+                            raw_data = urllib.request.urlopen(picture).read()
+                            im = Image.open(io.BytesIO(raw_data))
+                            im.thumbnail(size, Image.ANTIALIAS)
+                            image = ImageTk.PhotoImage(im)
+                            image_label = Label(tt_frame, image=image)
+                            image_label.grid(column=count, row=1, columnspan=1, rowspan=3)
+                            self.images.append(image)
+                            column_offset += 1
+                    except Exception as error:
+                        ui_logger.info(f"ShowTip Image Error: {error}")
             
             card_label.grid(column=0, row=0, columnspan=column_offset + 2, sticky=NSEW)
 

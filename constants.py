@@ -16,6 +16,10 @@ LIMITED_TYPE_DRAFT_TRADITIONAL  = 4
 LIMITED_TYPE_SEALED             = 5
 LIMITED_TYPE_SEALED_TRADITIONAL = 6
 
+URL_17LANDS = "https://www.17lands.com"
+
+IMAGE_17LANDS_SITE_PREFIX = "/static/images/"
+
 DATA_FIELD_17LANDS_OHWR       = "opening_hand_win_rate"
 DATA_FIELD_17LANDS_NGOH       = "opening_hand_game_count"
 DATA_FIELD_17LANDS_GPWR       = "win_rate"
