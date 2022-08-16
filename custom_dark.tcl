@@ -2,7 +2,7 @@ option add *tearOff 0
 
 array set colors {
           -fg             "#ffffff"
-          -bg             "#333333"
+          -bg             "#3d3d3d"
           -disabledfg     "#ffffff"
           -disabledbg     "#737373"
           -selectfg       "#ffffff"

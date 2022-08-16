@@ -81,7 +81,7 @@ import card_logic as CL
 import log_scanner as LS
 from ttkwidgets.autocomplete import AutocompleteEntry
 
-__version__= 2.96
+__version__= 3.00
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
     os.makedirs(constants.DEBUG_LOG_FOLDER)
@@ -236,12 +236,7 @@ def TableColumnSort(table, column, reverse):
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
         self.root = root
-        style = Style()
-        style.configure("TButton", foreground="black")  
-        style.configure("TEntry", foreground="black")  
-        #style.theme_use('alt')
         self.root.tk.call("source", "custom_dark.tcl")
-        #self.root.tk.call("set_theme", "dark")
         self.configuration = configuration
         self.filename = filename
         self.step_through = step_through
@@ -283,7 +278,7 @@ class WindowUI:
         self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
         self.root.config(menu=self.menubar)
         
-        #style = Style()
+        style = Style()
         style.map("Treeview", 
                 foreground=FixedMap(style, "foreground"),
                 background=FixedMap(style, "background"))
@@ -370,6 +365,8 @@ class WindowUI:
                    "Column6"  : {"width" : .18, "anchor" : CENTER},
                    "Column7"  : {"width" : .18, "anchor" : CENTER}}
         style = Style() 
+        style.configure("TButton", foreground="black")  
+        style.configure("TEntry", foreground="black") 
         style.configure("Treeview.Heading", font=("Cascadia", 7), foreground="black")        
                   
         self.pack_table = CreateHeader(self.pack_table_frame, 0, 7, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
@@ -702,8 +699,9 @@ class WindowUI:
                 self.stat_table.config(height=0)
             
             count = 0
-            for color,values in colors_filtered.items():
-                row_tag = CL.RowColorTag(values["symbol"])
+            for count, (color, values) in enumerate(colors_filtered.items()):
+                #row_tag = CL.RowColorTag(values["symbol"])
+                row_tag = TableRowTag(self.configuration.card_colors_enabled, values["symbol"], count)
                 self.stat_table.insert("",index = count, values = (color,
                                                                     values["distribution"][1],
                                                                     values["distribution"][2],
@@ -1388,11 +1386,11 @@ class WindowUI:
                                                                      deck_color_options),
                                                                      text="Copy to Clipboard")
             
-            headers = {"Card"  : {"width" : .40, "anchor" : W},
-                       "Count" : {"width" : .14, "anchor" : CENTER},
-                       "Color" : {"width" : .10, "anchor" : CENTER},
-                       "Cost"  : {"width" : .10, "anchor" : CENTER},
-                       "Type"  : {"width" : .26, "anchor" : CENTER}}
+            headers = {"CARD"  : {"width" : .40, "anchor" : W},
+                       "COUNT" : {"width" : .14, "anchor" : CENTER},
+                       "COLOR" : {"width" : .10, "anchor" : CENTER},
+                       "COST"  : {"width" : .10, "anchor" : CENTER},
+                       "TYPE"  : {"width" : .26, "anchor" : CENTER}}
 
             style = Style() 
             style.configure("Suggest.Treeview", rowheight=25) 
@@ -1652,7 +1650,13 @@ class WindowUI:
                             color_dict[color] = {x : "NA" for x in constants.DATA_FIELDS_LIST}
                             for k in color_dict[color].keys():
                                 if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
-                                    color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
+                                    if k in constants.WIN_RATE_FIELDS_DICT.keys():
+                                        winrate_count = constants.WIN_RATE_FIELDS_DICT[k]
+                                        color_dict[color][k] = CL.CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
+                                                                                   card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
+                                                                                   self.configuration.bayesian_average_enabled)
+                                    else:
+                                        color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
 
                             if "curve_bonus" in card.keys() and len(card["curve_bonus"]):
                                 color_dict[color]["curve_bonus"] = card["curve_bonus"][count]
