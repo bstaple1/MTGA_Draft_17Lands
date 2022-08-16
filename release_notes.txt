@@ -1,4 +1,4 @@
-===================== RELEASE NOTES 3.00 =====================
+===================== RELEASE NOTES 3.01 =====================
 * Bug Fix: The application can now re-detect an active draft if Arena is closed mid-draft (Issue #13)
 
 * Bug Fix: The Copy to Clipboard buttons will now work with Arena and Sealeddeck.tech

@@ -341,14 +341,13 @@ def CardFilter(card_list, deck, filtered_colors, fields,  limits, tier_list, con
             selected_card["color_bonus"] = [0.0] * len(filtered_colors) if color_bonus else []
 
             for count, option in enumerate(fields.values()):
-               
+                rated_colors = []
                 for color_index, color in enumerate(filtered_colors):
                     if constants.FILTER_OPTION_TIER in option:
                         card_name = card[constants.DATA_FIELD_NAME].split(" // ")
                         if card_name[0] in tier_list[option][constants.DATA_SECTION_RATINGS]:
                             selected_card["results"][count] = tier_list[option][constants.DATA_SECTION_RATINGS][card_name[0]]
                     elif (option in constants.WIN_RATE_OPTIONS) and (option in card[constants.DATA_FIELD_DECK_COLORS][color]):
-                        rated_colors = []
                         rating_data = FormattedResult(card,
                                                       option, 
                                                       constants.WIN_RATE_FIELDS_DICT[option],
@@ -364,14 +363,14 @@ def CardFilter(card_list, deck, filtered_colors, fields,  limits, tier_list, con
                             selected_card["curve_bonus"][color_index] = rating_data["curve_bonus"]
                         if "color_bonus" in rating_data:
                             selected_card["color_bonus"][color_index] = rating_data["color_bonus"]
-                        if len(rated_colors):
-                            selected_card["results"][count] = sorted(rated_colors, reverse = True)[0]
                     elif option in card[constants.DATA_FIELD_DECK_COLORS][color]:
                         selected_card["results"][count] = card[constants.DATA_FIELD_DECK_COLORS][color][option]
                     elif option == constants.DATA_FIELD_COLORS:
                         selected_card["results"][count] = "".join(card[option])
                     elif option in card:
                         selected_card["results"][count] = card[option]
+                if len(rated_colors):
+                    selected_card["results"][count] = sorted(rated_colors, reverse = True)[0]
             filtered_list.append(selected_card)
         except Exception as error:
             logic_logger.info(f"CardFilter Error: {error}")
