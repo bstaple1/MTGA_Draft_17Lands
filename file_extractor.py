@@ -643,7 +643,7 @@ class FileExtractor:
                     if k == constants.DATA_SECTION_IMAGES:
                         for field in v:
                             if field in card and len(card[field]):
-                                image_url = f"{constants.URL_17LANDS}{card[field]}" if constants.IMAGE_17LANDS_SITE_PREFIX in card[field] else card[field]
+                                image_url = f"{constants.URL_17LANDS}{card[field]}" if card[field].startswith(constants.IMAGE_17LANDS_SITE_PREFIX) else card[field]
                                 card_data[constants.DATA_SECTION_IMAGES].append(image_url)
                     elif v in card:
                         if (k in constants.WIN_RATE_OPTIONS) or (k == constants.DATA_FIELD_IWD):

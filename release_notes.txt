@@ -1,160 +1,184 @@
-===================== RELEASE NOTES 2.96 =====================
-- Bug Fix: The application will now support back-to-back drafts
+===================== RELEASE NOTES 3.00 =====================
+* Bug Fix: The application can now re-detect an active draft if Arena is closed mid-draft (Issue #13)
 
-- Modified Feature: The application can now parse the reformatted card files that were modified in a recent Arena update
-    - The application can now build data sets using local files instead of Scryfall data
+* Bug Fix: The Copy to Clipboard buttons will now work with Arena and Sealeddeck.tech
+
+* Data Update: The application now supports the remastered Amonkhet and Kaladesh sets
+
+* Data Update: The application will now collect all of the fields listed on the www.17lands.com/card_ratings page (excluding rarity,# Seen, and #Picked)
+
+* UI Updates: 
+** The application is now using a dark mode theme
+** The tooltip has been reworked to better display the card data
+** The row colors can now be toggled using the Enable Card Colors setting (default: disabled)
+** The Taken table layout has been reworked
+** The ratings feature can now be toggled using the Win Rate Format setting (default: percentage)
+** Three configurable columns have been added (default: disabled)
+** The Deck Filter drop-down has been detached from the column drop-downs and now sets the filter value for all of the fields in a table (no more All GIHWR or All ALSA)
+** Tables can be sorted by clicking on the column header
+
+
+===================== RELEASE NOTES 2.96 =====================
+* Bug Fix: The application will now support back-to-back drafts
+
+* Modified Feature: The application can now parse the reformatted card files that were modified in a recent Arena update
+** The application can now build data sets using local files instead of Scryfall data
 
 ===================== RELEASE NOTES 2.95 =====================
-- Bug Fix: The application can now read tier list files created using the Chrome extension (Issue #12)
-    - The downloaded tier lists need to be placed in the new Tier folder
+* Bug Fix: The application can now read tier list files created using the Chrome extension (Issue #12)
+** The downloaded tier lists need to be placed in the new Tier folder
 
-- Bug Fix: The deck suggester will now correctly calculate the deck ratings
+* Bug Fix: The deck suggester will now correctly calculate the deck ratings
 
-- New Feature: Added support for multiple tier lists per set (Issue #12)
-    - Tier lists will appear as Tier# (<Label>) in the drop-downs (i.e., Tier0 (Test), Tier1 (HBG), etc.).
+* New Feature: Added support for multiple tier lists per set (Issue #12)
+** Tier lists will appear as Tier# (<Label>) in the drop-downs (i.e., Tier0 (Test), Tier1 (HBG), etc.).
 
-- Modified Feature: The tier scraper extension will now automatically populate the Set and Label fields with data collected from the tier list page
-    - Follow the revised steps in ./Tools/TierScraper17Lands/README.txt
+* Modified Feature: The tier scraper extension will now automatically populate the Set and Label fields with data collected from the tier list page
+** Follow the revised steps in ./Tools/TierScraper17Lands/README.txt
 
-- Documentation Change: Added a Tier List Ratings note to the Card Logic section of the README
+* Documentation Change: Added a Tier List Ratings note to the Card Logic section of the README
 
 ===================== RELEASE NOTES 2.91 =====================
-- New Feature: For the filter drop-downs, users can use the Deck Filter Format setting to switch between the color combinations (i.e., UB, BG, WUG, etc.) and the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
-- Modified Feature: The application will store the card localization data in a temp file to speed up the set download process
-- Modified Feature: The card tooltips will no longer list the names of the other card sides
-    - The tooltip will display all of the images for double-sided cards, but not for Specialize cards 
-- Bug Fix: The application will no longer list the Crimson Vow set as Double Feature
-- Documentation Change: Added a Card Ratings note to the Card Logic section of the README. This note summarizes how the card ratings are calculated
+* New Feature: For the filter drop-downs, users can use the Deck Filter Format setting to switch between the color combinations (i.e., UB, BG, WUG, etc.) and the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
+
+* Modified Feature: The application will store the card localization data in a temp file to speed up the set download process
+
+* Modified Feature: The card tooltips will no longer list the names of the other card sides
+** The tooltip will display all of the images for double-sided cards, but not for Specialize cards 
+
+* Bug Fix: The application will no longer list the Crimson Vow set as Double Feature
+
+* Documentation Change: Added a Card Ratings note to the Card Logic section of the README. This note summarizes how the card ratings are calculated
 
 ===================== RELEASE NOTES 2.87 =====================
-- New Feature: Added support for Alchemy drafts
-    - Alchemy sets added to the set drop-down in the Set Data window.
-    - The Alchemy drafts will be listed as Y##<base set> (e.g. Y22SNC).
-    - For Alchemy drafts, the application will list the Alchemy data sets, denoted by a [Y##] prefix, and the base data sets.
+* New Feature: Added support for Alchemy drafts
+** Alchemy sets added to the set drop-down in the Set Data window.
+** The Alchemy drafts will be listed as Y##<base set> (e.g. Y22SNC).
+** For Alchemy drafts, the application will list the Alchemy data sets, denoted by a [Y##] prefix, and the base data sets.
 
 ===================== RELEASE NOTES 2.86 =====================
-- Modified Feature: The application will now build data sets that include alternate card art, Alchemy cards, and cards with Alchemy revisions.
-    - The tooltips for the alternate art cards will display the original card art.
+* Modified Feature: The application will now build data sets that include alternate card art, Alchemy cards, and cards with Alchemy revisions.
+** The tooltips for the alternate art cards will display the original card art.
 
-- Modified Feature: Added support for non-standard drafts (draft events, competitions, etc.)
-    - The application will parse all non-standard drafts as premier drafts, excluding the MWM bot draft.
+* Modified Feature: Added support for non-standard drafts (draft events, competitions, etc.)
+** The application will parse all non-standard drafts as premier drafts, excluding the MWM bot draft.
 
-- Modified Feature: The application will primarily build data sets using local files instead of Scryfall.
-    - Scryfall will be used as a backup in case there is an issue with the local files.
+* Modified Feature: The application will primarily build data sets using local files instead of Scryfall.
+** Scryfall will be used as a backup in case there is an issue with the local files.
 
-- UI Change: Added a window to remind users that 17Lands only updates their card data once a day.
+* UI Change: Added a window to remind users that 17Lands only updates their card data once a day.
 
 ===================== RELEASE NOTES 2.85 =====================
-- Bug Fix: The downloaded sets will now be visible in the Set Data window
+* Bug Fix: The downloaded sets will now be visible in the Set Data window
 
-- Bug Fix: The Bayesian average feature will now work with the "ALL GIHWR" filter
+* Bug Fix: The Bayesian average feature will now work with the "ALL GIHWR" filter
 
-- Modified Feature: Debug logs will now use UTC timestamps
+* Modified Feature: Debug logs will now use UTC timestamps
 
-- Modified Feature: Disabling the Draft Log by default
+* Modified Feature: Disabling the Draft Log by default
 
 ===================== RELEASE NOTES 2.84 =====================
-- New Feature: Data Source drop-down for selecting data set (i.e. Premier, Quick, Sealed, etc.)
+* New Feature: Data Source drop-down for selecting data set (i.e. Premier, Quick, Sealed, etc.)
 
-- New Feature: Enable/Disable draft log (Settings menu option)
+* New Feature: Enable/Disable draft log (Settings menu option)
 
-- New Feature: Enable/Disable Bayesian average (Settings menu option)
+* New Feature: Enable/Disable Bayesian average (Settings menu option)
 
-- New Feature: Data set now includes Number of Games In Hand (GIH) - visible in card tooltip
+* New Feature: Data set now includes Number of Games In Hand (GIH) * visible in card tooltip
 
-- Modified Feature: The file search logic will now search multiple drives (Issue #7)
+* Modified Feature: The file search logic will now search multiple drives (Issue #7)
 
-- UI Changes:
-    - Settings menu option taken out of Data drop-down
-    - Application is no longer resizable 
+* UI Changes:
+** Settings menu option taken out of Data drop-down
+** Application is no longer resizable 
 
-- File Changes: 
-    - Sets will now be stored in the Sets folder
-    - Debug logs will be stored in the Debug folder
+* File Changes: 
+** Sets will now be stored in the Sets folder
+** Debug logs will be stored in the Debug folder
 
 ===================== RELEASE NOTES 2.83 =====================
-- New Feature: If Scryfall doesn't have the card Arena IDs, then the tool will retrieve the IDs from local Arena files
+* New Feature: If Scryfall doesn't have the card Arena IDs, then the tool will retrieve the IDs from local Arena files
 
-- Modified Feature: The tool will fill out incomplete data sets from 17Lands (Issue #6)
+* Modified Feature: The tool will fill out incomplete data sets from 17Lands (Issue #6)
 
-- Modified Feature: Scrollbar added to Set Data window
+* Modified Feature: Scrollbar added to Set Data window
 
 ===================== RELEASE NOTES 2.82 =====================
-- New Feature: Using Bayesian average for small data sets
+* New Feature: Using Bayesian average for small data sets
 
-- New Feature: Added support for sealed (BO1) and traditional sealed (BO3)
+* New Feature: Added support for sealed (BO1) and traditional sealed (BO3)
 
-- Modified Feature: Disabling the color bonus and curve bonus by default
+* Modified Feature: Disabling the color bonus and curve bonus by default
 
-- Note: When downloading the Streets of New Capenna set, use ID 80152 for the first couple of weeks
+* Note: When downloading the Streets of New Capenna set, use ID 80152 for the first couple of weeks
 
 ===================== RELEASE NOTES 2.81 =====================
-- Modified Feature: Auto Highest Rated - the auto filter will now display the highest rated pick rating of the two leading color pairs
-    - Replaces the questionably useful Auto Averaging feature that averaged the ratings of the two leading color pairs
-    - Addresses an issue where highly rated cards that matched one color pair were listed below mediocre cards that matched the pivot color
+* Modified Feature: Auto Highest Rated * the auto filter will now display the highest rated pick rating of the two leading color pairs
+** Replaces the questionably useful Auto Averaging feature that averaged the ratings of the two leading color pairs
+** Addresses an issue where highly rated cards that matched one color pair were listed below mediocre cards that matched the pivot color
     
-- New UI Feature: Data Source Field - there is now a data source field on the main window that lists the source of the card data (i.e. QuickDraft, PremierDraft, TradDraft data files)
-    - If the user is playing a NEO premier draft, then the application will pull data from NEO_PremierDraft_Data.json and list "PremierDraft" as the data source
+* New UI Feature: Data Source Field * there is now a data source field on the main window that lists the source of the card data (i.e. QuickDraft, PremierDraft, TradDraft data files)
+** If the user is playing a NEO premier draft, then the application will pull data from NEO_PremierDraft_Data.json and list "PremierDraft" as the data source
 
-- New Feature: Data file verification - the application will check to see if the data file (e.g. NEO_PremierDraft_Data.json) is structuraly valid.
-    - If a file isn't valid, then it won't be listed in the Set Data window
+* New Feature: Data file verification * the application will check to see if the data file (e.g. NEO_PremierDraft_Data.json) is structuraly valid.
+** If a file isn't valid, then it won't be listed in the Set Data window
 
 ===================== RELEASE NOTES 2.80 =====================
-- New Feature: Auto Averaging - see the card logic and settings sections of the README
+* New Feature: Auto Averaging * see the card logic and settings sections of the README
 
-- New Feature: Color Bonus - see the card logic and settings sections of the README
+* New Feature: Color Bonus * see the card logic and settings sections of the README
 
-- New Feature: Curve Bonus - see the card logic and settings sections of the README
+* New Feature: Curve Bonus * see the card logic and settings sections of the README
 
-- Modified Feature: Moved the 17Lands notice information to the main window
+* Modified Feature: Moved the 17Lands notice information to the main window
 
-- Modified Feature: Changed the minimize/maximize hotkey from Ctrl+F to Ctrl+G and added a note to the main window
+* Modified Feature: Changed the minimize/maximize hotkey from Ctrl+F to Ctrl+G and added a note to the main window
 
-- Bug Fixes:
-    - The auto filter logic has been reworked (Issue #3) - see the card logic section of the README
-    - The tool will no longer fail to calculate pick ratings due to incomplete 17Lands data (Issue#2 a continuation of Issue#1)
-    - The tool will not generate an extra log file while drafting
+* Bug Fixes:
+** The auto filter logic has been reworked (Issue #3) * see the card logic section of the README
+** The tool will no longer fail to calculate pick ratings due to incomplete 17Lands data (Issue#2 a continuation of Issue#1)
+** The tool will not generate an extra log file while drafting
 
 ===================== RELEASE NOTES 2.73 =====================
-- New Feature: Added settings options for hiding the missing cards and deck stats tables
+* New Feature: Added settings options for hiding the missing cards and deck stats tables
 
-- New Feature: Settings will be saved between restarts
+* New Feature: Settings will be saved between restarts
 
-- Modified Feature: After pick 15, the auto filter will now remain at "All Decks" until there's a clear leading color pair
+* Modified Feature: After pick 15, the auto filter will now remain at "All Decks" until there's a clear leading color pair
 
-- Bug Fixes:
-    - Clicking on the reset config drop-down option will no longer prevent the deck suggester from working
-        - Reset config has been replaced with a default settings button in the settings window
-    - Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
-    - Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards
-    - Incomplete 17Lands data will no longer result in inaccurate pick ratings (Issue #1) 
+* Bug Fixes:
+** Clicking on the reset config drop-down option will no longer prevent the deck suggester from working
+** * Reset config has been replaced with a default settings button in the settings window
+** Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
+** Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards
+** Incomplete 17Lands data will no longer result in inaccurate pick ratings (Issue #1) 
 
 ===================== RELEASE NOTES 2.72 =====================
 
-- Modified Feature: Added input checks and retry logic to the download set process
+* Modified Feature: Added input checks and retry logic to the download set process
 
-- Bug Fix: The application now supports the Kamigawa traditional draft
+* Bug Fix: The application now supports the Kamigawa traditional draft
 
-- Note: When downloading the Kamigawa set, ID 79418 is no longer required (use the default 0)
+* Note: When downloading the Kamigawa set, ID 79418 is no longer required (use the default 0)
 
 ===================== RELEASE NOTES 2.71 =====================
 
-- New Feature: Added support for MWM bot draft
+* New Feature: Added support for MWM bot draft
 
-- Bug Fix: Restarting is no longer required when playing consecutive drafts
+* Bug Fix: Restarting is no longer required when playing consecutive drafts
 
 
 ===================== RELEASE NOTES 2.70 =====================
 
-- New Feature: Tier List 
-  - Follow the instructions in Tools/TierScraper17Lands/README.txt
-  - Added a Tier drop-down option to the filters
-  - Downloading the set is still required
+* New Feature: Tier List 
+** Follow the instructions in Tools/TierScraper17Lands/README.txt
+** Added a Tier drop-down option to the filters
+** Downloading the set is still required
 
-- UI Change: Added 17Lands startup and embargo notices so that the application is compliant with the 17Lands usage guidelines (https://www.17lands.com/usage_guidelines)
+* UI Change: Added 17Lands startup and embargo notices so that the application is compliant with the 17Lands usage guidelines (https://www.17lands.com/usage_guidelines)
 
-- Feature Note: Use ID 79418 when downloading the Kamigawa: Neon Dynasty set
+* Feature Note: Use ID 79418 when downloading the Kamigawa: Neon Dynasty set
 
-- Bug Fix: The application will no longer generate excessive log entries after a quick draft has ended
+* Bug Fix: The application will no longer generate excessive log entries after a quick draft has ended
 
-- Bug Fix: The application will no longer get stuck if the draft includes basic lands
+* Bug Fix: The application will no longer get stuck if the draft includes basic lands
