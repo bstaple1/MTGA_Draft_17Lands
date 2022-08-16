@@ -7,7 +7,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
   * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.), although not all events have been tested.
 
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier_Draft.png?raw=true)
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/DEV_0300/Images/Premier_Draft.png?raw=true)
 
 ## Run Steps: Windows Executable (Windows Only)
 - **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file, clone the repository, or download the latest executable (e.g., `MTGA_Draft_Tool_V0285_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
@@ -92,8 +92,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Menu Features
 
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Settings_Dark.png?raw=true)
-![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Settings_Colors.png?raw=true)
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/DEV_0300/Images/Settings_Dark.png?raw=true)
+![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/DEV_0300/Images/Settings_Colors.png?raw=true)
 
 - **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
 
