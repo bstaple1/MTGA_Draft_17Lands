@@ -48,6 +48,7 @@ def DecodeManaCost(encoded_cost):
         decoded_cost = "".join("{{{0}}}".format(x) for x in sections[0:index])
     
     return decoded_cost, cmc
+    
 def RetrieveLocalSetList(sets):
     file_list = []
     main_sets = [v[constants.SET_LIST_17LANDS][0] for k, v in sets.items()]
@@ -262,8 +263,108 @@ class FileExtractor:
         
     def Version(self, version):
         self.combined_data["meta"]["version"] = version
+      
+    def DownloadCardData(self, ui_root, progress_bar, database_size):
+        result = False
+        result_string = ""
+        temp_size = 0
+        try:
+            #if "Cube" in self.selected_sets[constants.SET_LIST_17LANDS]:
+            #    result, result_string, temp_size = self.DownloadCube(ui_root, progress_bar, database_size)
+            #else:
+            result, result_string, temp_size = self.DownloadExpansion(ui_root, progress_bar, database_size)
         
-    def RetrieveLocalArenaData(self, database_size):
+        except Exception as error:
+            file_logger.info(f"DownloadCardData Error: {error}")
+            result_string = error
+            
+        return result, result_string, temp_size
+       
+    def DownloadExpansion (self, ui_root, progress_bar, database_size):
+        result = False
+        result_string = ""
+        temp_size = 0
+        try:
+            while(True):
+                progress_bar['value']=5 #Provide immediate feedback that the download process has started
+                ui_root.update()
+                
+                result, result_string, temp_size = self.RetrieveLocalArenaData(database_size)
+                        
+                progress_bar['value']=10
+                ui_root.update()
+                
+                if self.Session17Lands(self.selected_sets[constants.SET_LIST_17LANDS], 
+                                       self.deck_colors,
+                                       ui_root, 
+                                       progress_bar,
+                                       progress_bar['value']) == False:
+                    result = False
+                    result_string = "Couldn't Collect 17Lands Data"
+                    break
+
+                matching_only = True if constants.SET_SELECTION_ALL in self.selected_sets[constants.SET_LIST_ARENA] else False
+                
+                if not matching_only:
+                    self.Initialize17LandsData()
+
+                if self.AssembleSetData(matching_only) == False:
+                    result = False
+                    result_string = "Couldn't Assemble Set Data"
+                    break
+
+                break
+        
+        except Exception as error:
+            file_logger.info(f"DownloadExpansion Error: {error}")
+            result_string = error
+            
+        return result, result_string, temp_size
+       
+    #def DownloadExpansion(self, ui_root, progress_bar, database_size):
+    #    result = False
+    #    result_string = ""
+    #    temp_size = 0
+    #    try:
+    #        while(True):
+    #            progress_bar['value']=5 #Provide immediate feedback that the download process has started
+    #            ui_root.update()
+    #            
+    #            result, result_string, temp_size = self.RetrieveLocalArenaData(database_size)
+    #            
+    #            if result == False:
+    #                result, result_string = self.SessionScryfallData()
+    #                if result == False:
+    #                    break
+    #                    
+    #            progress_bar['value']=10
+    #            ui_root.update()
+    #            
+    #            self.Initialize17LandsData()
+    #            
+    #            if self.Session17Lands(self.selected_sets[constants.SET_LIST_17LANDS], 
+    #                                   self.deck_colors,
+    #                                   ui_root, 
+    #                                   progress_bar,
+    #                                   progress_bar['value']) == False:
+    #                result = False
+    #                result_string = "Couldn't Collect 17Lands Data"
+    #                break
+    #            
+    #            if self.AssembleSetData() == False:
+    #                result = False
+    #                result_string = "Couldn't Assemble Set Data"
+    #                break
+    #            
+    #            break
+    #    
+    #    except Exception as error:
+    #        file_logger.info(f"DownloadExpansion Error: {error}")
+    #        result_string = error
+    #        
+    #    return result, result_string, temp_size
+      
+    def RetrieveLocalArenaData(self, previous_database_size):
         result_string = "Couldn't Collect Local Card Data"
         result = False
         self.card_dict = {}
@@ -285,89 +386,103 @@ class FileExtractor:
             not len(arena_database_locations)):
             return result, result_string
         
-        for set in self.selected_sets[constants.SET_LIST_ARENA]:
-            result = False
-            while(True):
-                try:      
+        result = False
+        while(True):
+            try:      
+                current_database_size = os.path.getsize(arena_cards_locations[0])
+                
+                if current_database_size != previous_database_size:
+                    file_logger.info(f"Local File Change Detected {current_database_size}, {previous_database_size}")
                     file_logger.info(f"Local Card Data: Searching file path {arena_cards_locations[0]}")
                     #Check temporary localization data and update it if necessary
-                    result, card_text, card_enumerators, database_size = self.CollectLocalizationData(arena_database_locations[0], database_size)
+                    #result, card_text, card_enumerators = self.CollectLocalizationData(arena_database_locations[0])
+                    result, card_text, card_enumerators = self.RetrieveLocalDatabase(arena_database_locations[0])
                     
                     if not result:
                         break
                 
-                    #Retrieve the card data without text
-                    result = self.RetrieveLocalCards(arena_cards_locations[0], set)
+                    #result, raw_card_data = self.CollectRawCardData(arena_cards_locations[0])
+                    result, raw_card_data = self.RetrieveLocalCards(arena_cards_locations[0])
                     
                     if not result:
                         break
-                                   
-
                         
-                    #Assemble information for local data set
-                    result = self.AssembleLocalDataSet(card_text, card_enumerators)
+                    result = self.AssembleStoredData(card_text, card_enumerators, raw_card_data)
                     
-                except Exception as error:
-                    file_logger.info(f"RetrieveLocalArenaData Error: {error}")
-                break
+                    if not result:
+                        break
+                    
+                #Assemble information for local data set
+                result = self.RetrieveStoredData(self.selected_sets[constants.SET_LIST_ARENA])
+                
+            except Exception as error:
+                file_logger.info(f"RetrieveLocalArenaData Error: {error}")
+            break
         
         if not result:
             file_logger.info(result_string)
         
-        return result, result_string, database_size 
+        return result, result_string, current_database_size
         
-    def CollectLocalizationData(self, file_location, file_size):
-        result = False
-        card_text = {}
-        card_enumerators = {}
-        current_database_size = 0
-        
-        try:
-            while(True): #break loop
-                    
-                #Determine if the database file matches the file size (indicates that the temporary data is up-to-date)
-                database_size = os.path.getsize(file_location)
-                
-                if database_size != file_size:
-                    file_logger.info(f"Database change detected {database_size}, {file_size}")
-                    #Update the temp file with data from the database
-                    if not self.RetrieveLocalDatabase(file_location):
-                        break
-                    
-                #Collect the localization and enumeration data from the temp localization file
-                with open(constants.TEMP_LOCALIZATION_FILE, 'r', encoding='utf-8') as data:
-                    json_file = data.read()
-                    json_data = json.loads(json_file)
+    #def CollectLocalizationData(self, file_location, file_size):
+    #    result = False
+    #    card_text = {}
+    #    card_enumerators = {}
+    #    current_database_size = 0
+    #    
+    #    try:
+    #        while(True): #break loop
+    #                
+    #            #Determine if the database file matches the file size (indicates that the temporary data is up-to-date)
+    #            database_size = os.path.getsize(file_location)
+    #            
+    #            if database_size != file_size:
+    #                file_logger.info(f"Database change detected {database_size}, {file_size}")
+    #                #Update the temp file with data from the database
+    #                if not self.RetrieveLocalDatabase(file_location):
+    #                    break
+    #                
+    #            #Collect the localization and enumeration data from the temp localization file
+    #            with open(constants.TEMP_LOCALIZATION_FILE, 'r', encoding='utf-8') as data:
+    #                json_file = data.read()
+    #                json_data = json.loads(json_file)
+    #
+    #                card_text = json_data["localization"]
+    #                card_enumerators = json_data["enumeration"]
+    #        
+    #            
+    #            current_database_size = database_size
+    #            result = True
+    #            break
+    #    
+    #    
+    #    except Exception as error:
+    #        file_logger.info(f"CollectLocalizationData Error: {error}")
+    #    
+    #    if not result:
+    #        file_logger.info(f"Failed to create temp localization file")
+    #    
+    #    return result, card_text, card_enumerators, current_database_size
 
-                    card_text = json_data["localization"]
-                    card_enumerators = json_data["enumeration"]
-            
-                
-                current_database_size = database_size
-                result = True
-                break
-        
-        
-        except Exception as error:
-            file_logger.info(f"CollectLocalizationData Error: {error}")
-        
-        if not result:
-            file_logger.info(f"Failed to create temp localization file")
-        
-        return result, card_text, card_enumerators, current_database_size
-        
-
-    def RetrieveLocalCards(self, file_location, card_set):
+    def RetrieveLocalCards(self, file_location):
         result = False
+        card_data = {}
         try:
             with open(file_location, 'r', encoding="utf8") as json_file:
                 json_data = json.loads(json_file.read())
                 
                 for card in json_data:
                     card = {k.lower(): v for k, v in card.items()} #Making all of the keys lowercase
-                    if ((card_set in card[constants.LOCAL_CARDS_KEY_SET]) or
-                       ((constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET in card) and (card_set in card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]))):
+                    if(True):
+                    #if ((card_set == "All") or
+                        #(card_set in card[constants.LOCAL_CARDS_KEY_SET]) or
+                        #((constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET in card) and (card_set in card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]))):
                         try:
+                            set = card[constants.LOCAL_CARDS_KEY_SET]
+                            
+                            if set not in card_data:
+                                card_data[set] = {}
+                        
                             if constants.LOCAL_CARDS_KEY_TOKEN in card:
                                 continue
                             
@@ -379,27 +494,30 @@ class FileExtractor:
                                     #The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
                                     #self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
                                     types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                                    self.card_dict[linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(types)
+                                    card_data[set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(types)
                                     continue
     
-                            self.card_dict[group_id] = {constants.DATA_FIELD_NAME : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES : []}
-                            self.card_dict[group_id][constants.DATA_FIELD_TYPES] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                            self.card_dict[group_id][constants.DATA_FIELD_COLORS] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
+                            card_data[set][group_id] = {constants.DATA_FIELD_NAME : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES : []}
+                            card_data[set][group_id][constants.DATA_FIELD_TYPES] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
+                            card_data[set][group_id][constants.DATA_FIELD_COLORS] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
                             mana_cost, cmc = DecodeManaCost(card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("",0)
-                            self.card_dict[group_id][constants.DATA_FIELD_CMC] = cmc
-                            self.card_dict[group_id]["mana_cost"] = mana_cost
+                            card_data[set][group_id][constants.DATA_FIELD_CMC] = cmc
+                            card_data[set][group_id]["mana_cost"] = mana_cost
 
                             result = True
                         except Exception as error:
-                            pass
+                            file_logger.info(f"Card Read Error: {card}")
+                            break
+                            #pass
         except Exception as error:
             file_logger.info(f"RetrieveLocalCards Error: {error}")
             
-        return result
+        return result, card_data
       
     def RetrieveLocalDatabase(self, file_location):
         result = False
-        card_data = {}
+        card_text = {}
+        card_enumerators = {}
         try:
             #Open Sqlite3 database
             while(True):
@@ -412,7 +530,7 @@ class FileExtractor:
                 if not rows:
                     break
                 
-                result, card_data["localization"] = self.RetrieveLocalCardText(rows)
+                result, card_text = self.RetrieveLocalCardText(rows)
                 
                 if not result:
                     break
@@ -423,23 +541,23 @@ class FileExtractor:
                 if not rows:
                     break
                 
-                result, card_data["enumeration"] = self.RetrieveLocalCardEnumerators(rows)
+                result, card_enumerators = self.RetrieveLocalCardEnumerators(rows)
                 
                 if not result:
                     break
                     
                 #store the localization data in a temporary file
-                with open(constants.TEMP_LOCALIZATION_FILE, 'w', encoding='utf-8') as json_file:
-                    json.dump(card_data, json_file)
-                
-                result = True
+                #with open(constants.TEMP_LOCALIZATION_FILE, 'w', encoding='utf-8') as json_file:
+                #    json.dump(card_data, json_file)
+                #
+                #result = True
                 break
                 
         except Exception as error:
             result = False
             file_logger.info(f"RetrieveLocalDatabase Error: {error}")
         
-        return result
+        return result, card_text, card_enumerators
       
     def RetrieveLocalCardText(self, data):
         result = True
@@ -460,9 +578,9 @@ class FileExtractor:
         try:
             for row in data:
                     if row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES:
-                        card_enumerators[constants.DATA_FIELD_TYPES][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
+                        card_enumerators[constants.DATA_FIELD_TYPES][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
                     elif row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE] == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR:
-                        card_enumerators[constants.DATA_FIELD_COLORS][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = str(row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID])
+                        card_enumerators[constants.DATA_FIELD_COLORS][row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]] = row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
 
         except Exception as error:
             result = False
@@ -470,24 +588,55 @@ class FileExtractor:
         
         return result, card_enumerators
     
-    def AssembleLocalDataSet(self, card_text, card_enumerators):
+    def AssembleStoredData(self, card_text, card_enumerators, card_data):
         result = False
         try:
-            for card in self.card_dict:
-                try:
-                    self.card_dict[card][constants.DATA_FIELD_NAME] = " // ".join(card_text[str(x)] for x in self.card_dict[card][constants.DATA_FIELD_NAME])     
-                    self.card_dict[card][constants.DATA_FIELD_TYPES] = list(set([card_text[card_enumerators[constants.DATA_FIELD_TYPES][str(x)]] for x in self.card_dict[card][constants.DATA_FIELD_TYPES]]))
-                    self.card_dict[card][constants.DATA_FIELD_COLORS] = [constants.CARD_COLORS_DICT[card_text[card_enumerators[constants.DATA_FIELD_COLORS][str(x)]]] for x in self.card_dict[card][constants.DATA_FIELD_COLORS]]
-                    if "Creature" in self.card_dict[card][constants.DATA_FIELD_TYPES]:
-                        index = self.card_dict[card][constants.DATA_FIELD_TYPES].index("Creature")
-                        self.card_dict[card][constants.DATA_FIELD_TYPES].insert(0, self.card_dict[card][constants.DATA_FIELD_TYPES].pop(index))
-                    result = True
-                except Exception as error:
-                    pass
+            for card_set in card_data:
+                for card in card_data[card_set]:
+                    try:
+                        card_data[card_set][card][constants.DATA_FIELD_NAME] = " // ".join(card_text[x] for x in card_data[card_set][card][constants.DATA_FIELD_NAME])     
+                        card_data[card_set][card][constants.DATA_FIELD_TYPES] = list(set([card_text[card_enumerators[constants.DATA_FIELD_TYPES][x]] for x in card_data[card_set][card][constants.DATA_FIELD_TYPES]]))
+                        card_data[card_set][card][constants.DATA_FIELD_COLORS] = [constants.CARD_COLORS_DICT[card_text[card_enumerators[constants.DATA_FIELD_COLORS][x]]] for x in card_data[card_set][card][constants.DATA_FIELD_COLORS]]
+                        if "Creature" in card_data[card_set][card][constants.DATA_FIELD_TYPES]:
+                            index = card_data[card_set][card][constants.DATA_FIELD_TYPES].index("Creature")
+                            card_data[card_set][card][constants.DATA_FIELD_TYPES].insert(0, card_data[card_set][card][constants.DATA_FIELD_TYPES].pop(index))
+                        result = True
+                    except Exception as error:
+                        pass
+            
+            if result:
+                #Store all of the processed card data
+                with open(constants.TEMP_CARD_DATA_FILE, 'w', encoding='utf-8') as json_file:
+                    json.dump(card_data, json_file)
     
         except Exception as error:
             result = False
-            file_logger.info(f"AssembleLocalDataSet Error: {error}")
+            file_logger.info(f"AssembleStoredData Error: {error}")
+        
+        return result
+        
+    def RetrieveStoredData(self, set_list):
+        result = False
+        self.card_dict = {}
+        try:
+            with open(constants.TEMP_CARD_DATA_FILE, 'r', encoding='utf-8') as data:
+                json_file = data.read()
+                json_data = json.loads(json_file)
+            
+            if constants.SET_SELECTION_ALL in set_list:
+                for set in json_data:
+                    self.card_dict.update(json_data[set].copy())
+            else:
+                for set in set_list:
+                    if set in json_data:
+                        self.card_dict.update(json_data[set].copy())
+            
+            if len(self.card_dict):
+                result = True
+    
+        except Exception as error:
+            result = False
+            file_logger.info(f"AssembleStoredData Error: {error}")
         
         return result
         
@@ -554,22 +703,20 @@ class FileExtractor:
         return result, result_string
 
     def Initialize17LandsData(self):
-        self.card_ratings = {}
-
         for card in self.card_dict:
             self.card_dict[card][constants.DATA_FIELD_DECK_COLORS] = {}
             for color in self.deck_colors:
                 self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = {x : 0.0 for x in constants.DATA_FIELD_17LANDS_DICT.keys() if x != constants.DATA_SECTION_IMAGES}
 
 
-    def Session17Lands(self, root, progress, initial_progress):
+    def Session17Lands(self, sets, deck_colors, root, progress, initial_progress):
+        self.card_ratings = {}
         current_progress = 0
         result = False
-        self.Initialize17LandsData()
-        for set in self.selected_sets[constants.SET_LIST_17LANDS]:
+        for set in sets:
             if set == "dbl":
                 continue
-            for color in self.deck_colors:
+            for color in deck_colors:
                 retry = 5
                 result = False
                 while retry:
@@ -598,13 +745,18 @@ class FileExtractor:
                 else:
                     break
                 time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
-         
             if set == "stx":
                 break
-        for card in self.card_dict:
-            self.ProcessCardRatings(self.card_dict[card])
-        self.combined_data["card_ratings"] = self.card_dict
+
         return result 
+        
+    def AssembleSetData(self, matching_only):
+        self.combined_data["card_ratings"] = {}
+        for card in self.card_dict:
+            if self.ProcessCardRatings(self.card_dict[card]):
+                self.combined_data["card_ratings"][card] = self.card_dict[card]
+            elif not matching_only:
+                self.combined_data["card_ratings"][card] = self.card_dict[card]
         
     def SessionSets(self):
         sets = {}
@@ -759,6 +911,7 @@ class FileExtractor:
         return result, result_string
         
     def ProcessCardRatings (self, card):
+        result = False
         try:
             card_sides = card[constants.DATA_FIELD_NAME].split(" // ") 
             card_sides = [x.replace("///", "//") for x in card_sides]
@@ -768,6 +921,10 @@ class FileExtractor:
                 deck_colors = self.card_ratings[ratings_card_name][constants.DATA_SECTION_RATINGS]
                 
                 card[constants.DATA_SECTION_IMAGES] = self.card_ratings[ratings_card_name][constants.DATA_SECTION_IMAGES]
+                card[constants.DATA_FIELD_DECK_COLORS] = {}
+                for color in self.deck_colors:
+                    card[constants.DATA_FIELD_DECK_COLORS][color] = {x : 0.0 for x in constants.DATA_FIELD_17LANDS_DICT.keys() if x != constants.DATA_SECTION_IMAGES}
+                result = True
                 for deck_color in deck_colors:
                     for key, value in deck_color.items():
                         for field in value:
@@ -776,7 +933,7 @@ class FileExtractor:
         except Exception as error:
             file_logger.info(f"ProcessCardRatings Error: {error}")
 
-        return
+        return result
         
     def ProcessSetData (self, sets, data):
         counter = 0
@@ -790,7 +947,7 @@ class FileExtractor:
                     sets[set_name][constants.SET_LIST_ARENA] = ["VOW","MID"]
                     sets[set_name][constants.SET_LIST_17LANDS] = [set_code.upper()]
                     sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW","MID"]
-                    counter += 1
+                    counter += 1   
                 elif (set["set_type"] in constants.SUPPORTED_SET_TYPES):
                     if set["set_type"] == constants.SET_TYPE_ALCHEMY:
                         sets[set_name] = {}
@@ -810,11 +967,14 @@ class FileExtractor:
                             sets[set_name][constants.SET_LIST_SCRYFALL].append("STA")
                     counter += 1
                     
-                # Only retrieve the last 20 sets
-                if counter >= 25:
+                # Only retrieve the last 24 sets + CUBE
+                if counter >= 24:
                     break
             except Exception as error:
                 file_logger.info(f"ProcessSetData Error: {error}")
+                
+        #Insert the cube sets 
+        sets["Arena Cube"] = {constants.SET_LIST_ARENA : [constants.SET_SELECTION_ALL], constants.SET_LIST_SCRYFALL : [], constants.SET_LIST_17LANDS : [constants.SET_SELECTION_CUBE]}
         
         return sets
         

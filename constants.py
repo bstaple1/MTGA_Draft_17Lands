@@ -200,11 +200,12 @@ LOCAL_CARDS_KEY_COLOR_ID = "coloridentity"
 LOCAL_CARDS_KEY_CASTING_COST = "castingcost"
 
 
+
 SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
 SET_FILE_SUFFIX = "Data.json"
 
 CARD_RATINGS_BACKOFF_DELAY_SECONDS = 30
-CARD_RATINGS_INTER_DELAY_SECONDS = 2
+CARD_RATINGS_INTER_DELAY_SECONDS = 1
 
 PLATFORM_ID_OSX = "darwin"
 PLATFORM_ID_WINDOWS = "win32"
@@ -226,6 +227,9 @@ SET_LIST_ARENA = "arena"
 SET_LIST_SCRYFALL = "scryfall"
 SET_LIST_17LANDS = "17Lands"
 
+SET_SELECTION_ALL = "ALL"
+SET_SELECTION_CUBE = "CUBE"
+
 SUPPORTED_SET_TYPES = [SET_TYPE_EXPANSION, SET_TYPE_ALCHEMY, SET_TYPE_MASTERS]
 
 TABLE_STYLE = "Treeview"
@@ -235,6 +239,7 @@ DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
 
 TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
 TEMP_LOCALIZATION_FILE = os.path.join(TEMP_FOLDER, "temp_localization.json")
+TEMP_CARD_DATA_FILE = os.path.join(TEMP_FOLDER, "temp_card_data.json")
 
 BW_ROW_COLOR_ODD_TAG = "bw_odd"
 BW_ROW_COLOR_EVEN_TAG = "bw_even"

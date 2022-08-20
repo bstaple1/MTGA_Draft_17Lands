@@ -465,7 +465,6 @@ class WindowUI:
                                           self.configuration.curve_bonus_enabled,
                                           self.configuration.color_bonus_enabled)
                                           
-            #filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
             # clear the previous rows
             for row in self.pack_table.get_children():
                 self.pack_table.delete(row)
@@ -1589,17 +1588,12 @@ class WindowUI:
                     break
                 self.extractor.Version(version)
                 self.extractor.SessionColorRatings()
-                result, result_string, temp_size = self.extractor.RetrieveLocalArenaData(self.configuration.database_size)
+                
+                result, result_string, temp_size = self.extractor.DownloadCardData(self.root, progress, self.configuration.database_size)
+                
                 if result == False:
-                    result, result_string = self.extractor.SessionScryfallData()
-                    if result == False:
-                        break
-                progress['value']=10
-                self.root.update()
-                if self.extractor.Session17Lands(self.root, progress, progress['value']) == False:
-                    result = False
-                    result_string = "Couldn't Collect 17Lands Data"
-                    break
+                    break  
+                    
                 if self.extractor.ExportData() == False:
                     result = False
                     result_string = "File Write Failure"
