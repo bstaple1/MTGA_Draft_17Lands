@@ -37,10 +37,15 @@ def DecodeManaCost(encoded_cost):
         cost_string = re.sub('\(|\)', '', encoded_cost)
         
         sections = cost_string[1:].split("o")
-        for section in sections:
-            cmc += int(section) if section.isnumeric() else 1
+        index = 0
+        for count, section in enumerate(sections):
+            if section.isnumeric() and count != 0:
+                break
+            else:
+                index += 1
+                cmc += int(section) if section.isnumeric() else 1
 
-        decoded_cost = "".join("{{{0}}}".format(x) for x in sections)
+        decoded_cost = "".join("{{{0}}}".format(x) for x in sections[0:index])
     
     return decoded_cost, cmc
 def RetrieveLocalSetList(sets):
@@ -756,6 +761,7 @@ class FileExtractor:
     def ProcessCardRatings (self, card):
         try:
             card_sides = card[constants.DATA_FIELD_NAME].split(" // ") 
+            card_sides = [x.replace("///", "//") for x in card_sides]
             matching_cards = [x for x in self.card_ratings.keys() if x in card_sides]
             if(matching_cards):
                 ratings_card_name = matching_cards[0]
@@ -766,14 +772,7 @@ class FileExtractor:
                     for key, value in deck_color.items():
                         for field in value:
                             card[constants.DATA_FIELD_DECK_COLORS][key][field] = value[field]
-                        #card[constants.DATA_FIELD_DECK_COLORS][key] = {constants.DATA_FIELD_GIHWR :  value[constants.DATA_FIELD_GIHWR], 
-                        #                                               constants.DATA_FIELD_ALSA  :  value[constants.DATA_FIELD_ALSA],
-                        #                                               constants.DATA_FIELD_IWD   :  value[constants.DATA_FIELD_IWD],
-                        #                                               constants.DATA_FIELD_GIH   :  value[constants.DATA_FIELD_GIH],
-                        #                                               constants.DATA_FIELD_OHWR  :  value[constants.DATA_FIELD_OHWR],
-                        #                                               constants.DATA_FIELD_NGOH  :  value[constants.DATA_FIELD_NGOH],
-                        #                                               constants.DATA_FIELD_GPWR  :  value[constants.DATA_FIELD_GPWR],
-                        #                                               constants.DATA_FIELD_NGP   :  value[constants.DATA_FIELD_NGP]}
+
         except Exception as error:
             file_logger.info(f"ProcessCardRatings Error: {error}")
 

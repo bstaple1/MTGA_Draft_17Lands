@@ -1023,6 +1023,7 @@ class WindowUI:
 
         self.UpdateDeckStatsCallback()
 
+        self.root.update()
 
     def UpdateCallback(self, enable_draft_search):
         update = True
@@ -1764,6 +1765,7 @@ class WindowUI:
         if update_flag:
             self.UpdateUI()
             self.ControlTrace(True)
+
     def EnableDeckStates(self, enable):
         try:
             if enable:
