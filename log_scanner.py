@@ -144,7 +144,7 @@ class ArenaScanner:
             event_sections = event_name.split('_')
             
             #Find set name within the event string
-            sets = [i[constants.SET_LIST_17LANDS][0] for i in self.set_list.values() for x in event_sections if i[constants.SET_LIST_17LANDS][0] in x]
+            sets = [i[constants.SET_LIST_17LANDS][0] for i in self.set_list.values() for x in event_sections if i[constants.SET_LIST_17LANDS][0].lower() in x.lower()]
             sets = list(dict.fromkeys(sets)) #Remove duplicates while retaining order
             events = []
             if sets:

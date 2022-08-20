@@ -800,12 +800,14 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
         #filter cards using the correct deck's colors
         #fields = {"filtered_a" : constants.DATA_FIELD_GIHWR.upper(), "filtered_b" : constants.DATA_FIELD_GIHWR.upper(), "filtered_c" : constants.DATA_FIELD_GIHWR.upper()}
         #filtered_cards = CardFilter(cards, cards, [color], fields, limits, None, configuration, False, False)
-        
+        fields = {"a" : constants.DATA_FIELD_GIHWR}
+        filtered_cards = CardFilter(cards, cards, [color], fields, limits, None, configuration, False, False)
+
         #identify a splashable color
-        color +=(ColorSplash(cards, color, configuration))
+        color +=(ColorSplash(filtered_cards, color, configuration))
         
-        card_colors_sorted = DeckColorSearch(cards, color, ["Creature", "Planeswalker"], True, True, False)
-        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR], reverse = True)
+        card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Creature", "Planeswalker"], True, True, False)
+        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["results"][0], reverse = True)
         
         #Identify creatures that fit distribution
         distribution = [0,0,0,0,0,0,0]
@@ -827,7 +829,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
         #Go back and identify remaining creatures that have the highest base rating but don't push average above the threshold
         unused_cmc_combined = cmc_average * recommended_creature_count - used_cmc_combined
         
-        unused_list.sort(key=lambda x : x[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR], reverse = True)
+        unused_list.sort(key=lambda x : x["results"][0], reverse = True)
         
         #Identify remaining cards that won't exceed recommeneded CMC average
         cmc_cards, unused_list = CardCmcSearch(unused_list, 0, 0, unused_cmc_combined, recommended_creature_count - used_count)
@@ -837,7 +839,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
         
         temp_unused_list = unused_list[:]
         if len(cmc_cards) == 0:
-            for count, card in enumerate(unused_list):
+            for card in unused_list:
                 if total_card_count >= recommended_creature_count:
                     break
                     
@@ -846,10 +848,10 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
                 total_card_count += 1
         unused_list = temp_unused_list[:]
             
-        card_colors_sorted = DeckColorSearch(cards, color, ["Instant", "Sorcery","Enchantment","Artifact"], True, True, False)
-        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR], reverse = True)
+        card_colors_sorted = DeckColorSearch(filtered_cards, color, ["Instant", "Sorcery","Enchantment","Artifact"], True, True, False)
+        card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["results"][0], reverse = True)
         #Add non-creature cards
-        for count, card in enumerate(card_colors_sorted):
+        for card in card_colors_sorted:
             if total_card_count >= maximum_card_count:
                 break
                 
@@ -858,7 +860,7 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
             
                 
         #Fill the deck with remaining creatures
-        for count, card in enumerate(unused_list):
+        for card in unused_list:
             if total_card_count >= maximum_card_count:
                 break
                 
@@ -867,14 +869,14 @@ def BuildDeck(deck_type, cards, color, limits, configuration):
             
 
         #Add in special lands if they are on-color, off-color, and they have a card rating above 2.0
-        land_cards = DeckColorSearch(cards, color, ["Land"], True, True, False)
+        land_cards = DeckColorSearch(filtered_cards, color, ["Land"], True, True, False)
         land_cards = [x for x in land_cards if x[constants.DATA_FIELD_NAME] not in constants.BASIC_LANDS]
-        land_cards = sorted(land_cards, key = lambda k: k[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR], reverse = True)
+        land_cards = sorted(land_cards, key = lambda k: k["results"][0], reverse = True)
         for card in land_cards:
             if total_card_count >= maximum_deck_size:
                 break
                 
-            if card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR] >= 55.0:    
+            if card["results"][0] >= 55.0:    
                 used_list.append(card)
                 total_card_count += 1
             
