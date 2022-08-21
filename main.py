@@ -1132,7 +1132,6 @@ class WindowUI:
         popup.attributes("-topmost", True)
 
         x, y = SafeCoordinates(self.root, 1000, 170, 250, 20)
-
         popup.wm_geometry("+%d+%d" % (x, y))
         
         Grid.rowconfigure(popup, 1, weight = 1)
@@ -1221,6 +1220,9 @@ class WindowUI:
         popup.wm_title("Card Compare")
         popup.resizable(width = False, height = True)
         popup.attributes("-topmost", True)
+        x, y = SafeCoordinates(self.root, 400, 170, 250, 0)
+        popup.wm_geometry("+%d+%d" % (x, y))
+        
         try:
             Grid.rowconfigure(popup, 2, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
@@ -1297,6 +1299,9 @@ class WindowUI:
         popup.wm_title("Taken Cards")
         popup.attributes("-topmost", True)
         popup.resizable(width = False, height = True)
+        x, y = SafeCoordinates(self.root, 400, 170, 250, 0)
+        popup.wm_geometry("+%d+%d" % (x, y))
+        
         popup.protocol("WM_DELETE_WINDOW", lambda window=popup: self.TakenCardsExit(window))
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
@@ -1307,16 +1312,16 @@ class WindowUI:
                                                                  self.draft.set_data),
                                                                  text="Copy to Clipboard")
             
-            headers = {"Column1" : {"width" : .28, "anchor" : W},
-                       "Column2" : {"width" : .12, "anchor" : CENTER},
-                       "Column3" : {"width" : .12, "anchor" : CENTER},
-                       "Column4" : {"width" : .12, "anchor" : CENTER},
-                       "Column5" : {"width" : .12, "anchor" : CENTER},
-                       "Column6" : {"width" : .12, "anchor" : CENTER},
-                       "Column7" : {"width" : .12, "anchor" : CENTER},
-                       "Column8" : {"width" : .12, "anchor" : CENTER},
-                       "Column9" : {"width" : .12, "anchor" : CENTER},
-                       "Column10": {"width" : .12, "anchor" : CENTER},
+            headers = {"Column1" : {"width" : .40, "anchor" : W},
+                       "Column2" : {"width" : .20, "anchor" : CENTER},
+                       "Column3" : {"width" : .20, "anchor" : CENTER},
+                       "Column4" : {"width" : .20, "anchor" : CENTER},
+                       "Column5" : {"width" : .20, "anchor" : CENTER},
+                       "Column6" : {"width" : .20, "anchor" : CENTER},
+                       "Column7" : {"width" : .20, "anchor" : CENTER},
+                       "Column8" : {"width" : .20, "anchor" : CENTER},
+                       "Column9" : {"width" : .20, "anchor" : CENTER},
+                       "Column10": {"width" : .20, "anchor" : CENTER},
             }
 
             style = Style() 
@@ -1325,7 +1330,7 @@ class WindowUI:
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            self.taken_table = CreateHeader(taken_table_frame, 0, 8, headers, 600, True, True, "Taken.Treeview", False)
+            self.taken_table = CreateHeader(taken_table_frame, 0, 8, headers, 410, True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
             
@@ -1382,6 +1387,7 @@ class WindowUI:
             taken_iwd_checkbox.pack(side=LEFT, expand = True, fill = "both")
             
             self.UpdateTakenTable()
+            popup.update()
         except Exception as error:
             ui_logger.info(f"TakenCardsPopup Error: {error}")
             
@@ -1390,6 +1396,10 @@ class WindowUI:
         popup.wm_title("Suggested Decks")
         popup.attributes("-topmost", True)
         popup.resizable(width = False, height = True)
+        
+        x, y = SafeCoordinates(self.root, 400, 170, 250, 0)
+        popup.wm_geometry("+%d+%d" % (x, y))
+        
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             
@@ -1463,7 +1473,10 @@ class WindowUI:
         popup = Toplevel()
         popup.wm_title("Settings")
         popup.protocol("WM_DELETE_WINDOW", lambda window=popup: self.SettingsExit(window))
-        #popup.geometry("210x75")
+        popup.attributes("-topmost", True)
+        x, y = SafeCoordinates(self.root, 400, 170, 250, 0)
+        popup.wm_geometry("+%d+%d" % (x, y))
+        
         try:
             Grid.rowconfigure(popup, 1, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
@@ -1587,8 +1600,7 @@ class WindowUI:
             default_button.grid(row=16, column=0, columnspan=2, sticky="nsew")
             
             self.ControlTrace(True)
-            
-            popup.attributes("-topmost", True)
+
         except Exception as error:
             ui_logger.info(f"SettingsPopup Error: {error}")
             
@@ -1857,15 +1869,13 @@ class CreateCardToolTip(object):
 
     def ShowTip(self, event=None):  
         try:
-            x, y = SafeCoordinates(self.widget, 700, 500, 25, 20)
-
+            tt_width = 400
             # creates a toplevel window
             self.tw = Toplevel(self.widget)
             # Leaves only the label and removes the app window
             self.tw.wm_overrideredirect(True)
             if sys.platform == constants.PLATFORM_ID_OSX:
                self.tw.wm_overrideredirect(False) 
-            self.tw.wm_geometry("+%d+%d" % (x, y))
    
             tt_frame = Frame(self.tw, borderwidth=5,relief="solid")
 
@@ -1878,6 +1888,7 @@ class CreateCardToolTip(object):
                            "Value1"   : {"width" : .15, "anchor" : CENTER},
                            "Value2"   : {"width" : .15, "anchor" : CENTER}}
                 width = 400
+                tt_width += 150
             else:
                 headers = {"Label"    : {"width"  : .80, "anchor" : W},
                            "Value1"    : {"width" : .20, "anchor" : CENTER}}
@@ -1971,6 +1982,7 @@ class CreateCardToolTip(object):
                             image_label.grid(column=count, row=1, columnspan=1, rowspan=3)
                             self.images.append(image)
                             column_offset += 1
+                            tt_width += 300
                     except Exception as error:
                         ui_logger.info(f"ShowTip Image Error: {error}")
             
@@ -1982,6 +1994,9 @@ class CreateCardToolTip(object):
 
 
             stats_main_table.grid(row = 1, column = column_offset, sticky=NSEW)
+            
+            x, y = SafeCoordinates(self.widget, tt_width, 500, 25, 20)
+            self.tw.wm_geometry("+%d+%d" % (x, y))
                 
             tt_frame.pack()
             
