@@ -152,13 +152,13 @@ class ArenaScanner:
                 events = [i for i in constants.LIMITED_TYPES_DICT.keys() for x in event_sections if i in x]
                 
                 if not events and [i for i in constants.DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
-                    events.append("PremierDraft") #Unknown draft events will be parsed as premier drafts
+                    events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER) #Unknown draft events will be parsed as premier drafts
             
             if sets and events:
                 #event_set = sets[0]
-                if events[0] == "Sealed":
+                if events[0] == constants.LIMITED_TYPE_STRING_SEALED:
                     #Trad_Sealed_NEO_20220317
-                    event_type = "TradSealed" if "Trad" in event_sections else "Sealed"
+                    event_type = constants.LIMITED_TYPE_STRING_TRAD_SEALED if "Trad" in event_sections else constants.LIMITED_TYPE_STRING_SEALED
                 else:
                     event_type = events[0]
                 draft_type = constants.LIMITED_TYPES_DICT[event_type]

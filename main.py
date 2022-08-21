@@ -1125,6 +1125,18 @@ class WindowUI:
             root.attributes("-topmost", False)
             root.iconify()
             
+    def UpdateSetStartDate(self, start, selection, set_list, *args):
+        try:
+            set_data = set_list[selection.get()]
+            
+            if constants.SET_START_DATE in set_data:
+                start.delete(0,END)
+                start.insert(END, set_data[constants.SET_START_DATE])
+                
+            self.root.update()
+        except Exception as error:
+            ui_logger.info(f"UpdateSetStartDate Error: {error}")
+            
     def SetViewPopup(self):
         popup = Toplevel()
         popup.wm_title("Set Data")
@@ -1138,10 +1150,10 @@ class WindowUI:
         try:
             sets = self.extractor.SetList()
         
-            headers = {"SET"        : {"width" : .55, "anchor" : W},
-                       "DRAFT"      : {"width" : .15, "anchor" : CENTER},
-                       "START DATE" : {"width" : .15, "anchor" : CENTER},
-                       "END DATE"   : {"width" : .15, "anchor" : CENTER}}
+            headers = {"SET"        : {"width" : .40, "anchor" : W},
+                       "DRAFT"      : {"width" : .20, "anchor" : CENTER},
+                       "START DATE" : {"width" : .20, "anchor" : CENTER},
+                       "END DATE"   : {"width" : .20, "anchor" : CENTER}}
 
             style = Style() 
             style.configure("Set.Treeview", rowheight=25)  
@@ -1150,7 +1162,7 @@ class WindowUI:
             list_box_scrollbar = Scrollbar(list_box_frame, orient=VERTICAL)
             list_box_scrollbar.pack(side=RIGHT, fill=Y)
             
-            list_box = CreateHeader(list_box_frame, 0, 10, headers, 400, True, True, "Set.Treeview", True)
+            list_box = CreateHeader(list_box_frame, 0, 10, headers, 1100, True, True, "Set.Treeview", False)
             
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
@@ -1160,25 +1172,24 @@ class WindowUI:
             draft_label = Label(popup, text="Draft:")
             start_label = Label(popup, text="Start Date:")
             end_label = Label(popup, text="End Date:")
-            draft_choices = ["PremierDraft", "QuickDraft", "TradDraft", "Sealed", "TradSealed"]
+            draft_choices = constants.LIMITED_TYPE_LIST
 
             status_text = StringVar()
             status_label = Label(popup, textvariable=status_text, font='Helvetica 12 bold', anchor="c")
             
             draft_value = StringVar(self.root)
-            draft_value.set('PremierDraft')
             draft_entry = OptionMenu(popup, draft_value, draft_choices[0], *draft_choices)
+            
+            start_entry = Entry(popup)
+            start_entry.insert(END, constants.SET_START_DATE_DEFAULT)
+            end_entry = Entry(popup)
+            end_entry.insert(END, str(date.today()))
             
             set_choices = list(sets.keys())
             
             set_value = StringVar(self.root)
-            set_value.set('PremierDraft')
             set_entry = OptionMenu(popup, set_value, set_choices[0], *set_choices)
-            
-            start_entry = Entry(popup)
-            start_entry.insert(END, '2019-1-1')
-            end_entry = Entry(popup)
-            end_entry.insert(END, str(date.today()))
+            set_value.trace("w", lambda *args, start=start_entry, selection=set_value, set_list=sets : self.UpdateSetStartDate(start, selection, set_list, *args))
             
             progress = Progressbar(popup,orient=HORIZONTAL,length=100,mode='determinate')
             
@@ -1432,11 +1443,11 @@ class WindowUI:
                                                                      deck_color_options),
                                                                      text="Copy to Clipboard")
             
-            headers = {"CARD"  : {"width" : .40, "anchor" : W},
+            headers = {"CARD"  : {"width" : .35, "anchor" : W},
                        "COUNT" : {"width" : .14, "anchor" : CENTER},
-                       "COLOR" : {"width" : .10, "anchor" : CENTER},
+                       "COLOR" : {"width" : .12, "anchor" : CENTER},
                        "COST"  : {"width" : .10, "anchor" : CENTER},
-                       "TYPE"  : {"width" : .26, "anchor" : CENTER}}
+                       "TYPE"  : {"width" : .29, "anchor" : CENTER}}
 
             style = Style() 
             style.configure("Suggest.Treeview", rowheight=25) 
@@ -1444,7 +1455,7 @@ class WindowUI:
             suggest_table_frame = Frame(popup)
             suggest_scrollbar = Scrollbar(suggest_table_frame, orient=VERTICAL)
             suggest_scrollbar.pack(side=RIGHT, fill=Y)
-            suggest_table = CreateHeader(suggest_table_frame, 0, 8, headers, 400, True, True, "Suggest.Treeview", False)
+            suggest_table = CreateHeader(suggest_table_frame, 0, 8, headers, 450, True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
             

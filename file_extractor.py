@@ -168,6 +168,18 @@ def DateCheck(date):
         result = False
     return result
     
+def DateShift(shifted_days, format):
+    shifted_date_string = ""
+    try:
+        today = datetime.date.today()
+        shifted_date = today + datetime.timedelta(days=shifted_days)
+        shifted_date_string = shifted_date.strftime(format)
+        
+    except Exception as error:
+        file_logger.info(f"DateShift Error: {error}")
+        
+    return shifted_date_string
+    
 def FileIntegrityCheck(filename):
     result = Result.VALID
     json_data = {}
@@ -956,6 +968,8 @@ class FileExtractor:
                 
         #Insert the cube sets 
         sets["Arena Cube"] = {constants.SET_LIST_ARENA : [constants.SET_SELECTION_ALL], constants.SET_LIST_SCRYFALL : [], constants.SET_LIST_17LANDS : [constants.SET_SELECTION_CUBE]}
+        sets["Arena Cube"][constants.SET_START_DATE] = DateShift(-45, "%Y-%m-%d")
+        
         
         return sets
         
