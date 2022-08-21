@@ -231,7 +231,30 @@ def TableColumnSort(table, column, reverse):
 
     table.heading(column, command=lambda: TableColumnSort(table, column, not reverse))
     
+def SafeCoordinates(root, window_width, window_height, offset_x, offset_y):
+    x = 0
+    y = 0
     
+    try:
+        pointer_x = root.winfo_pointerx()
+        pointer_y = root.winfo_pointery()
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        
+        if pointer_x + offset_x + window_width > screen_width:
+            x = max(pointer_x - offset_x - window_width, 0)
+        else:
+            x = pointer_x + offset_x
+            
+        if pointer_y + offset_y + window_height > screen_height:
+            y = max(pointer_y - offset_y - window_height, 0)
+        else:
+            y = pointer_y + offset_y   
+    
+    except Exception as error:
+        ui_logger.info(f"SafeCoordinates Error: {error}")
+        
+    return x, y
     
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
@@ -1105,11 +1128,17 @@ class WindowUI:
     def SetViewPopup(self):
         popup = Toplevel()
         popup.wm_title("Set Data")
+        popup.resizable(width = False, height = True)
+        popup.attributes("-topmost", True)
+
+        x, y = SafeCoordinates(self.root, 1000, 170, 250, 20)
+
+        popup.wm_geometry("+%d+%d" % (x, y))
+        
         Grid.rowconfigure(popup, 1, weight = 1)
         try:
             sets = self.extractor.SetList()
         
-            #column_headers = ('Set', 'Draft', 'Start Date', 'End Date')
             headers = {"SET"        : {"width" : .55, "anchor" : W},
                        "DRAFT"      : {"width" : .15, "anchor" : CENTER},
                        "START DATE" : {"width" : .15, "anchor" : CENTER},
@@ -1133,12 +1162,15 @@ class WindowUI:
             start_label = Label(popup, text="Start Date:")
             end_label = Label(popup, text="End Date:")
             draft_choices = ["PremierDraft", "QuickDraft", "TradDraft", "Sealed", "TradSealed"]
+
+            status_text = StringVar()
+            status_label = Label(popup, textvariable=status_text, font='Helvetica 12 bold', anchor="c")
             
             draft_value = StringVar(self.root)
             draft_value.set('PremierDraft')
             draft_entry = OptionMenu(popup, draft_value, draft_choices[0], *draft_choices)
             
-            set_choices = [k for k, v in sets.items()]
+            set_choices = list(sets.keys())
             
             set_value = StringVar(self.root)
             set_value.set('PremierDraft')
@@ -1151,7 +1183,8 @@ class WindowUI:
             
             progress = Progressbar(popup,orient=HORIZONTAL,length=100,mode='determinate')
             
-            add_button = Button(popup, command=lambda: self.AddSet(set_value,
+            add_button = Button(popup, command=lambda: self.AddSet(popup,
+                                                                   set_value,
                                                                    draft_value,
                                                                    start_entry,
                                                                    end_entry,
@@ -1159,6 +1192,7 @@ class WindowUI:
                                                                    progress,
                                                                    list_box,
                                                                    sets,
+                                                                   status_text,
                                                                    constants.DATA_SET_VERSION_3), text="ADD SET")
             
                 
@@ -1174,23 +1208,22 @@ class WindowUI:
             draft_entry.grid(row=2, column=7, sticky = 'nsew')
             add_button.grid(row=3, column=0, columnspan=8, sticky = 'nsew')
             progress.grid(row=4, column=0, columnspan=8, sticky = 'nsew')
-            
+            status_label.grid(row=5, column=0, columnspan=8, sticky = 'nsew')
+
             list_box.pack(expand = True, fill = "both")
     
             self.DataViewUpdate(list_box, sets)
-            
-            popup.attributes("-topmost", True)
         except Exception as error:
             ui_logger.info(f"SetViewPopup Error: {error}")
         
     def CardComparePopup(self):
         popup = Toplevel()
         popup.wm_title("Card Compare")
-        
+        popup.resizable(width = False, height = True)
+        popup.attributes("-topmost", True)
         try:
             Grid.rowconfigure(popup, 2, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
-            
 
             taken_cards = self.draft.TakenCards()
             
@@ -1224,7 +1257,7 @@ class WindowUI:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = CreateHeader(compare_table_frame, 0, 8, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, True)
+            compare_table = CreateHeader(compare_table_frame, 0, 8, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -1251,7 +1284,6 @@ class WindowUI:
                                     filtered,
                                     fields)
             
-            popup.attributes("-topmost", True)
         except Exception as error:
             ui_logger.info(f"CardComparePopup Error: {error}")
 
@@ -1263,6 +1295,7 @@ class WindowUI:
     def TakenCardsPopup(self):
         popup = Toplevel()
         popup.wm_title("Taken Cards")
+        popup.attributes("-topmost", True)
         popup.resizable(width = False, height = True)
         popup.protocol("WM_DELETE_WINDOW", lambda window=popup: self.TakenCardsExit(window))
         try:
@@ -1349,14 +1382,13 @@ class WindowUI:
             taken_iwd_checkbox.pack(side=LEFT, expand = True, fill = "both")
             
             self.UpdateTakenTable()
-            
-            popup.attributes("-topmost", True)
         except Exception as error:
             ui_logger.info(f"TakenCardsPopup Error: {error}")
             
     def SuggestDeckPopup(self):
         popup = Toplevel()
         popup.wm_title("Suggested Decks")
+        popup.attributes("-topmost", True)
         popup.resizable(width = False, height = True)
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
@@ -1415,7 +1447,6 @@ class WindowUI:
             suggest_table.pack(expand = True, fill = 'both')
             
             self.UpdateSuggestDeckTable(suggest_table, deck_colors_value, suggested_decks, deck_color_options)
-            popup.attributes("-topmost", True)
         except Exception as error:
             ui_logger.info(f"SuggestDeckPopup Error: {error}")      
 
@@ -1562,7 +1593,7 @@ class WindowUI:
             ui_logger.info(f"SettingsPopup Error: {error}")
             
         
-    def AddSet(self, set, draft, start, end, button, progress, list_box, sets, version):
+    def AddSet(self, popup, set, draft, start, end, button, progress, list_box, sets, status, version):
         result = True
         result_string = ""
         return_size = 0
@@ -1572,10 +1603,11 @@ class WindowUI:
                 if not message_box:
                     break
                     
+                status.set("Starting Download Process")
                 self.extractor.ClearData()
                 button['state'] = 'disabled'
                 progress['value'] = 0
-                self.root.update()
+                popup.update()
                 self.extractor.Sets(sets[set.get()])
                 self.extractor.DraftType(draft.get())
                 if self.extractor.StartDate(start.get()) == False:
@@ -1587,9 +1619,10 @@ class WindowUI:
                     result_string = "Invalid End Date (YYYY-MM-DD)"
                     break
                 self.extractor.Version(version)
+                status.set("Downloading Color Ratings")
                 self.extractor.SessionColorRatings()
                 
-                result, result_string, temp_size = self.extractor.DownloadCardData(self.root, progress, self.configuration.database_size)
+                result, result_string, temp_size = self.extractor.DownloadCardData(popup, progress, status, self.configuration.database_size)
                 
                 if result == False:
                     break  
@@ -1601,24 +1634,28 @@ class WindowUI:
                 progress['value']=100
                 button['state'] = 'normal'
                 return_size = temp_size
-                self.root.update()
+                popup.update()
+                status.set("Updating Set List")
                 self.DataViewUpdate(list_box, sets)
                 self.DraftReset(True)
                 self.UpdateCallback(True)
-                
+                status.set("Download Complete")
             except Exception as error:
                 result = False
                 result_string = error
-                print(error)
+                
             break
         
         if result == False:
+            status.set("Download Failed")
+            popup.update()
             button['state'] = 'normal'
             message_string = "Download Failed: %s" % result_string
             message_box = MessageBox.showwarning(title="Error", message=message_string)
         else:
             self.configuration.database_size = return_size
             CL.WriteConfig(self.configuration)
+        popup.update()
         return
         
     def DataViewUpdate(self, list_box, sets):
@@ -1820,9 +1857,8 @@ class CreateCardToolTip(object):
 
     def ShowTip(self, event=None):  
         try:
-            x = y = 0
-            x = self.widget.winfo_pointerx() + 25
-            y = self.widget.winfo_pointery() + 20
+            x, y = SafeCoordinates(self.widget, 700, 500, 25, 20)
+
             # creates a toplevel window
             self.tw = Toplevel(self.widget)
             # Leaves only the label and removes the app window

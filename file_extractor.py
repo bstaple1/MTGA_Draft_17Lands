@@ -187,23 +187,23 @@ def FileIntegrityCheck(filename):
             #Check 2A) Meta data is present
             version = json_data["meta"]["version"]
             if version == 1:
-                start_date, end_date = json_data["meta"]["date_range"].split("->")
+                json_data["meta"]["date_range"].split("->")
             else:
-                start_date = json_data["meta"]["start_date"] 
-                end_date = json_data["meta"]["end_date"] 
+                json_data["meta"]["start_date"] 
+                json_data["meta"]["end_date"] 
                 
             #Check 2B) Card data is present
             cards = json_data["card_ratings"]
             for card in cards:
-                name = cards[card][constants.DATA_FIELD_NAME]
-                colors = cards[card][constants.DATA_FIELD_COLORS]
-                cmc = cards[card][constants.DATA_FIELD_CMC]
-                types = cards[card][constants.DATA_FIELD_TYPES]
-                mana_cost = cards[card]["mana_cost"]
-                image = cards[card][constants.DATA_SECTION_IMAGES]
-                gihwr = cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIHWR]
-                alsa = cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
-                iwd = cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_IWD]
+                cards[card][constants.DATA_FIELD_NAME]
+                cards[card][constants.DATA_FIELD_COLORS]
+                cards[card][constants.DATA_FIELD_CMC]
+                cards[card][constants.DATA_FIELD_TYPES]
+                cards[card]["mana_cost"]
+                cards[card][constants.DATA_SECTION_IMAGES]
+                cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIHWR]
+                cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
+                cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_IWD]
                 break
                 
             if len(cards.keys()) < 100:
@@ -234,7 +234,9 @@ class FileExtractor:
 
     def ClearData(self):
         self.combined_data = {"meta" : {"collection_date" : str(datetime.datetime.now())}}
-        
+        self.card_dict = {}
+        self.card_ratings = {}
+
     def Sets(self, sets):
         self.selected_sets = sets
         
@@ -264,15 +266,12 @@ class FileExtractor:
     def Version(self, version):
         self.combined_data["meta"]["version"] = version
       
-    def DownloadCardData(self, ui_root, progress_bar, database_size):
+    def DownloadCardData(self, ui_root, progress_bar, status, database_size):
         result = False
         result_string = ""
         temp_size = 0
         try:
-            #if "Cube" in self.selected_sets[constants.SET_LIST_17LANDS]:
-            #    result, result_string, temp_size = self.DownloadCube(ui_root, progress_bar, database_size)
-            #else:
-            result, result_string, temp_size = self.DownloadExpansion(ui_root, progress_bar, database_size)
+            result, result_string, temp_size = self.DownloadExpansion(ui_root, progress_bar, status, database_size)
         
         except Exception as error:
             file_logger.info(f"DownloadCardData Error: {error}")
@@ -280,25 +279,34 @@ class FileExtractor:
             
         return result, result_string, temp_size
        
-    def DownloadExpansion (self, ui_root, progress_bar, database_size):
+    def DownloadExpansion (self, ui_root, progress_bar, status, database_size):
         result = False
         result_string = ""
         temp_size = 0
         try:
             while(True):
-                progress_bar['value']=5 #Provide immediate feedback that the download process has started
+                progress_bar['value']=5
                 ui_root.update()
                 
-                result, result_string, temp_size = self.RetrieveLocalArenaData(database_size)
+                result, result_string, temp_size = self.RetrieveLocalArenaData(ui_root, status, database_size)
+
+                if result == False:
+                    status.set("Collecting Scryfall Data")
+                    ui_root.update()
+                    result, result_string = self.SessionScryfallData()
+                    if result == False:
+                        break
                         
                 progress_bar['value']=10
+                status.set("Collecting 17Lands Data")
                 ui_root.update()
                 
                 if self.Session17Lands(self.selected_sets[constants.SET_LIST_17LANDS], 
                                        self.deck_colors,
                                        ui_root, 
                                        progress_bar,
-                                       progress_bar['value']) == False:
+                                       progress_bar['value'],
+                                       status) == False:
                     result = False
                     result_string = "Couldn't Collect 17Lands Data"
                     break
@@ -308,6 +316,8 @@ class FileExtractor:
                 if not matching_only:
                     self.Initialize17LandsData()
 
+                status.set("Building Data Set File")
+                ui_root.update()
                 if self.AssembleSetData(matching_only) == False:
                     result = False
                     result_string = "Couldn't Assemble Set Data"
@@ -364,11 +374,13 @@ class FileExtractor:
     #        
     #    return result, result_string, temp_size
       
-    def RetrieveLocalArenaData(self, previous_database_size):
+    def RetrieveLocalArenaData(self, root, status, previous_database_size):
         result_string = "Couldn't Collect Local Card Data"
         result = False
         self.card_dict = {}
-          
+        database_size = 0
+        status.set("Searching Local Files")
+        root.update()
         if sys.platform == constants.PLATFORM_ID_OSX:
             directory = os.path.join(os.path.expanduser('~'), constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
             paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
@@ -394,26 +406,33 @@ class FileExtractor:
                 if current_database_size != previous_database_size:
                     file_logger.info(f"Local File Change Detected {current_database_size}, {previous_database_size}")
                     file_logger.info(f"Local Card Data: Searching file path {arena_cards_locations[0]}")
-                    #Check temporary localization data and update it if necessary
-                    #result, card_text, card_enumerators = self.CollectLocalizationData(arena_database_locations[0])
+                    status.set("Retrieving Localization Data")
+                    root.update()
                     result, card_text, card_enumerators = self.RetrieveLocalDatabase(arena_database_locations[0])
                     
                     if not result:
                         break
                 
-                    #result, raw_card_data = self.CollectRawCardData(arena_cards_locations[0])
+                    status.set("Retrieving Raw Card Data")
+                    root.update()
                     result, raw_card_data = self.RetrieveLocalCards(arena_cards_locations[0])
                     
                     if not result:
                         break
-                        
+
+                    status.set("Building Temporary Card Data File")  
+                    root.update()
                     result = self.AssembleStoredData(card_text, card_enumerators, raw_card_data)
                     
                     if not result:
                         break
                     
                 #Assemble information for local data set
+                status.set("Retrieving Temporary Card Data") 
+                root.update() 
                 result = self.RetrieveStoredData(self.selected_sets[constants.SET_LIST_ARENA])
+
+                database_size = current_database_size
                 
             except Exception as error:
                 file_logger.info(f"RetrieveLocalArenaData Error: {error}")
@@ -422,47 +441,7 @@ class FileExtractor:
         if not result:
             file_logger.info(result_string)
         
-        return result, result_string, current_database_size
-        
-    #def CollectLocalizationData(self, file_location, file_size):
-    #    result = False
-    #    card_text = {}
-    #    card_enumerators = {}
-    #    current_database_size = 0
-    #    
-    #    try:
-    #        while(True): #break loop
-    #                
-    #            #Determine if the database file matches the file size (indicates that the temporary data is up-to-date)
-    #            database_size = os.path.getsize(file_location)
-    #            
-    #            if database_size != file_size:
-    #                file_logger.info(f"Database change detected {database_size}, {file_size}")
-    #                #Update the temp file with data from the database
-    #                if not self.RetrieveLocalDatabase(file_location):
-    #                    break
-    #                
-    #            #Collect the localization and enumeration data from the temp localization file
-    #            with open(constants.TEMP_LOCALIZATION_FILE, 'r', encoding='utf-8') as data:
-    #                json_file = data.read()
-    #                json_data = json.loads(json_file)
-    #
-    #                card_text = json_data["localization"]
-    #                card_enumerators = json_data["enumeration"]
-    #        
-    #            
-    #            current_database_size = database_size
-    #            result = True
-    #            break
-    #    
-    #    
-    #    except Exception as error:
-    #        file_logger.info(f"CollectLocalizationData Error: {error}")
-    #    
-    #    if not result:
-    #        file_logger.info(f"Failed to create temp localization file")
-    #    
-    #    return result, card_text, card_enumerators, current_database_size
+        return result, result_string, database_size
 
     def RetrieveLocalCards(self, file_location):
         result = False
@@ -709,7 +688,7 @@ class FileExtractor:
                 self.card_dict[card][constants.DATA_FIELD_DECK_COLORS][color] = {x : 0.0 for x in constants.DATA_FIELD_17LANDS_DICT.keys() if x != constants.DATA_SECTION_IMAGES}
 
 
-    def Session17Lands(self, sets, deck_colors, root, progress, initial_progress):
+    def Session17Lands(self, sets, deck_colors, root, progress, initial_progress, status):
         self.card_ratings = {}
         current_progress = 0
         result = False
@@ -722,6 +701,8 @@ class FileExtractor:
                 while retry:
                     
                     try:
+                        status.set(f"Collecting {color} 17Lands Data")
+                        root.update()
                         url = f"https://www.17lands.com/card_ratings/data?expansion={set}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}"
                         
                         if color != constants.FILTER_OPTION_ALL_DECKS:
