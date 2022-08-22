@@ -3,6 +3,9 @@ import getpass
 # Global Constants
 ## The different types of draft.
 
+FONT_SANS_SERIF = "Arial"
+FONT_MONO_SPACE = "Courier"
+
 LOG_TYPE_DEBUG = "mtgaTool"
 LOG_TYPE_DRAFT = "draftLog"
 
@@ -199,13 +202,15 @@ LOCAL_CARDS_KEY_CMC = "cmc"
 LOCAL_CARDS_KEY_COLOR_ID = "coloridentity"
 LOCAL_CARDS_KEY_CASTING_COST = "castingcost"
 
-
-
 SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
 SET_FILE_SUFFIX = "Data.json"
 
 CARD_RATINGS_BACKOFF_DELAY_SECONDS = 30
 CARD_RATINGS_INTER_DELAY_SECONDS = 1
+CARD_RATINGS_ATTEMPT_MAX = 5
+
+SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS = 5
+SCRYFALL_REQUEST_ATTEMPT_MAX = 5
 
 PLATFORM_ID_OSX = "darwin"
 PLATFORM_ID_WINDOWS = "win32"
@@ -246,6 +251,11 @@ SET_START_DATE_DEFAULT = "2019-1-1"
 
 SET_SELECTION_ALL = "ALL"
 SET_SELECTION_CUBE = "CUBE"
+
+SET_RELEASE_OFFSET_DAYS = -7
+SET_LIST_COUNT_MAX = 24 
+
+SET_ARENA_CUBE_START_OFFSET_DAYS = -45
 
 SUPPORTED_SET_TYPES = [SET_TYPE_EXPANSION, SET_TYPE_ALCHEMY, SET_TYPE_MASTERS]
 
@@ -374,16 +384,16 @@ STATS_HEADER_CONFIG = {"Colors"   : {"width" : .19, "anchor" : "w"},
                        "Total"    : {"width" : .15, "anchor" : "c"}}
                        
 ROW_TAGS_BW_DICT = {
-    BW_ROW_COLOR_ODD_TAG      : ("Helvetica Neue", "#3d3d3d", "#e6ecec"),
-    BW_ROW_COLOR_EVEN_TAG     : ("Helvetica Neue", "#333333", "#e6ecec"),
+    BW_ROW_COLOR_ODD_TAG      : (FONT_SANS_SERIF, "#3d3d3d", "#e6ecec"),
+    BW_ROW_COLOR_EVEN_TAG     : (FONT_SANS_SERIF, "#333333", "#e6ecec"),
 }
 
 ROW_TAGS_COLORS_DICT = {
-    CARD_ROW_COLOR_WHITE_TAG  : ("Helvetica Neue", "#E9E9E9", "#000000"),
-    CARD_ROW_COLOR_RED_TAG    : ("Helvetica Neue", "#FF6C6C", "#000000"),
-    CARD_ROW_COLOR_BLUE_TAG   : ("Helvetica Neue", "#6078F3", "#000000"),
-    CARD_ROW_COLOR_BLACK_TAG  : ("Helvetica Neue", "#BFBFBF", "#000000"),
-    CARD_ROW_COLOR_GREEN_TAG  : ("Helvetica Neue", "#60DC68", "#000000"),
-    CARD_ROW_COLOR_GOLD_TAG   : ("Helvetica Neue", "#F0E657", "#000000"),
+    CARD_ROW_COLOR_WHITE_TAG  : (FONT_SANS_SERIF, "#E9E9E9", "#000000"),
+    CARD_ROW_COLOR_RED_TAG    : (FONT_SANS_SERIF, "#FF6C6C", "#000000"),
+    CARD_ROW_COLOR_BLUE_TAG   : (FONT_SANS_SERIF, "#6078F3", "#000000"),
+    CARD_ROW_COLOR_BLACK_TAG  : (FONT_SANS_SERIF, "#BFBFBF", "#000000"),
+    CARD_ROW_COLOR_GREEN_TAG  : (FONT_SANS_SERIF, "#60DC68", "#000000"),
+    CARD_ROW_COLOR_GOLD_TAG   : (FONT_SANS_SERIF, "#F0E657", "#000000"),
 }
                        

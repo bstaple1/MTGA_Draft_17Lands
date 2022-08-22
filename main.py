@@ -185,8 +185,6 @@ def CreateHeader(frame, height, font, headers, total_width, include_header, fixe
             
         for k, v in constants.ROW_TAGS_COLORS_DICT.items():
             list_box.tag_configure(k, font=(v[0],font, "bold"), background=v[1], foreground=v[2])
-            
-        #list_box.tag_configure("taken_odd", font=("Helvetica Neue", 8), background = "#3d3d3d", foreground = "#e6ecec")
 
         for column in header_labels:
             if fixed_width:
@@ -255,7 +253,7 @@ def SafeCoordinates(root, window_width, window_height, offset_x, offset_y):
         ui_logger.info(f"SafeCoordinates Error: {error}")
         
     return x, y
-    
+
 class WindowUI:
     def __init__(self, root, filename, step_through, configuration):
         self.root = root
@@ -307,16 +305,16 @@ class WindowUI:
                 background=FixedMap(style, "background"))
 
         current_draft_label_frame = Frame(self.root)
-        self.current_draft_label = Label(current_draft_label_frame, text="Current Draft:", font='Helvetica 9 bold', anchor="e")
+        self.current_draft_label = Label(current_draft_label_frame, text="Current Draft:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
         
         current_draft_value_frame = Frame(self.root)
-        self.current_draft_value_label = Label(current_draft_value_frame, text="", font='Helvetica 9', anchor="w")
+        self.current_draft_value_label = Label(current_draft_value_frame, text="", font=f'{constants.FONT_SANS_SERIF} 9', anchor="w")
         
         data_source_label_frame = Frame(self.root)
-        self.data_source_label = Label(data_source_label_frame, text="Data Source:", font='Helvetica 9 bold', anchor="e")
+        self.data_source_label = Label(data_source_label_frame, text="Data Source:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
         
         deck_colors_label_frame = Frame(self.root)
-        self.deck_colors_label = Label(deck_colors_label_frame, text="Deck Filter:", font='Helvetica 9 bold', anchor="e")
+        self.deck_colors_label = Label(deck_colors_label_frame, text="Deck Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
         
         self.data_source_selection = StringVar(self.root)
         self.data_source_list = self.data_sources
@@ -356,7 +354,7 @@ class WindowUI:
         self.taken_filter_selection = StringVar(self.root)
 
         optionsStyle = Style()
-        optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
+        optionsStyle.configure('my.TMenubutton', font=(constants.FONT_SANS_SERIF, 9))
         
         data_source_option_frame = Frame(self.root)
         self.data_source_options = OptionMenu(data_source_option_frame, self.data_source_selection, self.data_source_selection.get(), *self.data_source_list, style="my.TMenubutton")
@@ -376,7 +374,7 @@ class WindowUI:
         self.refresh_button = Button(self.refresh_button_frame, command= lambda : self.UpdateCallback(True), text="Refresh")
         
         self.status_frame = Frame(self.root)
-        self.pack_pick_label = Label(self.status_frame, text="Pack: 0, Pick: 0", font='Helvetica 9 bold')
+        self.pack_pick_label = Label(self.status_frame, text="Pack: 0, Pick: 0", font=f'{constants.FONT_SANS_SERIF} 9 bold')
         
         self.pack_table_frame = Frame(self.root, width=10)
 
@@ -390,12 +388,12 @@ class WindowUI:
         style = Style() 
         style.configure("TButton", foreground="black")  
         style.configure("TEntry", foreground="black") 
-        style.configure("Treeview.Heading", font=("Cascadia", 7), foreground="black")        
+        style.configure("Treeview.Heading", font=(constants.FONT_SANS_SERIF, 7), foreground="black")        
                   
         self.pack_table = CreateHeader(self.pack_table_frame, 0, 7, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         
         self.missing_frame = Frame(self.root)
-        self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font='Helvetica 9 bold')
+        self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font=f'{constants.FONT_SANS_SERIF} 9 bold')
        
         self.missing_table_frame = Frame(self.root, width=10)
 
@@ -404,7 +402,7 @@ class WindowUI:
         self.stat_frame = Frame(self.root)
 
         self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.configuration.table_width, True, True, constants.TABLE_STYLE, True)
-        self.stat_label = Label(self.stat_frame, text = "Draft Stats:", font='Helvetica 9 bold', anchor="e", width = 15)
+        self.stat_label = Label(self.stat_frame, text = "Draft Stats:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
         self.stat_options_list = ["Creatures","Noncreatures","All"]
@@ -412,9 +410,9 @@ class WindowUI:
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection, self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
         self.stat_options.config(width=11) 
         
-        citation_label = Label(self.root, text="Powered by 17Lands*", font='Helvetica 9 ', anchor="e", borderwidth=2, relief="groove")
-        hotkey_label = Label(self.root, text="CTRL+G to Minimize", font='Helvetica 8 ', anchor="e" )
-        footnote_label = Label(self.root, text="*This application is not endorsed by 17Lands", font='Helvetica 8 ', anchor="e")
+        citation_label = Label(self.root, text="Powered by 17Lands*", font=f'{constants.FONT_SANS_SERIF} 9 ', anchor="e", borderwidth=2, relief="groove")
+        hotkey_label = Label(self.root, text="CTRL+G to Minimize", font=f'{constants.FONT_SANS_SERIF} 8 ', anchor="e" )
+        footnote_label = Label(self.root, text="*This application is not endorsed by 17Lands", font=f'{constants.FONT_SANS_SERIF} 8 ', anchor="e")
         
         citation_label.grid(row = 0, column = 0, columnspan = 2) 
         current_draft_label_frame.grid(row = 1, column = 0, columnspan = 1, sticky = 'nsew')
@@ -642,7 +640,7 @@ class WindowUI:
                 filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True)  
 
                 if len(filtered_list):
-                    self.taken_table.config(height = len(filtered_list))
+                    self.taken_table.config(height = min(len(filtered_list), 20))
                 else:
                     self.taken_table.config(height=1)
 
@@ -1162,20 +1160,20 @@ class WindowUI:
             list_box_scrollbar = Scrollbar(list_box_frame, orient=VERTICAL)
             list_box_scrollbar.pack(side=RIGHT, fill=Y)
             
-            list_box = CreateHeader(list_box_frame, 0, 10, headers, 1100, True, True, "Set.Treeview", False)
+            list_box = CreateHeader(list_box_frame, 0, 10, headers, 500, True, True, "Set.Treeview", True)
             
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
             
-            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.", font='Helvetica 9', anchor="c")
-            set_label = Label(popup, text="Set:")
-            draft_label = Label(popup, text="Draft:")
-            start_label = Label(popup, text="Start Date:")
-            end_label = Label(popup, text="End Date:")
+            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.", font=f'{constants.FONT_SANS_SERIF} 9', anchor="c")
+            set_label = Label(popup, text="Set:", font=f'{constants.FONT_SANS_SERIF} 10 bold')
+            draft_label = Label(popup, text="Draft:", font=f'{constants.FONT_SANS_SERIF} 10 bold')
+            start_label = Label(popup, text="Start Date:", font=f'{constants.FONT_SANS_SERIF} 10 bold')
+            end_label = Label(popup, text="End Date:", font=f'{constants.FONT_SANS_SERIF} 10 bold')
             draft_choices = constants.LIMITED_TYPE_LIST
 
             status_text = StringVar()
-            status_label = Label(popup, textvariable=status_text, font='Helvetica 12 bold', anchor="c")
+            status_label = Label(popup, textvariable=status_text, font=f'{constants.FONT_SANS_SERIF} 12 bold', anchor="c")
             
             draft_value = StringVar(self.root)
             draft_entry = OptionMenu(popup, draft_value, draft_choices[0], *draft_choices)
@@ -1345,7 +1343,7 @@ class WindowUI:
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
             
-            taken_filter_label = Label(popup, text="Deck Filter:", font='Helvetica 9 bold', anchor="w")
+            taken_filter_label = Label(popup, text="Deck Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             self.taken_filter_selection.set(self.deck_filter_selection.get())
             taken_filter_list = self.deck_filter_list
             
@@ -1426,7 +1424,7 @@ class WindowUI:
                     deck_color_options[rating_label] = color
                     choices.append(rating_label)
                 
-            deck_colors_label = Label(popup, text="Deck Colors:", anchor = 'e', font='Helvetica 9 bold')
+            deck_colors_label = Label(popup, text="Deck Colors:", anchor = 'e', font=f'{constants.FONT_SANS_SERIF} 9 bold')
             
             deck_colors_value = StringVar(popup)
             deck_colors_entry = OptionMenu(popup, deck_colors_value, choices[0], *choices)
@@ -1494,61 +1492,61 @@ class WindowUI:
             
             self.ControlTrace(False)
             
-            column_2_label = Label(popup, text="Column 2:", font='Helvetica 9 bold', anchor="w")
-            column_3_label = Label(popup, text="Column 3:", font='Helvetica 9 bold', anchor="w")
-            column_4_label = Label(popup, text="Column 4:", font='Helvetica 9 bold', anchor="w")
-            column_5_label = Label(popup, text="Column 5:", font='Helvetica 9 bold', anchor="w")
-            column_6_label = Label(popup, text="Column 6:", font='Helvetica 9 bold', anchor="w")
-            column_7_label = Label(popup, text="Column 7:", font='Helvetica 9 bold', anchor="w")
-            filter_format_label = Label(popup, text="Deck Filter Format:", font='Helvetica 9 bold', anchor="w")
-            result_format_label = Label(popup, text="Win Rate Format:", font='Helvetica 9 bold', anchor="w")
-            deck_stats_label = Label(popup, text="Enable Draft Stats:", font='Helvetica 9 bold', anchor="w")
+            column_2_label = Label(popup, text="Column 2:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            column_3_label = Label(popup, text="Column 3:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            column_4_label = Label(popup, text="Column 4:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            column_5_label = Label(popup, text="Column 5:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            column_6_label = Label(popup, text="Column 6:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            column_7_label = Label(popup, text="Column 7:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            filter_format_label = Label(popup, text="Deck Filter Format:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            result_format_label = Label(popup, text="Win Rate Format:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            deck_stats_label = Label(popup, text="Enable Draft Stats:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             deck_stats_checkbox = Checkbutton(popup,
                                               variable=self.deck_stats_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
-            missing_cards_label = Label(popup, text="Enable Missing Cards:", font='Helvetica 9 bold', anchor="w")
+            missing_cards_label = Label(popup, text="Enable Missing Cards:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             missing_cards_checkbox = Checkbutton(popup,
                                                  variable=self.missing_cards_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)
                                                  
-            auto_highest_label = Label(popup, text="Enable Highest Rated:", font='Helvetica 9 bold', anchor="w")
+            auto_highest_label = Label(popup, text="Enable Highest Rated:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             auto_highest_checkbox = Checkbutton(popup,
                                                  variable=self.auto_highest_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)
                                                  
-            curve_bonus_label = Label(popup, text="Enable Curve Bonus:", font='Helvetica 9 bold', anchor="w")
+            curve_bonus_label = Label(popup, text="Enable Curve Bonus:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             curve_bonus_checkbox = Checkbutton(popup,
                                                variable=self.curve_bonus_checkbox_value,
                                                onvalue=1,
                                                offvalue=0)
-            color_bonus_label = Label(popup, text="Enable Color Bonus:", font='Helvetica 9 bold', anchor="w")
+            color_bonus_label = Label(popup, text="Enable Color Bonus:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             color_bonus_checkbox = Checkbutton(popup,
                                                  variable=self.color_bonus_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)     
-            bayesian_average_label = Label(popup, text="Enable Bayesian Average:", font='Helvetica 9 bold', anchor="w")
+            bayesian_average_label = Label(popup, text="Enable Bayesian Average:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             bayesian_average_checkbox = Checkbutton(popup,
                                                  variable=self.bayesian_average_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0) 
 
-            draft_log_label = Label(popup, text="Enable Draft Log:", font='Helvetica 9 bold', anchor="w")
+            draft_log_label = Label(popup, text="Enable Draft Log:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             draft_log_checkbox = Checkbutton(popup,
                                              variable=self.draft_log_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)  
 
-            card_colors_label = Label(popup, text="Enable Card Colors:", font='Helvetica 9 bold', anchor="w")
+            card_colors_label = Label(popup, text="Enable Card Colors:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             card_colors_checkbox = Checkbutton(popup,
                                                variable=self.card_colors_checkbox_value,
                                                onvalue=1,
                                                offvalue=0) 
                                                  
             optionsStyle = Style()
-            optionsStyle.configure('my.TMenubutton', font=('Helvetica', 9))
+            optionsStyle.configure('my.TMenubutton', font=(constants.FONT_SANS_SERIF, 9))
             
             self.column_2_options = OptionMenu(popup, self.column_2_selection, self.column_2_selection.get(), *self.column_2_list, style="my.TMenubutton")
             self.column_2_options.config(width=15)
@@ -1892,7 +1890,7 @@ class CreateCardToolTip(object):
 
             Grid.rowconfigure(tt_frame, 2, weight = 1)
 
-            card_label = Label(tt_frame, text=self.card_name, font=("Helvetica Neue", 15, "bold", ), background = "#3d3d3d", foreground = "#e6ecec", relief="groove",anchor="c",)
+            card_label = Label(tt_frame, text=self.card_name, font=(constants.FONT_SANS_SERIF, 15, "bold", ), background = "#3d3d3d", foreground = "#e6ecec", relief="groove",anchor="c",)
             
             if len(self.color_dict) == 2:
                 headers = {"Label"    : {"width" : .70, "anchor" : W},
@@ -1910,12 +1908,6 @@ class CreateCardToolTip(object):
             
             stats_main_table = CreateHeader(tt_frame, 0, 8, headers, width, False, True, "Tooltip.Treeview", False)
             main_field_list = []
-            
-            #stats_count_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
-            #count_field_list = []
-            #
-            #bonus_table = CreateHeader(tt_frame, 0, headers, width, False, True, "Tooltip.Treeview", False)
-            #bonus_field_list = []
             
             values = ["Filter:"] + list(self.color_dict.keys())
             main_field_list.append(tuple(values))

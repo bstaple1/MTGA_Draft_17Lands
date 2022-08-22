@@ -168,17 +168,32 @@ def DateCheck(date):
         result = False
     return result
     
-def DateShift(shifted_days, format):
+def DateShift(start_date, shifted_days, string_format):
     shifted_date_string = ""
+    shifted_date = datetime.date.min
     try:
-        today = datetime.date.today()
-        shifted_date = today + datetime.timedelta(days=shifted_days)
-        shifted_date_string = shifted_date.strftime(format)
-        
+        shifted_date = start_date + datetime.timedelta(days=shifted_days)
+        if string_format != None:
+            shifted_date_string = shifted_date.strftime(string_format)
     except Exception as error:
         file_logger.info(f"DateShift Error: {error}")
         
-    return shifted_date_string
+    return shifted_date, shifted_date_string
+    
+def ReleaseCheck(release_string, shifted_days):
+    result = True
+    try:
+        release_date = datetime.datetime.strptime(release_string, "%Y-%m-%d").date()
+        shifted_release_date = DateShift(release_date, shifted_days, None)[0]
+        today = datetime.date.today()
+        
+        if shifted_release_date > today:
+            result = False
+        
+    except Exception as error:
+        file_logger.info(f"ReleaseCheck Error: {error}")
+    
+    return result
     
 def FileIntegrityCheck(filename):
     result = Result.VALID
@@ -303,9 +318,8 @@ class FileExtractor:
                 result, result_string, temp_size = self.RetrieveLocalArenaData(ui_root, status, database_size)
 
                 if result == False:
-                    status.set("Collecting Scryfall Data")
-                    ui_root.update()
-                    result, result_string = self.SessionScryfallData()
+
+                    result, result_string = self.SessionScryfallData(ui_root, status)
                     if result == False:
                         break
                         
@@ -342,49 +356,6 @@ class FileExtractor:
             result_string = error
             
         return result, result_string, temp_size
-       
-    #def DownloadExpansion(self, ui_root, progress_bar, database_size):
-    #    result = False
-    #    result_string = ""
-    #    temp_size = 0
-    #    try:
-    #        while(True):
-    #            progress_bar['value']=5 #Provide immediate feedback that the download process has started
-    #            ui_root.update()
-    #            
-    #            result, result_string, temp_size = self.RetrieveLocalArenaData(database_size)
-    #            
-    #            if result == False:
-    #                result, result_string = self.SessionScryfallData()
-    #                if result == False:
-    #                    break
-    #                    
-    #            progress_bar['value']=10
-    #            ui_root.update()
-    #            
-    #            self.Initialize17LandsData()
-    #            
-    #            if self.Session17Lands(self.selected_sets[constants.SET_LIST_17LANDS], 
-    #                                   self.deck_colors,
-    #                                   ui_root, 
-    #                                   progress_bar,
-    #                                   progress_bar['value']) == False:
-    #                result = False
-    #                result_string = "Couldn't Collect 17Lands Data"
-    #                break
-    #            
-    #            if self.AssembleSetData() == False:
-    #                result = False
-    #                result_string = "Couldn't Assemble Set Data"
-    #                break
-    #            
-    #            break
-    #    
-    #    except Exception as error:
-    #        file_logger.info(f"DownloadExpansion Error: {error}")
-    #        result_string = error
-    #        
-    #    return result, result_string, temp_size
       
     def RetrieveLocalArenaData(self, root, status, previous_database_size):
         result_string = "Couldn't Collect Local Card Data"
@@ -417,7 +388,7 @@ class FileExtractor:
                 
                 if current_database_size != previous_database_size:
                     file_logger.info(f"Local File Change Detected {current_database_size}, {previous_database_size}")
-                    file_logger.info(f"Local Card Data: Searching file path {arena_cards_locations[0]}")
+                    file_logger.info(f"Local Database Data: Searching file path {arena_database_locations[0]}")
                     status.set("Retrieving Localization Data")
                     root.update()
                     result, card_text, card_enumerators = self.RetrieveLocalDatabase(arena_database_locations[0])
@@ -425,6 +396,7 @@ class FileExtractor:
                     if not result:
                         break
                 
+                    file_logger.info(f"Local Card Data: Searching file path {arena_cards_locations[0]}")
                     status.set("Retrieving Raw Card Data")
                     root.update()
                     result, raw_card_data = self.RetrieveLocalCards(arena_cards_locations[0])
@@ -656,16 +628,19 @@ class FileExtractor:
         return version  
 
 
-    def SessionScryfallData(self):
+    def SessionScryfallData(self, root, status):
         result = False
         self.card_dict = {}
         result_string = "Couldn't Retrieve Card Data"
+        url = ""
         for set in self.selected_sets[constants.SET_LIST_SCRYFALL]:
             if set == "dbl":
                 continue
-            retry = 5
+            retry = constants.SCRYFALL_REQUEST_ATTEMPT_MAX
             while retry:
                 try:
+                    status.set("Collecting Scryfall Data")
+                    root.update()
                     #https://api.scryfall.com/cards/search?order=set&unique=prints&q=e%3AMID
                     url = "https://api.scryfall.com/cards/search?order=set&unique=prints&q=e" + urlencode(':', safe='') + "%s" % (set)
                     url_data = urllib.request.urlopen(url, context=self.context).read()
@@ -690,7 +665,12 @@ class FileExtractor:
                 
                 if result == False:
                     retry -= 1
-                    time.sleep(5)
+                    
+                    if retry:
+                        attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
+                        status.set(f"""Collecting Scryfall Data - Request Failed ({attempt_count}/{constants.SCRYFALL_REQUEST_ATTEMPT_MAX}) - Retry in {constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS} seconds""")
+                        root.update()
+                        time.sleep(constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS)
         return result, result_string
 
     def Initialize17LandsData(self):
@@ -704,11 +684,12 @@ class FileExtractor:
         self.card_ratings = {}
         current_progress = 0
         result = False
+        url = ""
         for set in sets:
             if set == "dbl":
                 continue
             for color in deck_colors:
-                retry = 5
+                retry = constants.CARD_RATINGS_ATTEMPT_MAX
                 result = False
                 while retry:
                     
@@ -728,8 +709,14 @@ class FileExtractor:
                     except Exception as error:
                         file_logger.info(url) 
                         file_logger.info(f"Session17Lands Error: {error}")   
-                        time.sleep(constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
                         retry -= 1
+                        
+                        if retry:
+                            attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
+                            status.set(f"""Collecting {color} 17Lands Data - Request Failed ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX}) - Retry in {constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS} seconds""")
+                            root.update()
+                            time.sleep(constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
+
                         
                 if result:
                     current_progress += 3 / len(self.selected_sets[constants.SET_LIST_17LANDS])
@@ -869,7 +856,7 @@ class FileExtractor:
           
     def ProcessScryfallData (self, data):
         result = False
-        result_string = "Arena IDs Unavailable"
+        result_string = "Scryfall Data Unavailable"
         for card_data in data:
             try:
                 if "arena_id" not in card_data:
@@ -932,6 +919,10 @@ class FileExtractor:
         counter = 0
         for set in data:
             try:
+                #Check if the set has been released
+                if "released_at" in set and not ReleaseCheck(set["released_at"], constants.SET_RELEASE_OFFSET_DAYS):
+                    continue
+                    
                 set_name = set[constants.DATA_FIELD_NAME]
                 set_code = set["code"]
                 
@@ -960,15 +951,15 @@ class FileExtractor:
                             sets[set_name][constants.SET_LIST_SCRYFALL].append("STA")
                     counter += 1
                     
-                # Only retrieve the last 24 sets + CUBE
-                if counter >= 24:
+                # Only retrieve the last X sets + CUBE
+                if counter >= constants.SET_LIST_COUNT_MAX:
                     break
             except Exception as error:
                 file_logger.info(f"ProcessSetData Error: {error}")
                 
         #Insert the cube sets 
         sets["Arena Cube"] = {constants.SET_LIST_ARENA : [constants.SET_SELECTION_ALL], constants.SET_LIST_SCRYFALL : [], constants.SET_LIST_17LANDS : [constants.SET_SELECTION_CUBE]}
-        sets["Arena Cube"][constants.SET_START_DATE] = DateShift(-45, "%Y-%m-%d")
+        sets["Arena Cube"][constants.SET_START_DATE] = DateShift(datetime.date.today(), constants.SET_ARENA_CUBE_START_OFFSET_DAYS, "%Y-%m-%d")[1]
         
         
         return sets

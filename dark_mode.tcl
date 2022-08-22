@@ -21,7 +21,7 @@ array set colors {
           -insertcolor $colors(-fg) \
           -insertwidth 1 \
           -fieldbackground $colors(-selectbg) \
-          -font {"Helvetica Neue" 10} \
+          -font {"Arial" 10} \
           -borderwidth 1 \
           -relief flat
 
