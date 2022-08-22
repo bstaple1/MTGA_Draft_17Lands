@@ -9,6 +9,8 @@ FONT_MONO_SPACE = "Courier"
 LOG_TYPE_DEBUG = "mtgaTool"
 LOG_TYPE_DRAFT = "draftLog"
 
+HOTKEY_CTRL_G = '\x07'
+
 BASIC_LANDS = ["Island","Mountain","Swamp","Plains","Forest"]
 
 LIMITED_TYPE_UNKNOWN            = 0

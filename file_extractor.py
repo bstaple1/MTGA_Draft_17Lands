@@ -103,8 +103,6 @@ def ArenaDirectoryLocation(log_location):
             location = re.findall(r"'(.*?)/Managed'", line, re.DOTALL)
             if location and os.path.exists(location[0]):
                 arena_directory = location[0]
-                file_logger.info(f"Arena Directory: {arena_directory}")
-
                 
     except Exception as error:
         file_logger.info(f"ArenaDirectoryLocation Error: {error}")
