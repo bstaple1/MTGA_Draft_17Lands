@@ -1352,11 +1352,6 @@ class Overlay:
                                               onvalue=1,
                                               offvalue=0) 
 
-            #taken_filter_label.grid(row=0, column=0, columnspan = 1, sticky="nsew")
-            #taken_option.grid(row=0, column=1, columnspan = 6, sticky="nsew")
-            #
-            #type_label.grid(row=1, column=0, columnspan = 1, sticky="nsew")
-            #type_option.grid(row=1, column=1, columnspan = 6, sticky="nsew")
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             checkbox_frame.grid(row=1, column=0, columnspan = 7, sticky="nsew")
             copy_button.grid(row=2, column=0, columnspan = 7, sticky="nsew")
@@ -1369,9 +1364,9 @@ class Overlay:
             taken_gndwr_checkbox.pack(side=LEFT, expand = True, fill = "both")
             taken_iwd_checkbox.pack(side=LEFT, expand = True, fill = "both")
             
-            taken_filter_label.pack(side=LEFT, expand = True, fill = "both")
+            taken_filter_label.pack(side=LEFT, expand = True, fill = None)
             taken_option.pack(side=LEFT, expand = True, fill = "both")
-            type_label.pack(side=LEFT, expand = True, fill = "both")
+            type_label.pack(side=LEFT, expand = True, fill = None)
             type_option.pack(side=LEFT, expand = True, fill = "both")
             
             self.UpdateTakenTable()

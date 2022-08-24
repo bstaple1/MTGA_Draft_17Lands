@@ -157,19 +157,19 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 | Letter Grade     | Standard Deviations|
 |:----------------:|:------------------:|
-| A+               | >= 2               |
-| A                | >= 1.33            |
-| A-               | >= 1               |
-| B+               | >= 0.67            |
-| B                | >= 0.33            |
-| B-               | >= 0               |
-| C+               | >= -0.33           |
-| C                | >= -0.67           |
-| C-               | >= -1              |
-| D+               | >= -1.33           |
-| D                | >= -1.67           |
-| D-               | >= -2              |
-| F                | <  -2              |
+| A+               | >= 2.33            |
+| A                | >= 2               |
+| A-               | >= 1.67            |
+| B+               | >= 1.33            |
+| B                | >= 1               |
+| B-               | >= 0.67            |
+| C+               | >= 0.33            |
+| C                | >= 0               |
+| C-               | >= -0.33           |
+| D+               | >= -0.67           |
+| D                | >= -1              |
+| D-               | >= -1.33           |
+| F                | <  -1.67           |
 
 - **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (+-2 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
     - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2 * 4.68 = 66.16%`, the lower limit will be `56.8 - 2 * 4.68 = 47.44%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 47.44) / (66.16 - 47.44)) * 5.0 = 3.8)`
