@@ -8,7 +8,6 @@ import urllib
 import os
 import sys
 import io
-import functools
 import logging
 import logging.handlers
 import constants
@@ -140,7 +139,8 @@ def TableColumnSort(table, column, reverse):
         row_list = [(float(table.set(k, column)), k) for k in table.get_children('')]
     except ValueError:
         row_list = [(table.set(k, column), k) for k in table.get_children('')]
-    row_list.sort(reverse=reverse)
+
+    row_list.sort(key=lambda x: CL.FieldProcessSort(x[0]), reverse=reverse)
 
     if len(row_list):
         tags = table.item(row_list[0][1])["tags"][0]
@@ -216,7 +216,7 @@ class Overlay:
         
         self.trace_ids = []
         
-        self.deck_limits = {}
+        self.set_metrics = {}
         self.tier_data = {}
         self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
@@ -301,6 +301,7 @@ class Overlay:
         self.deck_filter_selection = StringVar(self.root)
         self.deck_filter_list = self.deck_colors.keys()
         self.taken_filter_selection = StringVar(self.root)
+        self.taken_type_selection = StringVar(self.root)
 
         optionsStyle = Style()
         optionsStyle.configure('my.TMenubutton', font=(constants.FONT_SANS_SERIF, 9))
@@ -354,7 +355,7 @@ class Overlay:
         self.stat_label = Label(self.stat_frame, text = "Draft Stats:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
-        self.stat_options_list = ["Creatures","Noncreatures","All"]
+        self.stat_options_list = [constants.CARD_TYPE_SELECTION_CREATURES,constants.CARD_TYPE_SELECTION_NONCREATURES,constants.CARD_TYPE_SELECTION_ALL]
         
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection, self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
         self.stat_options.config(width=11) 
@@ -442,7 +443,7 @@ class Overlay:
                                           taken_cards,
                                           filtered_colors,
                                           fields,
-                                          self.deck_limits,
+                                          self.set_metrics,
                                           self.tier_data,
                                           self.configuration,
                                           self.configuration.curve_bonus_enabled,
@@ -460,9 +461,9 @@ class Overlay:
                 self.pack_table.config(height=0)
                 
             #Update the filtered column header with the filtered colors
-            last_field_index =TableColumnControl(self.pack_table, fields)
+            last_field_index = TableColumnControl(self.pack_table, fields)
             
-            filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True) 
+            filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
                 
             for count, card in enumerate(filtered_list):
                 row_tag = TableRowTag(self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
@@ -496,13 +497,13 @@ class Overlay:
                                                   taken_cards,
                                                   filtered_colors,
                                                   fields,
-                                                  self.deck_limits,
+                                                  self.set_metrics,
                                                   self.tier_data,
                                                   self.configuration,
                                                   False,
                                                   False)
                     
-                    filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True) 
+                    filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
 
                     #filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(filtered_list):
@@ -534,7 +535,7 @@ class Overlay:
                                           matching_cards,
                                           filtered_colors,
                                           fields,
-                                          self.deck_limits,
+                                          self.set_metrics,
                                           self.tier_data,
                                           self.configuration,
                                           False,
@@ -545,7 +546,7 @@ class Overlay:
                         #Update the filtered column header with the filtered colors
             last_field_index = TableColumnControl(compare_table, fields)
 
-            filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True) 
+            filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
             
             list_length = len(filtered_list)
             
@@ -569,20 +570,25 @@ class Overlay:
                     break
 
                 fields = {"Column1"    : constants.DATA_FIELD_NAME,
-                          "Column2"    : constants.DATA_FIELD_COLORS,
-                          "Column3"    : constants.DATA_FIELD_COUNT,
+                          "Column2"    : constants.DATA_FIELD_COUNT,
+                          "Column3"    : constants.DATA_FIELD_COLORS,
                           "Column4"    : (constants.DATA_FIELD_ALSA if self.taken_alsa_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column5"    : (constants.DATA_FIELD_ATA if self.taken_ata_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column6"    : (constants.DATA_FIELD_GPWR if self.taken_gpwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column7"    : (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column8"    : (constants.DATA_FIELD_IWD if self.taken_iwd_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column6"    : (constants.DATA_FIELD_IWD if self.taken_iwd_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column7"    : (constants.DATA_FIELD_GPWR if self.taken_gpwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column8"    : (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column9"    : (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column10"   : constants.DATA_FIELD_GIHWR}
 
 
                 taken_cards = self.draft.TakenCards()
+                
                 filtered_colors = self.DeckFilterColors(taken_cards, self.taken_filter_selection.get())
-                stacked_cards = CL.StackCards(taken_cards)
+                
+                #Filter the card types
+                filtered_cards = CL.DeckColorSearch(taken_cards, constants.CARD_COLORS_DICT.values(), constants.CARD_TYPE_DICT[self.taken_type_selection.get()], True, True, True) 
+                
+                stacked_cards = CL.StackCards(filtered_cards)
 
                 for row in self.taken_table.get_children():
                     self.taken_table.delete(row)
@@ -591,7 +597,7 @@ class Overlay:
                                               taken_cards,
                                               filtered_colors,
                                               fields,
-                                              self.deck_limits,
+                                              self.set_metrics,
                                               self.tier_data,
                                               self.configuration,
                                               False,
@@ -599,7 +605,7 @@ class Overlay:
 
                 last_field_index = TableColumnControl(self.taken_table, fields)
 
-                filtered_list = sorted(filtered_list, key=lambda d: d["results"][last_field_index], reverse=True)  
+                filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True)  
 
                 if len(filtered_list):
                     self.taken_table.config(height = min(len(filtered_list), 20))
@@ -643,17 +649,11 @@ class Overlay:
             
     def UpdateDeckStatsTable(self, taken_cards, filter_type, total_width):
         try:             
-            filter = []
-            if filter_type == "Creatures":
-                filter = ["Creature", "Planeswalker"]
-            elif filter_type == "Noncreatures":
-                filter = ["Instant", "Sorcery","Enchantment","Artifact"]
-            else:
-                filter = ["Creature", "Planeswalker","Instant", "Sorcery","Enchantment","Artifact"]
+            filter = constants.CARD_TYPE_DICT[filter_type]
 
-            colors = {"Black":"B","Blue":"U", "Green":"G", "Red":"R", "White":"W", "NC":""}
+            #colors = {constants.CARD_COLOR_LABEL_BLACK:constants.CARD_COLOR_SYMBOL_BLACK,constants.CARD_COLOR_LABEL_BLUE:constants.CARD_COLOR_SYMBOL_BLUE, constants.CARD_COLOR_LABEL_GREEN:constants.CARD_COLOR_SYMBOL_GREEN, constants.CARD_COLOR_LABEL_RED:constants.CARD_COLOR_SYMBOL_RED, constants.CARD_COLOR_LABEL_WHITE:constants.CARD_COLOR_SYMBOL_WHITE, constants.CARD_COLOR_SYMBOL_NONE:""}
             colors_filtered = {}
-            for color,symbol in colors.items():
+            for color,symbol in constants.CARD_COLORS_DICT.items():
                 if symbol == "":
                     card_colors_sorted = CL.DeckColorSearch(taken_cards, symbol, filter, True, True, False)               
                 else:
@@ -766,7 +766,9 @@ class Overlay:
                 self.deck_filter_selection.set(selection[0] if len(selection) else constants.DECK_FILTER_DEFAULT)
             if self.taken_filter_selection.get() not in self.deck_colors.keys():
                 selection = [k for k in self.deck_colors.keys() if constants.DECK_FILTER_DEFAULT in k]
-                self.taken_filter_selection.set(selection[0] if len(selection) else constants.DECK_FILTER_DEFAULT)            
+                self.taken_filter_selection.set(selection[0] if len(selection) else constants.DECK_FILTER_DEFAULT)       
+            if self.taken_type_selection.get() not in constants.CARD_TYPE_DICT.keys():
+                self.taken_type_selection.set(constants.CARD_TYPE_SELECTION_ALL)                   
             
             deck_colors_menu = self.deck_colors_options["menu"]
             deck_colors_menu.delete(0, "end")
@@ -864,7 +866,7 @@ class Overlay:
         
     def UpdateDraftData(self):
         self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
-        self.deck_limits = self.draft.RetrieveColorLimits(False)
+        self.set_metrics = self.draft.RetrieveSetMetrics(False)
         self.deck_colors = self.draft.RetrieveColorWinRate(self.filter_format_selection.get())
         self.tier_data, tier_dict = self.draft.RetrieveTierData(self.tier_sources)
         self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
@@ -1305,11 +1307,18 @@ class Overlay:
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
             
-            taken_filter_label = Label(popup, text="Deck Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            option_frame = Frame(popup)
+            taken_filter_label = Label(option_frame, text="Deck Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             self.taken_filter_selection.set(self.deck_filter_selection.get())
             taken_filter_list = self.deck_filter_list
             
-            taken_option = OptionMenu(popup, self.taken_filter_selection, self.taken_filter_selection.get(), *taken_filter_list, style="my.TMenubutton")
+            taken_option = OptionMenu(option_frame, self.taken_filter_selection, self.taken_filter_selection.get(), *taken_filter_list, style="my.TMenubutton")
+            
+            type_label = Label(option_frame, text="Type Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            self.taken_type_selection.set(next(iter(constants.CARD_TYPE_DICT)))
+            taken_type_list = constants.CARD_TYPE_DICT.keys()
+            
+            type_option = OptionMenu(option_frame, self.taken_type_selection, self.taken_type_selection.get(), *taken_type_list, style="my.TMenubutton")
 
             checkbox_frame = Frame(popup)
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
@@ -1343,9 +1352,12 @@ class Overlay:
                                               onvalue=1,
                                               offvalue=0) 
 
-            taken_filter_label.grid(row=0, column=0, columnspan = 1, sticky="nsew")
-            taken_option.grid(row=0, column=1, columnspan = 6, sticky="nsew")
-
+            #taken_filter_label.grid(row=0, column=0, columnspan = 1, sticky="nsew")
+            #taken_option.grid(row=0, column=1, columnspan = 6, sticky="nsew")
+            #
+            #type_label.grid(row=1, column=0, columnspan = 1, sticky="nsew")
+            #type_option.grid(row=1, column=1, columnspan = 6, sticky="nsew")
+            option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             checkbox_frame.grid(row=1, column=0, columnspan = 7, sticky="nsew")
             copy_button.grid(row=2, column=0, columnspan = 7, sticky="nsew")
             taken_table_frame.grid(row=3, column=0, columnspan = 7, sticky = "nsew")
@@ -1356,6 +1368,11 @@ class Overlay:
             taken_ohwr_checkbox.pack(side=LEFT, expand = True, fill = "both")
             taken_gndwr_checkbox.pack(side=LEFT, expand = True, fill = "both")
             taken_iwd_checkbox.pack(side=LEFT, expand = True, fill = "both")
+            
+            taken_filter_label.pack(side=LEFT, expand = True, fill = "both")
+            taken_option.pack(side=LEFT, expand = True, fill = "both")
+            type_label.pack(side=LEFT, expand = True, fill = "both")
+            type_option.pack(side=LEFT, expand = True, fill = "both")
             
             self.UpdateTakenTable()
             popup.update()
@@ -1374,7 +1391,7 @@ class Overlay:
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             
-            suggested_decks = CL.SuggestDeck(self.draft.TakenCards(), self.deck_limits, self.configuration)
+            suggested_decks = CL.SuggestDeck(self.draft.TakenCards(), self.set_metrics, self.configuration)
             
             choices = ["None"]
             deck_color_options = {}
@@ -1732,6 +1749,7 @@ class Overlay:
                 (self.taken_gndwr_checkbox_value, lambda : self.taken_gndwr_checkbox_value.trace("w", self.UpdateSettingsCallback)),
                 (self.taken_iwd_checkbox_value, lambda : self.taken_iwd_checkbox_value.trace("w", self.UpdateSettingsCallback)),
                 (self.taken_filter_selection, lambda : self.taken_filter_selection.trace("w", self.UpdateSettingsCallback)),
+                (self.taken_type_selection, lambda : self.taken_type_selection.trace("w", self.UpdateSettingsCallback)),
                 (self.card_colors_checkbox_value, lambda : self.card_colors_checkbox_value.trace("w", self.UpdateSettingsCallback)),
             ]
 

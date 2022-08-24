@@ -917,16 +917,18 @@ class ArenaScanner:
             
         return result
         
-    def RetrieveColorLimits(self, bayesian_enabled):
-        deck_limits = {}
+    def RetrieveSetMetrics(self, bayesian_enabled):
+        set_metrics = {"mean": 0, "standard_deviation" : 0}
         
         try:
             if self.set_data:
-                upper_limit, lower_limit = CL.RatingsLimits(self.set_data["card_ratings"], bayesian_enabled)
-                deck_limits ={"upper" : upper_limit, "lower" : lower_limit}
+                mean = CL.CalculateMean(self.set_data["card_ratings"], bayesian_enabled)
+                standard_deviation = CL.CalculateStandardDeviation(self.set_data["card_ratings"], mean, bayesian_enabled)
+                set_metrics = {"mean": mean, "standard_deviation" : standard_deviation}
+                print(f"Mean:{mean}, Standard Deviation: {standard_deviation}")
         except Exception as error:
-            scanner_logger.info(f"RetrieveColorLimits Error: {error}")
-        return deck_limits
+            scanner_logger.info(f"RetrieveSetMetrics Error: {error}")
+        return set_metrics
         
     def RetrieveColorWinRate(self, label_type):
         deck_colors = {}
@@ -1020,6 +1022,11 @@ class ArenaScanner:
                             tier_label = f'{tier_label[:8]}...' if len(tier_label) > 11 else tier_label #Truncate label if it's too long
                             tier_key = f'{tier_id} ({tier_label})'
                             tier_options[tier_key] = tier_id
+                            if data["meta"]["version"] == 1:
+                                for card_name, card_rating in data["ratings"].items():
+                                    data["ratings"][card_name] = CL.FormatTierResults(card_rating, 
+                                                                                     constants.RESULT_FORMAT_RATING, 
+                                                                                     constants.RESULT_FORMAT_GRADE)
                             tier_data[tier_id] = data
                             count += 1
              

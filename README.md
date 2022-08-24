@@ -152,9 +152,27 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Card Logic:
 
-- **Win Rate Ratings:** The application will identify the upper and lower GIHWR values of all of the set cards across all of the filters and perform the following calculation to determine a card's rating: `((card_gihwr - lower_gihwr) / (upper_gihwr - lower_gihwr)) * 5.0`
-    - Example: If the highest win rate of the set is 75.67% (Lae'zel, Githyanki Warrior (WR)) and the lowest win rate of the set is 41.73% (Ambitious Dragonborn (URG)), then the All Decks rating for The Hourglass Coven (71.97%) will be 4.5 `(((71.97 - 41.73) / (75.67 - 41.73)) * 5.0 = 4.5)`
-    - If the color and curve bonuses are enabled, then the application will add those bonuses to the card rating
+- **Win Rate Grades:** The application will calculate the mean and standard deviation from the non-zero GIHWR values and assign a letter grade based on the number of standard deviations from the mean.
+    - Example: If the mean win rate for the set is 56.8% and the standard deviation is 4.68, then a card with a win rate of 62% will have a letter grade of A- since it's between 1 standard deviation (`56.8 + 1 * 4.68 = 61.48%`) and 1.33 standard deviations (`56.8 + 1.33 * 4.68 = 63.02%`) from the mean (see the table below).
+
+| Letter Grade     | Standard Deviations|
+|:----------------:|:------------------:|
+| A+               | >= 2               |
+| A                | >= 1.33            |
+| A-               | >= 1               |
+| B+               | >= 0.67            |
+| B                | >= 0.33            |
+| B-               | >= 0               |
+| C+               | >= -0.33           |
+| C                | >= -0.67           |
+| C-               | >= -1              |
+| D+               | >= -1.33           |
+| D                | >= -1.67           |
+| D-               | >= -2              |
+| F                | <  -2              |
+
+- **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (+-2 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
+    - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2 * 4.68 = 66.16%`, the lower limit will be `56.8 - 2 * 4.68 = 47.44%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 47.44) / (66.16 - 47.44)) * 5.0 = 3.8)`
 
 - **Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
     - Enabled: The application will perform this calculation on all win rate data. The adjustment made by this calculation will disappear as the sample count (e.g, Number of Games In Hand for the Games in Hand Win Rate) reaches 200.
@@ -200,22 +218,3 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
         - The NEO creature sagas count as creatures.
 
-- **Tier List Ratings:** The tier scraper Chrome extension, found in `./Tools/TierScraper17Lands`, converts the grades in a 17Lands tier list into ratings using the following table:
-
-| Letter Grade     | Numeric Rating     |
-|:----------------:|:------------------:|
-| A+               | 5.0                |
-| A                | 4.6                |
-| A-               | 4.2                |
-| B+               | 3.8                |
-| B                | 3.5                |
-| B-               | 3.1                |
-| C+               | 2.7                |
-| C                | 2.3                |
-| C-               | 1.9                |
-| D+               | 1.5                |
-| D                | 1.2                |
-| D-               | 0.8                |
-| F                | 0.4                |
-| SB               | 0.0                |
-| TBD              | 0.0                |

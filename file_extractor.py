@@ -127,26 +127,26 @@ def SearchLocalFiles(paths, file_prefixes):
 
 def ExtractTypes(type_line):
     types = []
-    if "Creature" in type_line:
-        types.append("Creature")
+    if constants.CARD_TYPE_CREATURE in type_line:
+        types.append(constants.CARD_TYPE_CREATURE)
         
-    if "Planeswalker" in type_line:
-        types.append("Planeswalker")
+    if constants.CARD_TYPE_PLANESWALKER in type_line:
+        types.append(constants.CARD_TYPE_PLANESWALKER)
         
-    if "Land" in type_line:
-        types.append("Land")
+    if constants.CARD_TYPE_LAND in type_line:
+        types.append(constants.CARD_TYPE_LAND)
         
-    if "Instant" in type_line:
-        types.append("Instant")
+    if constants.CARD_TYPE_INSTANT in type_line:
+        types.append(constants.CARD_TYPE_INSTANT)
         
-    if "Sorcery" in type_line:
-        types.append("Sorcery")
+    if constants.CARD_TYPE_SORCERY in type_line:
+        types.append(constants.CARD_TYPE_SORCERY)
        
-    if "Enchantment" in type_line:
-        types.append("Enchantment")
+    if constants.CARD_TYPE_ENCHANTMENT in type_line:
+        types.append(constants.CARD_TYPE_ENCHANTMENT)
         
-    if "Artifact" in type_line:
-        types.append("Artifact")
+    if constants.CARD_TYPE_ARTIFACT in type_line:
+        types.append(constants.CARD_TYPE_ARTIFACT)
 
     return types
     
@@ -558,8 +558,8 @@ class FileExtractor:
                         card_data[card_set][card][constants.DATA_FIELD_NAME] = " // ".join(card_text[x] for x in card_data[card_set][card][constants.DATA_FIELD_NAME])     
                         card_data[card_set][card][constants.DATA_FIELD_TYPES] = list(set([card_text[card_enumerators[constants.DATA_FIELD_TYPES][x]] for x in card_data[card_set][card][constants.DATA_FIELD_TYPES]]))
                         card_data[card_set][card][constants.DATA_FIELD_COLORS] = [constants.CARD_COLORS_DICT[card_text[card_enumerators[constants.DATA_FIELD_COLORS][x]]] for x in card_data[card_set][card][constants.DATA_FIELD_COLORS]]
-                        if "Creature" in card_data[card_set][card][constants.DATA_FIELD_TYPES]:
-                            index = card_data[card_set][card][constants.DATA_FIELD_TYPES].index("Creature")
+                        if constants.CARD_TYPE_CREATURE in card_data[card_set][card][constants.DATA_FIELD_TYPES]:
+                            index = card_data[card_set][card][constants.DATA_FIELD_TYPES].index(constants.CARD_TYPE_CREATURE)
                             card_data[card_set][card][constants.DATA_FIELD_TYPES].insert(0, card_data[card_set][card][constants.DATA_FIELD_TYPES].pop(index))
                         result = True
                     except Exception as error:
@@ -804,11 +804,11 @@ class FileExtractor:
         
     def RetrieveColorRatings(self, colors):
         color_ratings_dict = {
-            "Mono-White"     : "W",
-            "Mono-Blue"      : "U",
-            "Mono-Black"     : "B",
-            "Mono-Red"       : "R",
-            "Mono-Green"     : "G",
+            "Mono-White"     : constants.CARD_COLOR_SYMBOL_WHITE,
+            "Mono-Blue"      : constants.CARD_COLOR_SYMBOL_BLUE,
+            "Mono-Black"     : constants.CARD_COLOR_SYMBOL_BLACK,
+            "Mono-Red"       : constants.CARD_COLOR_SYMBOL_RED,
+            "Mono-Green"     : constants.CARD_COLOR_SYMBOL_GREEN,
             "(WU)"           : "WU",
             "(UB)"           : "UB",
             "(BR)"           : "BR",
