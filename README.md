@@ -148,7 +148,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Card Logic:
 
-- **Win Rate Grades:** The application will calculate the mean and standard deviation from the non-zero GIHWR values and assign a letter grade based on the number of standard deviations from the mean.
+- **Win Rate Grades:** The application will use the non-zero GIHWR values to calculate the mean and standard deviation and assign a letter grade based on the number of standard deviations from the mean.
     - Example: If the mean win rate for the set is 56.8% and the standard deviation is 4.68, then a card with a win rate of 62% will have a letter grade of B since it's between 1 standard deviation (`56.8 + 1 * 4.68 = 61.48%`) and 1.33 standard deviations (`56.8 + 1.33 * 4.68 = 63.02%`) from the mean (see the table below).
 
 | Letter Grade     | Standard Deviations|
@@ -165,7 +165,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 | D+               | >= -0.67           |
 | D                | >= -1              |
 | D-               | >= -1.33           |
-| F                | <  -1.67           |
+| F                | <  -1.33           |
 
 - **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.67 to 2 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
     - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2 * 4.68 = 66.16%`, the lower limit will be `56.8 - 1.67 * 4.68 = 48.98%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 48.98) / (66.16 - 48.98)) * 5.0 = 3.8)`
