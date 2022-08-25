@@ -142,10 +142,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the card logic section.
 
-- **Enable Curve Bonus:** Enables the curve bonus logic for the `Auto`. Requires the Win Rate Format to be set to Ratings. See the curve bonus note in the card logic section.
-
-- **Enable Color Bonus:** Enables the color bonus logic for the `Auto` and `All Decks` filters. Requires the Win Rate Format to be set to Ratings. See the color bonus note in the card logic section.
-
 - **Enable Bayesian Average:** Enables the bayesian average logic for all win rate fields. See the Bayesian average note in the card logic section.
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
@@ -171,8 +167,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 | D-               | >= -1.33           |
 | F                | <  -1.67           |
 
-- **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (+-2 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
-    - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2 * 4.68 = 66.16%`, the lower limit will be `56.8 - 2 * 4.68 = 47.44%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 47.44) / (66.16 - 47.44)) * 5.0 = 3.8)`
+- **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.67 to 2 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
+    - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2 * 4.68 = 66.16%`, the lower limit will be `56.8 - 1.67 * 4.68 = 48.98%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 48.98) / (66.16 - 48.98)) * 5.0 = 3.8)`
 
 - **Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
     - Enabled: The application will perform this calculation on all win rate data. The adjustment made by this calculation will disappear as the sample count (e.g, Number of Games In Hand for the Games in Hand Win Rate) reaches 200.
@@ -180,19 +176,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Auto Highest Rating:** If the `Auto` filter is set, and the user has taken at least 16 cards, then the application will try and determine the leading color pair from the taken cards. If the tool is unable to identify a definitive leading color pair, then it will display the highest win rate of the top two color pairs for each win rate field (e.g., GIHWR, OHWR, etc.). The filter label will display both color pairs separated by a slash (e.g., `Auto (WB/BG)`).
     - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG win rate of 66% and a UB rating of 15%, then the displayed win rate will be 66%.
-
-- **Curve Bonus:** If the Win Rate Format setting is set to Rating, then the application will add a curve bonus if certain requirements are met.
-    - Curve Bonus Conditions:
-        - If the identified, or configured, color pair has fewer than 13 creatures, then the application will add a curve bonus ranging from 0.1 - 1.0.
-        - If the identified, or configured, color pair has fewer than 4 2-drops, 3 3-drops, 2 4-drops, and 1 5-drop, then it will add a curve bonus ranging from 0.1 - 0.5 to cards that fit the distribution.
-        - If the identified, or configured, color pair identifies a card in a pack that could potentially replace a taken card (due to higher GIHWR or lower CMC), then it will add a curve bonus ranging from 0.1 - 0.25.
-        
-- **Color Bonus:** If the Win Rate Format setting is set to Rating, and the Deck Filter is set to `All Decks` or `Auto(All Decks)`, then the application will add a color bonus based on the top 3 colors identified from the taken cards.
-    - Color Bonus Factors:
-        - The application will add a color bonus of 0.3 for each taken card that has a GIHWR equal to or above 65%
-        - The application will add a color bonus of 0.2 for each taken card that has a GIHWR between 64.9% and 60%.
-        - The application will add a color bonus of 0.1 for each taken card that has a GIHWR between 59.9% and 52%.
-        - For colorless cards, the application will divide the highest color bonus by 2.
         
 - **Deck Suggester:** For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build an intentionally synergistic deck. 
     - Deck Building Requirements:

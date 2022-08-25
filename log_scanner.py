@@ -925,7 +925,7 @@ class ArenaScanner:
                 mean = CL.CalculateMean(self.set_data["card_ratings"], bayesian_enabled)
                 standard_deviation = CL.CalculateStandardDeviation(self.set_data["card_ratings"], mean, bayesian_enabled)
                 set_metrics = {"mean": mean, "standard_deviation" : standard_deviation}
-                print(f"Mean:{mean}, Standard Deviation: {standard_deviation}")
+                #print(f"Mean:{mean}, Standard Deviation: {standard_deviation}")
         except Exception as error:
             scanner_logger.info(f"RetrieveSetMetrics Error: {error}")
         return set_metrics

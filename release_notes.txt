@@ -1,3 +1,26 @@
+===================== RELEASE NOTES 3.02 =====================
+* Data Update: Added support for the Arena Cube
+** The set option is located at the bottom of the set list
+
+* New Feature: Added card grades (see the Win Rate Grades section of the README)
+
+* New Feature: Chrome extension now adds a label text box to the tier list page
+
+* Modified Feature: Modified the card rating calculation (see the Win Rate Ratings section of the README)
+
+* Modified Feature: The set list will no longer contain unreleased sets
+** The application will automatically list a set once it's released
+
+* Modified Feature: Tier list data will now be displayed as grades
+
+* Modified Features: Removed/disabled the curve and color bonuses
+** These features will be readded once they are modified to function with the new ratings/grades/win rate options
+
+* UI Updates:
+** The tooltips will no longer appear outside of the bounds of the screen
+** The Set Data window will now display the status during the build process
+** Fixed various table formatting issues
+
 ===================== RELEASE NOTES 3.01 =====================
 * Bug Fix: The application can now re-detect an active draft if Arena is closed mid-draft (Issue #13)
 

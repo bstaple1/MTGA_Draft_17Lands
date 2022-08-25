@@ -65,7 +65,7 @@ import argparse
 import sys
 import overlay as OL
 
-__version__= 3.01
+__version__= 3.02
             
 def Startup(argv):
     parser = argparse.ArgumentParser()
