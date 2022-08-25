@@ -308,7 +308,7 @@ LETTER_GRADE_D_MINUS = "D-"
 LETTER_GRADE_F       = "F " 
 LETTER_GRADE_NA      = "NA"
 
-CARD_TYPE_CREATURE    = "Creature"
+CARD_TYPE_CREATURE     = "Creature"
 CARD_TYPE_PLANESWALKER = "Planeswalker"
 CARD_TYPE_INSTANT      = "Instant"
 CARD_TYPE_SORCERY      = "Sorcery"
@@ -319,7 +319,6 @@ CARD_TYPE_LAND         = "Land"
 CARD_TYPE_SELECTION_ALL = "All"
 CARD_TYPE_SELECTION_CREATURES = "Creatures"
 CARD_TYPE_SELECTION_NONCREATURES = "Noncreatures"
-
 
 #Dictionaries
 ## Used to identify the limited type based on log string

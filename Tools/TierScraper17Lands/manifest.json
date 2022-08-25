@@ -3,15 +3,12 @@
 
   "name": "Draft Ratings Extractor",
   "description": "Retrieve pick ratings from websites",
-  "version": "1.0",
+  "version": "2.0",
 
   "action": {
    "default_icon": "get_started16.png",
    "default_popup": "popup.html"
   },
-  //"background": {
-  //"service_worker": "background.js"
-  //},
  "permissions": ["activeTab", "declarativeContent", "storage","scripting","tabs"],
  "host_permissions": ["*://*/*"],
  "content_scripts": [

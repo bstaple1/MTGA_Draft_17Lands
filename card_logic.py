@@ -246,22 +246,22 @@ def ColorCmc(deck):
     
     return cmc_total, count, distribution
     
-def OptionFilter(deck, option_selection, configuration):
+def OptionFilter(deck, option_selection, metrics, configuration):
     filtered_color_list = [option_selection]
     try:
         if constants.FILTER_OPTION_AUTO in option_selection:
-            filtered_color_list = AutoColors(deck, 2, configuration)
+            filtered_color_list = AutoColors(deck, 2, metrics, configuration)
         else:
             filtered_color_list = [option_selection]
     except Exception as error:
         logic_logger.info(f"OptionFilter Error: {error}")
     return filtered_color_list
     
-def DeckColors(deck, colors_max, configuration):
+def DeckColors(deck, colors_max, metrics, configuration):
     try:
         deck_colors = {}
         
-        colors = CalculateColorAffinity(deck,constants.FILTER_OPTION_ALL_DECKS,52, configuration)
+        colors = CalculateColorAffinity(deck,constants.FILTER_OPTION_ALL_DECKS, metrics["mean"], configuration)
         
         # Modify the dictionary to include ratings
         color_list = list(map((lambda x : {"color" : x, "rating" : colors[x]}), colors.keys()))
@@ -309,13 +309,13 @@ def DeckColors(deck, colors_max, configuration):
     
     return deck_colors
     
-def AutoColors(deck, colors_max, configuration):
+def AutoColors(deck, colors_max, metrics, configuration):
     try:
         deck_colors_list = [constants.FILTER_OPTION_ALL_DECKS]
         colors_dict = {}
         deck_length = len(deck)
         if deck_length > 15:
-            colors_dict = DeckColors(deck, colors_max, configuration)
+            colors_dict = DeckColors(deck, colors_max, metrics, configuration)
             colors = list(colors_dict.keys())
             auto_select_threshold = 30 - deck_length
             if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
@@ -351,7 +351,7 @@ def CalculateColorAffinity(deck_cards, color_filter, threshold, configuration):
 def CardFilter(card_list, deck, filtered_colors, fields,  metrics, tier_list, configuration, curve_bonus, color_bonus):
     filtered_list = []
     
-    deck_colors = DeckColors(deck, 2, configuration)
+    deck_colors = DeckColors(deck, 2, metrics, configuration)
     deck_colors = deck_colors.keys()
     
     for card in card_list:
@@ -517,15 +517,14 @@ def FormattedResult(card_data, winrate_field, winrate_count, metrics, configurat
     return rating_data
     
 def CardGrade(card_data, winrate_field, winrate_count, metrics, configuration, filter):
-    rating_data = {"result" : constants.LETTER_GRADE_F}
+    rating_data = {"result" : constants.LETTER_GRADE_NA}
     try:
         winrate = CalculateWinRate(card_data[constants.DATA_FIELD_DECK_COLORS][filter][winrate_field],
                                    card_data[constants.DATA_FIELD_DECK_COLORS][filter][winrate_count],
                                    configuration.bayesian_average_enabled)
         
-        if winrate == 0:
-            rating_data["result"] = constants.LETTER_GRADE_NA
-        else:
+        if ((winrate != 0) and (metrics["standard_deviation"] != 0)):
+            rating_data["result"] = constants.LETTER_GRADE_F
             for grade, deviation in constants.GRADE_DEVIATION_DICT.items():
                 standard_score = (winrate - metrics["mean"]) / metrics["standard_deviation"]
                 if standard_score >= deviation:
@@ -544,7 +543,7 @@ def CardRating(card_data, winrate_field, winrate_count, metrics, configuration, 
                                  configuration.bayesian_average_enabled)
 
         upper_limit = metrics["mean"] + metrics["standard_deviation"] * 2
-        lower_limit = metrics["mean"] - metrics["standard_deviation"] * 2
+        lower_limit = metrics["mean"] - metrics["standard_deviation"] * 1.33
 
         if (winrate != 0) and (upper_limit != lower_limit):
             rating_data["result"] = round(((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0, 1)
@@ -657,7 +656,7 @@ def CardCmcSearch(deck, offset, starting_cmc, cmc_limit, remaining_count):
     
     return cards, unused
     
-def DeckRating(deck, deck_type, color, bayesian_enabled):
+def DeckRating(deck, deck_type, color, threshold, bayesian_enabled):
     rating = 0
     try:
         #Combined GIHWR of the cards
@@ -666,7 +665,7 @@ def DeckRating(deck, deck_type, color, bayesian_enabled):
                 gihwr = CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR],
                                          card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIH],
                                          bayesian_enabled)
-                if gihwr > 50.0:
+                if gihwr > threshold:
                     rating += gihwr
             except Exception as error:
                 pass
@@ -775,12 +774,12 @@ def CardColors(mana_cost):
     return colors
     
 #Identify splashable color
-def ColorSplash(cards, colors, configuration):
+def ColorSplash(cards, colors, splash_threshold, configuration):
     color_affinity = {}
     splash_color = ""
     try:
         # Calculate affinity
-        color_affinity = CalculateColorAffinity(cards, colors, 65, configuration)
+        color_affinity = CalculateColorAffinity(cards, colors, splash_threshold, configuration)
         
         # Modify the dictionary to include ratings
         color_affinity = list(map((lambda x : {"color" : x, "rating" : color_affinity[x]}), color_affinity.keys()))
@@ -838,7 +837,11 @@ def ManaBase(deck):
                     number_of_lands -= 1
             
             if mana_types[land][constants.DATA_FIELD_COUNT] != 0:
-                card = {constants.DATA_FIELD_COLORS : mana_types[land]["color"], constants.DATA_FIELD_TYPES : constants.CARD_TYPE_LAND, constants.DATA_FIELD_CMC : 0.0, constants.DATA_FIELD_NAME : land, constants.DATA_FIELD_COUNT : land_count}
+                card = {constants.DATA_FIELD_COLORS : mana_types[land]["color"], 
+                        constants.DATA_FIELD_TYPES : constants.CARD_TYPE_LAND, 
+                        constants.DATA_FIELD_CMC : 0, 
+                        constants.DATA_FIELD_NAME : land, 
+                        constants.DATA_FIELD_COUNT : land_count}
                 combined_deck.append(card) 
             
     except Exception as error:
@@ -852,7 +855,7 @@ def SuggestDeck(taken_cards, metrics, configuration):
     try:
         deck_types = {"Mid" : configuration.deck_mid, "Aggro" : configuration.deck_aggro, "Control" :configuration.deck_control}
         #Identify the top color combinations
-        colors = DeckColors(taken_cards, colors_max, configuration)
+        colors = DeckColors(taken_cards, colors_max, metrics, configuration)
         colors = colors.keys()
         filtered_colors = []
         
@@ -868,7 +871,7 @@ def SuggestDeck(taken_cards, metrics, configuration):
         for color in filtered_colors:
             for type in deck_types.keys():
                 deck, sideboard_cards = BuildDeck(deck_types[type], taken_cards, color, metrics, configuration)
-                rating = DeckRating(deck, deck_types[type], color, configuration.bayesian_average_enabled)
+                rating = DeckRating(deck, deck_types[type], color, metrics["mean"], configuration.bayesian_average_enabled)
                 if rating >= configuration.ratings_threshold:
                     
                     if ((color not in decks.keys()) or 
@@ -903,7 +906,8 @@ def BuildDeck(deck_type, cards, color, metrics, configuration):
                                                 configuration.bayesian_average_enabled)]
 
         #identify a splashable color
-        color +=(ColorSplash(cards, color, configuration))
+        splash_threshold = metrics["mean"] + 2.33 * metrics["standard_deviation"]
+        color +=(ColorSplash(cards, color, splash_threshold, configuration))
         
         card_colors_sorted = DeckColorSearch(cards, color, constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_CREATURES], True, True, False)
         card_colors_sorted = sorted(card_colors_sorted, key = lambda k: k["results"][0], reverse = True)
@@ -975,7 +979,7 @@ def BuildDeck(deck_type, cards, color, metrics, configuration):
             if total_card_count >= maximum_deck_size:
                 break
                 
-            if card["results"][0] >= 55.0:    
+            if card["results"][0] >= metrics["mean"]:    
                 used_list.append(card)
                 total_card_count += 1
             

@@ -216,13 +216,13 @@ class Overlay:
         
         self.trace_ids = []
         
-        self.set_metrics = {}
         self.tier_data = {}
         self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         self.deck_colors = self.draft.RetrieveColorWinRate(self.configuration.filter_format)
         self.data_sources = self.draft.RetrieveDataSources()
         self.tier_sources = self.draft.RetrieveTierSource()
+        self.set_metrics = self.draft.RetrieveSetMetrics(False)
         
         #Grid.rowconfigure(self.root, 9, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -351,7 +351,7 @@ class Overlay:
         
         self.stat_frame = Frame(self.root)
 
-        self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.configuration.table_width, True, True, constants.TABLE_STYLE, True)
+        self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text = "Draft Stats:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
@@ -421,7 +421,7 @@ class Overlay:
         try:
             #selected_option = self.deck_filter_selection.get()
             selected_color = self.deck_colors[selected_option]
-            filtered_colors = CL.OptionFilter(cards, selected_color, self.configuration)
+            filtered_colors = CL.OptionFilter(cards, selected_color, self.set_metrics, self.configuration)
 
             if selected_color == constants.FILTER_OPTION_AUTO:
                 new_key = f"{constants.FILTER_OPTION_AUTO} ({'/'.join(filtered_colors)})"
@@ -586,9 +586,9 @@ class Overlay:
                 filtered_colors = self.DeckFilterColors(taken_cards, self.taken_filter_selection.get())
                 
                 #Filter the card types
-                filtered_cards = CL.DeckColorSearch(taken_cards, constants.CARD_COLORS_DICT.values(), constants.CARD_TYPE_DICT[self.taken_type_selection.get()], True, True, True) 
+                #filtered_cards = CL.DeckColorSearch(taken_cards, constants.CARD_COLORS_DICT.values(), constants.CARD_TYPE_DICT[self.taken_type_selection.get()], True, True, True) 
                 
-                stacked_cards = CL.StackCards(filtered_cards)
+                stacked_cards = CL.StackCards(taken_cards)
 
                 for row in self.taken_table.get_children():
                     self.taken_table.delete(row)
@@ -1314,11 +1314,11 @@ class Overlay:
             
             taken_option = OptionMenu(option_frame, self.taken_filter_selection, self.taken_filter_selection.get(), *taken_filter_list, style="my.TMenubutton")
             
-            type_label = Label(option_frame, text="Type Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            self.taken_type_selection.set(next(iter(constants.CARD_TYPE_DICT)))
-            taken_type_list = constants.CARD_TYPE_DICT.keys()
-            
-            type_option = OptionMenu(option_frame, self.taken_type_selection, self.taken_type_selection.get(), *taken_type_list, style="my.TMenubutton")
+            #type_label = Label(option_frame, text="Type Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            #self.taken_type_selection.set(next(iter(constants.CARD_TYPE_DICT)))
+            #taken_type_list = constants.CARD_TYPE_DICT.keys()
+            #
+            #type_option = OptionMenu(option_frame, self.taken_type_selection, self.taken_type_selection.get(), *taken_type_list, style="my.TMenubutton")
 
             checkbox_frame = Frame(popup)
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
@@ -1366,8 +1366,8 @@ class Overlay:
             
             taken_filter_label.pack(side=LEFT, expand = True, fill = None)
             taken_option.pack(side=LEFT, expand = True, fill = "both")
-            type_label.pack(side=LEFT, expand = True, fill = None)
-            type_option.pack(side=LEFT, expand = True, fill = "both")
+            #type_label.pack(side=LEFT, expand = True, fill = None)
+            #type_option.pack(side=LEFT, expand = True, fill = "both")
             
             self.UpdateTakenTable()
             popup.update()
@@ -1491,16 +1491,17 @@ class Overlay:
                                                  onvalue=1,
                                                  offvalue=0)
                                                  
-            curve_bonus_label = Label(popup, text="Enable Curve Bonus:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            curve_bonus_checkbox = Checkbutton(popup,
-                                               variable=self.curve_bonus_checkbox_value,
-                                               onvalue=1,
-                                               offvalue=0)
-            color_bonus_label = Label(popup, text="Enable Color Bonus:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            color_bonus_checkbox = Checkbutton(popup,
-                                                 variable=self.color_bonus_checkbox_value,
-                                                 onvalue=1,
-                                                 offvalue=0)     
+            #curve_bonus_label = Label(popup, text="Enable Curve Bonus:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            #curve_bonus_checkbox = Checkbutton(popup,
+            #                                   variable=self.curve_bonus_checkbox_value,
+            #                                   onvalue=1,
+            #                                   offvalue=0)
+            #color_bonus_label = Label(popup, text="Enable Color Bonus:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            #color_bonus_checkbox = Checkbutton(popup,
+            #                                     variable=self.color_bonus_checkbox_value,
+            #                                     onvalue=1,
+            #                                     offvalue=0)    
+            
             bayesian_average_label = Label(popup, text="Enable Bayesian Average:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
             bayesian_average_checkbox = Checkbutton(popup,
                                                  variable=self.bayesian_average_checkbox_value,
@@ -1572,15 +1573,15 @@ class Overlay:
             missing_cards_checkbox.grid(row=10, column=1, columnspan=1, sticky="nsew", padx=(5,)) 
             auto_highest_label.grid(row=11, column=0, columnspan=1, sticky="nsew", padx=(10,))
             auto_highest_checkbox.grid(row=11, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            curve_bonus_label.grid(row=12, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            curve_bonus_checkbox.grid(row=12, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            color_bonus_label.grid(row=13, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            color_bonus_checkbox.grid(row=13, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            bayesian_average_label.grid(row=14, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            bayesian_average_checkbox.grid(row=14, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            draft_log_label.grid(row=15, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            draft_log_checkbox.grid(row=15, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=16, column=0, columnspan=2, sticky="nsew")
+            #curve_bonus_label.grid(row=12, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            #curve_bonus_checkbox.grid(row=12, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            #color_bonus_label.grid(row=14, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            #color_bonus_checkbox.grid(row=14, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            bayesian_average_label.grid(row=15, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            bayesian_average_checkbox.grid(row=15, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            draft_log_label.grid(row=16, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            draft_log_checkbox.grid(row=16, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=17, column=0, columnspan=2, sticky="nsew")
             
             self.ControlTrace(True)
 
@@ -1922,21 +1923,22 @@ class CreateCardToolTip(object):
             values = ["Number of Games Not Drawn:"] + [f"{x[constants.DATA_FIELD_NGND]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
 
-            main_field_list.append(tuple(["",""]))
-
-            if any("curve_bonus" in x for x in self.color_dict.values()):
-                values = ["Curve Bonus:"] + [f"+{x['curve_bonus']}" for x in self.color_dict.values()]
-                main_field_list.append(tuple(values))
-            else:
+            for x in range(4):
                 main_field_list.append(tuple(["",""]))
 
-            if any("color_bonus" in x for x in self.color_dict.values()):  
-                values = ["Color Bonus:"] + [f"+{x['color_bonus']}" for x in self.color_dict.values()]
-                main_field_list.append(tuple(values))
-            else:
-                main_field_list.append(tuple(["",""]))
+            #if any("curve_bonus" in x for x in self.color_dict.values()):
+            #    values = ["Curve Bonus:"] + [f"+{x['curve_bonus']}" for x in self.color_dict.values()]
+            #    main_field_list.append(tuple(values))
+            #else:
+            #    main_field_list.append(tuple(["",""]))
+            #
+            #if any("color_bonus" in x for x in self.color_dict.values()):  
+            #    values = ["Color Bonus:"] + [f"+{x['color_bonus']}" for x in self.color_dict.values()]
+            #    main_field_list.append(tuple(values))
+            #else:
+            #    main_field_list.append(tuple(["",""]))
 
-            main_field_list.append(tuple(["",""]))
+            #main_field_list.append(tuple(["",""]))
 
             if len(main_field_list):
                 stats_main_table.config(height = len(main_field_list))
