@@ -70,7 +70,7 @@ def FormatTierResults(value, old_format, new_format):
     try:
         #ratings to grades
         if (old_format == constants.RESULT_FORMAT_RATING) and (new_format == constants.RESULT_FORMAT_GRADE):
-            new_value = constants.LETTER_GRADE_F
+            new_value = constants.LETTER_GRADE_NA
             for grade, threshold in constants.TIER_CONVERSION_RATINGS_GRADES_DICT.items():
                 if value > threshold:
                     new_value = grade
@@ -353,7 +353,6 @@ def CardFilter(card_list, deck, filtered_colors, fields,  metrics, tier_list, co
     
     deck_colors = DeckColors(deck, 2, metrics, configuration)
     deck_colors = deck_colors.keys()
-    
     for card in card_list:
         try:
             selected_card = card
@@ -542,8 +541,9 @@ def CardRating(card_data, winrate_field, winrate_count, metrics, configuration, 
                                  card_data[constants.DATA_FIELD_DECK_COLORS][filter][winrate_count],
                                  configuration.bayesian_average_enabled)
 
-        upper_limit = metrics["mean"] + metrics["standard_deviation"] * 2
-        lower_limit = metrics["mean"] - metrics["standard_deviation"] * 1.33
+        deviation_list = list(constants.GRADE_DEVIATION_DICT.values())
+        upper_limit = metrics["mean"] + metrics["standard_deviation"] * deviation_list[0]
+        lower_limit = metrics["mean"] + metrics["standard_deviation"] * deviation_list[-1]
 
         if (winrate != 0) and (upper_limit != lower_limit):
             rating_data["result"] = round(((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0, 1)

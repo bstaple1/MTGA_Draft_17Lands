@@ -52,17 +52,7 @@ def FixedMap(style, option):
     return [elm for elm in style.map("Treeview", query_opt=option)
             if elm[:2] != ("!disabled", "!selected")]
 
-def TableColumnControl(table, column_fields):
-    visible_columns = []
-    last_field_index = 0
-    for count, (key, value) in enumerate(column_fields.items()):
-        if value != constants.DATA_FIELD_DISABLED:
-            table.heading(key, text = value.upper())
-            visible_columns.append(key)
-            last_field_index = count
 
-    table["displaycolumns"] = visible_columns
-    return last_field_index
 def CopySuggested(deck_colors, deck, set_data, color_options):
     colors = color_options[deck_colors.get()]
     deck_string = ""
@@ -216,8 +206,18 @@ class Overlay:
         
         self.trace_ids = []
         
+        self.table_widths_dict = {
+            constants.TABLE_MISSING : self.configuration.table_width,
+            constants.TABLE_PACK    : self.configuration.table_width,
+            constants.TABLE_COMPARE : self.configuration.table_width,
+            constants.TABLE_STATS   : self.configuration.table_width,
+            constants.TABLE_TAKEN   : 410,
+            constants.TABLE_SUGGEST : 450,
+            constants.TABLE_SETS    : 500
+        }
+        
         self.tier_data = {}
-        self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
+        self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         self.deck_colors = self.draft.RetrieveColorWinRate(self.configuration.filter_format)
         self.data_sources = self.draft.RetrieveDataSources()
@@ -340,18 +340,18 @@ class Overlay:
         style.configure("TEntry", foreground="black") 
         style.configure("Treeview.Heading", font=(constants.FONT_SANS_SERIF, 7), foreground="black")        
                   
-        self.pack_table = CreateHeader(self.pack_table_frame, 0, 7, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+        self.pack_table = CreateHeader(self.pack_table_frame, 0, 7, headers, self.table_widths_dict[constants.TABLE_PACK], True, True, constants.TABLE_STYLE, False)
         
         self.missing_frame = Frame(self.root)
         self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font=f'{constants.FONT_SANS_SERIF} 9 bold')
        
         self.missing_table_frame = Frame(self.root, width=10)
 
-        self.missing_table = CreateHeader(self.missing_table_frame, 0, 7, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+        self.missing_table = CreateHeader(self.missing_table_frame, 0, 7, headers, self.table_widths_dict[constants.TABLE_MISSING], True, True, constants.TABLE_STYLE, False)
         
         self.stat_frame = Frame(self.root)
 
-        self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+        self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.table_widths_dict[constants.TABLE_STATS], True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text = "Draft Stats:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
@@ -461,7 +461,7 @@ class Overlay:
                 self.pack_table.config(height=0)
                 
             #Update the filtered column header with the filtered colors
-            last_field_index = TableColumnControl(self.pack_table, fields)
+            last_field_index = self.TableColumnControl(self.pack_table, fields, constants.TABLE_PACK)
             
             filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
                 
@@ -479,7 +479,7 @@ class Overlay:
                 self.missing_table.delete(row)
             
             #Update the filtered column header with the filtered colors
-            last_field_index = TableColumnControl(self.missing_table, fields)
+            last_field_index = self.TableColumnControl(self.missing_table, fields, constants.TABLE_MISSING)
             if len(previous_pack) == 0:
                 self.missing_table.config(height=0)
             else:
@@ -544,7 +544,7 @@ class Overlay:
             compare_table.delete(*compare_table.get_children())
 
                         #Update the filtered column header with the filtered colors
-            last_field_index = TableColumnControl(compare_table, fields)
+            last_field_index = self.TableColumnControl(compare_table, fields, constants.TABLE_COMPARE)
 
             filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
             
@@ -580,7 +580,6 @@ class Overlay:
                           "Column9"    : (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column10"   : constants.DATA_FIELD_GIHWR}
 
-
                 taken_cards = self.draft.TakenCards()
                 
                 filtered_colors = self.DeckFilterColors(taken_cards, self.taken_filter_selection.get())
@@ -603,7 +602,7 @@ class Overlay:
                                               False,
                                               False)
 
-                last_field_index = TableColumnControl(self.taken_table, fields)
+                last_field_index = self.TableColumnControl(self.taken_table, fields, constants.TABLE_TAKEN)
 
                 filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True)  
 
@@ -869,7 +868,7 @@ class Overlay:
         self.set_metrics = self.draft.RetrieveSetMetrics(False)
         self.deck_colors = self.draft.RetrieveColorWinRate(self.filter_format_selection.get())
         self.tier_data, tier_dict = self.draft.RetrieveTierData(self.tier_sources)
-        self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
+        self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
@@ -1124,7 +1123,7 @@ class Overlay:
             list_box_scrollbar = Scrollbar(list_box_frame, orient=VERTICAL)
             list_box_scrollbar.pack(side=RIGHT, fill=Y)
             
-            list_box = CreateHeader(list_box_frame, 0, 10, headers, 500, True, True, "Set.Treeview", True)
+            list_box = CreateHeader(list_box_frame, 0, 10, headers, self.table_widths_dict[constants.TABLE_SETS], True, True, "Set.Treeview", True)
             
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
@@ -1232,7 +1231,7 @@ class Overlay:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = CreateHeader(compare_table_frame, 0, 8, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+            compare_table = CreateHeader(compare_table_frame, 0, 8, headers, self.table_widths_dict[constants.TABLE_COMPARE], True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -1303,7 +1302,7 @@ class Overlay:
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            self.taken_table = CreateHeader(taken_table_frame, 0, 8, headers, 410, True, True, "Taken.Treeview", False)
+            self.taken_table = CreateHeader(taken_table_frame, 0, 8, headers, self.table_widths_dict[constants.TABLE_TAKEN], True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
             
@@ -1427,7 +1426,7 @@ class Overlay:
             suggest_table_frame = Frame(popup)
             suggest_scrollbar = Scrollbar(suggest_table_frame, orient=VERTICAL)
             suggest_scrollbar.pack(side=RIGHT, fill=Y)
-            suggest_table = CreateHeader(suggest_table_frame, 0, 8, headers, 450, True, True, "Suggest.Treeview", False)
+            suggest_table = CreateHeader(suggest_table_frame, 0, 8, headers, self.table_widths_dict[constants.TABLE_SUGGEST], True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
             
@@ -1524,28 +1523,28 @@ class Overlay:
             optionsStyle.configure('my.TMenubutton', font=(constants.FONT_SANS_SERIF, 9))
             
             self.column_2_options = OptionMenu(popup, self.column_2_selection, self.column_2_selection.get(), *self.column_2_list, style="my.TMenubutton")
-            self.column_2_options.config(width=15)
+            #self.column_2_options.config(width=15)
             
             self.column_3_options = OptionMenu(popup, self.column_3_selection, self.column_3_selection.get(), *self.column_3_list, style="my.TMenubutton")
-            self.column_3_options.config(width=15)
+            #self.column_3_options.config(width=15)
             
             self.column_4_options = OptionMenu(popup, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
-            self.column_4_options.config(width=15)
+            #self.column_4_options.config(width=15)
 
             self.column_5_options = OptionMenu(popup, self.column_5_selection, self.column_5_selection.get(), *self.column_5_list, style="my.TMenubutton")
-            self.column_5_options.config(width=15)
+            #self.column_5_options.config(width=15)
 
             self.column_6_options = OptionMenu(popup, self.column_6_selection, self.column_6_selection.get(), *self.column_6_list, style="my.TMenubutton")
-            self.column_6_options.config(width=15)
+            #self.column_6_options.config(width=15)
 
             self.column_7_options = OptionMenu(popup, self.column_7_selection, self.column_7_selection.get(), *self.column_7_list, style="my.TMenubutton")
-            self.column_7_options.config(width=15)
+            #self.column_7_options.config(width=15)
             
             filter_format_options = OptionMenu(popup, self.filter_format_selection, self.filter_format_selection.get(), *self.filter_format_list, style="my.TMenubutton")
-            filter_format_options.config(width=15)
+            #filter_format_options.config(width=15)
             
             result_format_options = OptionMenu(popup, self.result_format_selection, self.result_format_selection.get(), *self.result_format_list, style="my.TMenubutton")
-            result_format_options.config(width=15)
+            #result_format_options.config(width=15)
             
             default_button = Button(popup, command=self.DefaultSettingsCallback, text="Default Settings")
             
@@ -1817,6 +1816,27 @@ class Overlay:
             self.missing_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
             self.missing_table_frame.grid(row = 9, column = 0, columnspan = 2)
 
+    def TableColumnControl(self, table, column_fields, table_id):
+        visible_columns = []
+        last_field_index = 0
+        try:
+            for count, (key, value) in enumerate(column_fields.items()):
+                if value != constants.DATA_FIELD_DISABLED:
+                    table.heading(key, text = value.upper())
+                    visible_columns.append(key)
+                    last_field_index = count
+        
+            visible_length = len(visible_columns)
+            if visible_length < len(constants.TABLE_PROPORTIONS) + 1:
+                #full_length = self.table_length_dict[table_id]
+                full_length = self.table_widths_dict[table_id]
+                proportions = constants.TABLE_PROPORTIONS[visible_length - 1]
+                for count, column in enumerate(visible_columns):
+                    table.column(column, width=int(proportions[count]*full_length))
+            table["displaycolumns"] = visible_columns
+        except Exception as error:
+            overlay_logger.info(f"TableColumnControl Error: {error}")
+        return last_field_index
 
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, color_dict, image, images_enabled):

@@ -434,42 +434,42 @@ class FileExtractor:
                 
                 for card in json_data:
                     card = {k.lower(): v for k, v in card.items()} #Making all of the keys lowercase
-                    if(True):
-                    #if ((card_set == "All") or
-                        #(card_set in card[constants.LOCAL_CARDS_KEY_SET]) or
-                        #((constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET in card) and (card_set in card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]))):
-                        try:
-                            set = card[constants.LOCAL_CARDS_KEY_SET]
-                            
-                            if set not in card_data:
-                                card_data[set] = {}
+                    try:
+                        set = card[constants.LOCAL_CARDS_KEY_SET]
                         
-                            if constants.LOCAL_CARDS_KEY_TOKEN in card:
+                        if((constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET in card) and
+                           (re.findall("^[yY]\d{2}$", set, re.DOTALL))):
+                            set = card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]
+                        
+                        if set not in card_data:
+                            card_data[set] = {}
+                    
+                        if constants.LOCAL_CARDS_KEY_TOKEN in card:
+                            continue
+                        
+                        group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
+                        
+                        if constants.LOCAL_CARDS_KEY_LINKED_FACES in card:
+                            linked_id = int(card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
+                            if linked_id < group_id:
+                                #The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
+                                #self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
+                                types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
+                                card_data[set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(types)
                                 continue
-                            
-                            group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
-                            
-                            if constants.LOCAL_CARDS_KEY_LINKED_FACES in card:
-                                linked_id = int(card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
-                                if linked_id < group_id:
-                                    #The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
-                                    #self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
-                                    types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                                    card_data[set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(types)
-                                    continue
     
-                            card_data[set][group_id] = {constants.DATA_FIELD_NAME : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES : []}
-                            card_data[set][group_id][constants.DATA_FIELD_TYPES] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                            card_data[set][group_id][constants.DATA_FIELD_COLORS] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
-                            mana_cost, cmc = DecodeManaCost(card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("",0)
-                            card_data[set][group_id][constants.DATA_FIELD_CMC] = cmc
-                            card_data[set][group_id]["mana_cost"] = mana_cost
+                        card_data[set][group_id] = {constants.DATA_FIELD_NAME : [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES : []}
+                        card_data[set][group_id][constants.DATA_FIELD_TYPES] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
+                        card_data[set][group_id][constants.DATA_FIELD_COLORS] = [int(x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
+                        mana_cost, cmc = DecodeManaCost(card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("",0)
+                        card_data[set][group_id][constants.DATA_FIELD_CMC] = cmc
+                        card_data[set][group_id]["mana_cost"] = mana_cost
 
-                            result = True
-                        except Exception as error:
-                            file_logger.info(f"Card Read Error: {card}")
-                            break
-                            #pass
+                        result = True
+                    except Exception as error:
+                        file_logger.info(f"Card Read Error: {card}")
+                        break
+                        #pass
         except Exception as error:
             file_logger.info(f"RetrieveLocalCards Error: {error}")
             
@@ -507,11 +507,6 @@ class FileExtractor:
                 if not result:
                     break
                     
-                #store the localization data in a temporary file
-                #with open(constants.TEMP_LOCALIZATION_FILE, 'w', encoding='utf-8') as json_file:
-                #    json.dump(card_data, json_file)
-                #
-                #result = True
                 break
                 
         except Exception as error:
@@ -585,12 +580,13 @@ class FileExtractor:
                 json_data = json.loads(json_file)
             
             if constants.SET_SELECTION_ALL in set_list:
-                for set in json_data:
+                for search_set in json_data:
                     self.card_dict.update(json_data[set].copy())
             else:
-                for set in set_list:
-                    if set in json_data:
-                        self.card_dict.update(json_data[set].copy())
+                for search_set in set_list:
+                    matching_sets = list(filter(lambda x: search_set in x, json_data.keys()))
+                    for match in matching_sets:
+                        self.card_dict.update(json_data[match].copy())
             
             if len(self.card_dict):
                 result = True
