@@ -52,12 +52,22 @@ def FixedMap(style, option):
     return [elm for elm in style.map("Treeview", query_opt=option)
             if elm[:2] != ("!disabled", "!selected")]
 
+def TableColumnControl(table, column_fields):
+    visible_columns = []
+    last_field_index = 0
+    for count, (key, value) in enumerate(column_fields.items()):
+        if value != constants.DATA_FIELD_DISABLED:
+            table.heading(key, text = value.upper())
+            visible_columns.append(key)
+            last_field_index = count
 
+    table["displaycolumns"] = visible_columns
+    return last_field_index
 def CopySuggested(deck_colors, deck, set_data, color_options):
     colors = color_options[deck_colors.get()]
     deck_string = ""
     try:
-        deck_string = CL.CopyDeck(deck[colors]["deck_cards"],deck[colors]["sideboard_cards"],set_data["card_ratings"])
+        deck_string = CL.copy_deck(deck[colors]["deck_cards"],deck[colors]["sideboard_cards"],set_data["card_ratings"])
         CopyClipboard(deck_string)
     except Exception as error:
         overlay_logger.info(f"CopySuggested Error: {error}")
@@ -66,8 +76,8 @@ def CopySuggested(deck_colors, deck, set_data, color_options):
 def CopyTaken(taken_cards, set_data):
     deck_string = ""
     try:
-        stacked_cards = CL.StackCards(taken_cards)
-        deck_string = CL.CopyDeck(stacked_cards, None, set_data["card_ratings"])
+        stacked_cards = CL.stack_cards(taken_cards)
+        deck_string = CL.copy_deck(stacked_cards, None, set_data["card_ratings"])
         CopyClipboard(deck_string)
 
     except Exception as error:
@@ -116,7 +126,7 @@ def TableRowTag(colors_enabled, colors, index):
     tag = ""
     
     if colors_enabled:
-        tag = CL.RowColorTag(colors)
+        tag = CL.row_color_tag(colors)
     else:
         tag = constants.BW_ROW_COLOR_ODD_TAG if index % 2 else constants.BW_ROW_COLOR_EVEN_TAG
     
@@ -176,7 +186,7 @@ class Overlay:
         self.version = version
         self.root.title("Magic Draft %.2f" % version)
         self.root.tk.call("source", "dark_mode.tcl")
-        self.configuration = CL.ReadConfig()
+        self.configuration = CL.read_config()
         self.listener = None
         
         if args.file is None:
@@ -206,23 +216,13 @@ class Overlay:
         
         self.trace_ids = []
         
-        self.table_widths_dict = {
-            constants.TABLE_MISSING : self.configuration.table_width,
-            constants.TABLE_PACK    : self.configuration.table_width,
-            constants.TABLE_COMPARE : self.configuration.table_width,
-            constants.TABLE_STATS   : self.configuration.table_width,
-            constants.TABLE_TAKEN   : 410,
-            constants.TABLE_SUGGEST : 450,
-            constants.TABLE_SETS    : 500
-        }
-        
         self.tier_data = {}
-        self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
+        self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
-        self.deck_colors = self.draft.RetrieveColorWinRate(self.configuration.filter_format)
-        self.data_sources = self.draft.RetrieveDataSources()
-        self.tier_sources = self.draft.RetrieveTierSource()
-        self.set_metrics = self.draft.RetrieveSetMetrics(False)
+        self.deck_colors = self.draft.retrieve_color_win_rate(self.configuration.filter_format)
+        self.data_sources = self.draft.retrieve_data_sources()
+        self.tier_sources = self.draft.retrieve_tier_source()
+        self.set_metrics = self.draft.retrieve_set_metrics(False)
         
         #Grid.rowconfigure(self.root, 9, weight = 1)
         Grid.columnconfigure(self.root, 0, weight = 1)
@@ -235,8 +235,8 @@ class Overlay:
         self.datamenu.add_command(label="View Sets", command=self.SetViewPopup)
 
         self.cardmenu = Menu(self.menubar, tearoff=0)
-        self.cardmenu.add_command(label="Taken Cards", command=self.TakenCardsPopup)
-        self.cardmenu.add_command(label="Suggest Decks", command=self.SuggestDeckPopup)
+        self.cardmenu.add_command(label="Taken Cards", command=self.retrieve_taken_cardsPopup)
+        self.cardmenu.add_command(label="Suggest Decks", command=self.suggest_deckPopup)
         self.cardmenu.add_command(label="Compare Cards", command=self.CardComparePopup)
         
         self.settingsmenu = Menu(self.menubar, tearoff=0)
@@ -340,18 +340,18 @@ class Overlay:
         style.configure("TEntry", foreground="black") 
         style.configure("Treeview.Heading", font=(constants.FONT_SANS_SERIF, 7), foreground="black")        
                   
-        self.pack_table = CreateHeader(self.pack_table_frame, 0, 7, headers, self.table_widths_dict[constants.TABLE_PACK], True, True, constants.TABLE_STYLE, False)
+        self.pack_table = CreateHeader(self.pack_table_frame, 0, 7, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         
         self.missing_frame = Frame(self.root)
         self.missing_cards_label = Label(self.missing_frame, text = "Missing Cards", font=f'{constants.FONT_SANS_SERIF} 9 bold')
        
         self.missing_table_frame = Frame(self.root, width=10)
 
-        self.missing_table = CreateHeader(self.missing_table_frame, 0, 7, headers, self.table_widths_dict[constants.TABLE_MISSING], True, True, constants.TABLE_STYLE, False)
+        self.missing_table = CreateHeader(self.missing_table_frame, 0, 7, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         
         self.stat_frame = Frame(self.root)
 
-        self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.table_widths_dict[constants.TABLE_STATS], True, True, constants.TABLE_STYLE, False)
+        self.stat_table = CreateHeader(self.root, 0, 7, constants.STATS_HEADER_CONFIG, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text = "Draft Stats:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e", width = 15)
 
         self.stat_options_selection = StringVar(self.root)
@@ -421,7 +421,7 @@ class Overlay:
         try:
             #selected_option = self.deck_filter_selection.get()
             selected_color = self.deck_colors[selected_option]
-            filtered_colors = CL.OptionFilter(cards, selected_color, self.set_metrics, self.configuration)
+            filtered_colors = CL.option_filter(cards, selected_color, self.set_metrics, self.configuration)
 
             if selected_color == constants.FILTER_OPTION_AUTO:
                 new_key = f"{constants.FILTER_OPTION_AUTO} ({'/'.join(filtered_colors)})"
@@ -439,7 +439,7 @@ class Overlay:
         
     def UpdatePackTable(self, card_list, taken_cards, filtered_colors, fields):
         try:
-            filtered_list = CL.CardFilter(card_list,
+            filtered_list = CL.CardResult(card_list,
                                           taken_cards,
                                           filtered_colors,
                                           fields,
@@ -461,7 +461,7 @@ class Overlay:
                 self.pack_table.config(height=0)
                 
             #Update the filtered column header with the filtered colors
-            last_field_index = self.TableColumnControl(self.pack_table, fields, constants.TABLE_PACK)
+            last_field_index = TableColumnControl(self.pack_table, fields)
             
             filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
                 
@@ -479,7 +479,7 @@ class Overlay:
                 self.missing_table.delete(row)
             
             #Update the filtered column header with the filtered colors
-            last_field_index = self.TableColumnControl(self.missing_table, fields, constants.TABLE_MISSING)
+            last_field_index = TableColumnControl(self.missing_table, fields)
             if len(previous_pack) == 0:
                 self.missing_table.config(height=0)
             else:
@@ -493,7 +493,7 @@ class Overlay:
                     self.missing_table.config(height=0) 
                 
                 if list_length:
-                    filtered_list = CL.CardFilter(missing_cards,
+                    filtered_list = CL.CardResult(missing_cards,
                                                   taken_cards,
                                                   filtered_colors,
                                                   fields,
@@ -531,7 +531,7 @@ class Overlay:
                 if len(cards):
                     matching_cards.append(cards[0])
 
-            filtered_list = CL.CardFilter(matching_cards,
+            filtered_list = CL.CardResult(matching_cards,
                                           matching_cards,
                                           filtered_colors,
                                           fields,
@@ -544,7 +544,7 @@ class Overlay:
             compare_table.delete(*compare_table.get_children())
 
                         #Update the filtered column header with the filtered colors
-            last_field_index = self.TableColumnControl(compare_table, fields, constants.TABLE_COMPARE)
+            last_field_index = TableColumnControl(compare_table, fields)
 
             filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True) 
             
@@ -580,19 +580,20 @@ class Overlay:
                           "Column9"    : (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column10"   : constants.DATA_FIELD_GIHWR}
 
-                taken_cards = self.draft.TakenCards()
+
+                taken_cards = self.draft.retrieve_taken_cards()
                 
                 filtered_colors = self.DeckFilterColors(taken_cards, self.taken_filter_selection.get())
                 
                 #Filter the card types
                 #filtered_cards = CL.DeckColorSearch(taken_cards, constants.CARD_COLORS_DICT.values(), constants.CARD_TYPE_DICT[self.taken_type_selection.get()], True, True, True) 
                 
-                stacked_cards = CL.StackCards(taken_cards)
+                stacked_cards = CL.stack_cards(taken_cards)
 
                 for row in self.taken_table.get_children():
                     self.taken_table.delete(row)
 
-                filtered_list = CL.CardFilter(stacked_cards,
+                filtered_list = CL.CardResult(stacked_cards,
                                               taken_cards,
                                               filtered_colors,
                                               fields,
@@ -602,7 +603,7 @@ class Overlay:
                                               False,
                                               False)
 
-                last_field_index = self.TableColumnControl(self.taken_table, fields, constants.TABLE_TAKEN)
+                last_field_index = TableColumnControl(self.taken_table, fields)
 
                 filtered_list = sorted(filtered_list, key=lambda d: CL.FieldProcessSort(d["results"][last_field_index]), reverse=True)  
 
@@ -620,7 +621,7 @@ class Overlay:
         except Exception as error:
             overlay_logger.info(f"UpdateTakenTable Error: {error}")
             
-    def UpdateSuggestDeckTable(self, suggest_table, selected_color, suggested_decks, color_options):
+    def Updatesuggest_deckTable(self, suggest_table, selected_color, suggested_decks, color_options):
         try:             
             color = color_options[selected_color.get()]
             suggested_deck = suggested_decks[color]["deck_cards"]
@@ -681,7 +682,7 @@ class Overlay:
             
             count = 0
             for count, (color, values) in enumerate(colors_filtered.items()):
-                #row_tag = CL.RowColorTag(values["symbol"])
+                #row_tag = CL.row_color_tag(values["symbol"])
                 row_tag = TableRowTag(self.configuration.card_colors_enabled, values["symbol"], count)
                 self.stat_table.insert("",index = count, values = (color,
                                                                     values["distribution"][1],
@@ -846,8 +847,8 @@ class Overlay:
         self.ControlTrace(True)
         
     def DefaultSettingsCallback(self, *args):
-        CL.ResetConfig()
-        self.configuration = CL.ReadConfig()
+        CL.reset_config()
+        self.configuration = CL.read_config()
         self.UpdateSettingsData()
         self.UpdateDraftData()
         self.UpdateCallback(False)            
@@ -864,11 +865,11 @@ class Overlay:
         self.UpdateCallback(False)     
         
     def UpdateDraftData(self):
-        self.draft.RetrieveSetData(self.data_sources[self.data_source_selection.get()])
-        self.set_metrics = self.draft.RetrieveSetMetrics(False)
-        self.deck_colors = self.draft.RetrieveColorWinRate(self.filter_format_selection.get())
-        self.tier_data, tier_dict = self.draft.RetrieveTierData(self.tier_sources)
-        self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
+        self.draft.retrieve_set_data(self.data_sources[self.data_source_selection.get()])
+        self.set_metrics = self.draft.retrieve_set_metrics(False)
+        self.deck_colors = self.draft.retrieve_color_win_rate(self.filter_format_selection.get())
+        self.tier_data, tier_dict = self.draft.retrieve_tier_data(self.tier_sources)
+        self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
@@ -876,14 +877,14 @@ class Overlay:
         
     def UpdateDraft(self):
         update = False
-        if self.draft.DraftStartSearch():
+        if self.draft.draft_start_search():
             update = True
-            self.data_sources = self.draft.RetrieveDataSources()
-            self.tier_sources = self.draft.RetrieveTierSource()
+            self.data_sources = self.draft.retrieve_data_sources()
+            self.tier_sources = self.draft.retrieve_tier_source()
             self.UpdateSourceOptions(True)
             self.UpdateDraftData()
 
-        if self.draft.DraftDataSearch():
+        if self.draft.draft_data_search():
             update = True
         return update
 
@@ -920,7 +921,7 @@ class Overlay:
             self.configuration.taken_iwd_enabled = bool(self.taken_iwd_checkbox_value.get())
             self.configuration.taken_gndwr_enabled = bool(self.taken_gndwr_checkbox_value.get())
             self.configuration.card_colors_enabled = bool(self.card_colors_checkbox_value.get())
-            CL.WriteConfig(self.configuration)
+            CL.write_config(self.configuration)
         except Exception as error:
             overlay_logger.info(f"UpdateSettingsStorage Error: {error}")
             
@@ -982,7 +983,7 @@ class Overlay:
             overlay_logger.info(f"UpdateSettingsData Error: {error}")
         self.ControlTrace(True) 
         
-        self.draft.LogEnable(self.configuration.draft_log_enabled)
+        self.draft.log_enable(self.configuration.draft_log_enabled)
     
     def InitializeUI(self):
         self.UpdateSourceOptions(False)
@@ -1022,7 +1023,7 @@ class Overlay:
         self.EnableDeckStates(self.deck_stats_checkbox_value.get())
         self.EnableMissingCards(self.missing_cards_checkbox_value.get())
               
-        taken_cards = self.draft.TakenCards()
+        taken_cards = self.draft.retrieve_taken_cards()
         
         filtered = self.DeckFilterColors(taken_cards, self.deck_filter_selection.get())
         fields = {"Column1"    : constants.DATA_FIELD_NAME,
@@ -1037,15 +1038,15 @@ class Overlay:
         self.UpdatePackPick(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
 
-        pack_cards = self.draft.PackCards(pack_index)
+        pack_cards = self.draft.retrieve_pack_cards(pack_index)
         self.UpdatePackTable(pack_cards, 
                              taken_cards,
                              filtered,
                              fields)
                              
         self.UpdateMissingTable(pack_cards,
-                                self.draft.InitialPackCards(pack_index),
-                                self.draft.PickedCards(pack_index),
+                                self.draft.retrieve_initial_pack_cards(pack_index),
+                                self.draft.retrieve_picked_cards(pack_index),
                                 taken_cards,
                                 filtered,
                                 fields)   
@@ -1055,7 +1056,7 @@ class Overlay:
 
     def UpdateDeckStatsCallback(self, *args):
         self.root.update_idletasks() 
-        self.UpdateDeckStatsTable(self.draft.TakenCards(), self.stat_options_selection.get(), self.pack_table.winfo_width())
+        self.UpdateDeckStatsTable(self.draft.retrieve_taken_cards(), self.stat_options_selection.get(), self.pack_table.winfo_width())
 
     def UpdateUI(self):
         try:
@@ -1123,7 +1124,7 @@ class Overlay:
             list_box_scrollbar = Scrollbar(list_box_frame, orient=VERTICAL)
             list_box_scrollbar.pack(side=RIGHT, fill=Y)
             
-            list_box = CreateHeader(list_box_frame, 0, 10, headers, self.table_widths_dict[constants.TABLE_SETS], True, True, "Set.Treeview", True)
+            list_box = CreateHeader(list_box_frame, 0, 10, headers, 500, True, True, "Set.Treeview", True)
             
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
@@ -1199,7 +1200,7 @@ class Overlay:
             Grid.rowconfigure(popup, 2, weight = 1)
             Grid.columnconfigure(popup, 0, weight = 1)
 
-            taken_cards = self.draft.TakenCards()
+            taken_cards = self.draft.retrieve_taken_cards()
             
             filtered = self.DeckFilterColors(taken_cards, self.deck_filter_selection.get())
             fields = {"Column1"    : constants.DATA_FIELD_NAME,
@@ -1231,7 +1232,7 @@ class Overlay:
             compare_table_frame = Frame(popup)
             compare_scrollbar = Scrollbar(compare_table_frame, orient=VERTICAL)
             compare_scrollbar.pack(side=RIGHT, fill=Y)
-            compare_table = CreateHeader(compare_table_frame, 0, 8, headers, self.table_widths_dict[constants.TABLE_COMPARE], True, True, constants.TABLE_STYLE, False)
+            compare_table = CreateHeader(compare_table_frame, 0, 8, headers, self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
             
@@ -1261,12 +1262,12 @@ class Overlay:
         except Exception as error:
             overlay_logger.info(f"CardComparePopup Error: {error}")
 
-    def TakenCardsExit(self, popup):
+    def retrieve_taken_cardsExit(self, popup):
         self.taken_table = None
         
         popup.destroy()  
 
-    def TakenCardsPopup(self):
+    def retrieve_taken_cardsPopup(self):
         popup = Toplevel()
         popup.wm_title("Taken Cards")
         popup.attributes("-topmost", True)
@@ -1274,12 +1275,12 @@ class Overlay:
         x, y = SafeCoordinates(self.root, 400, 170, 250, 0)
         popup.wm_geometry("+%d+%d" % (x, y))
         
-        popup.protocol("WM_DELETE_WINDOW", lambda window=popup: self.TakenCardsExit(window))
+        popup.protocol("WM_DELETE_WINDOW", lambda window=popup: self.retrieve_taken_cardsExit(window))
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             Grid.columnconfigure(popup, 6, weight = 1)
 
-            taken_cards = self.draft.TakenCards()
+            taken_cards = self.draft.retrieve_taken_cards()
             copy_button = Button(popup, command=lambda:CopyTaken(taken_cards,
                                                                  self.draft.set_data),
                                                                  text="Copy to Clipboard")
@@ -1302,7 +1303,7 @@ class Overlay:
             taken_table_frame = Frame(popup)
             taken_scrollbar = Scrollbar(taken_table_frame, orient=VERTICAL)
             taken_scrollbar.pack(side=RIGHT, fill=Y)
-            self.taken_table = CreateHeader(taken_table_frame, 0, 8, headers, self.table_widths_dict[constants.TABLE_TAKEN], True, True, "Taken.Treeview", False)
+            self.taken_table = CreateHeader(taken_table_frame, 0, 8, headers, 410, True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
             
@@ -1371,9 +1372,9 @@ class Overlay:
             self.UpdateTakenTable()
             popup.update()
         except Exception as error:
-            overlay_logger.info(f"TakenCardsPopup Error: {error}")
+            overlay_logger.info(f"retrieve_taken_cardsPopup Error: {error}")
             
-    def SuggestDeckPopup(self):
+    def suggest_deckPopup(self):
         popup = Toplevel()
         popup.wm_title("Suggested Decks")
         popup.attributes("-topmost", True)
@@ -1385,7 +1386,7 @@ class Overlay:
         try:
             Grid.rowconfigure(popup, 3, weight = 1)
             
-            suggested_decks = CL.SuggestDeck(self.draft.TakenCards(), self.set_metrics, self.configuration)
+            suggested_decks = CL.suggest_deck(self.draft.retrieve_taken_cards(), self.set_metrics, self.configuration)
             
             choices = ["None"]
             deck_color_options = {}
@@ -1402,7 +1403,7 @@ class Overlay:
             deck_colors_value = StringVar(popup)
             deck_colors_entry = OptionMenu(popup, deck_colors_value, choices[0], *choices)
             
-            deck_colors_button = Button(popup, command=lambda:self.UpdateSuggestDeckTable(suggest_table,
+            deck_colors_button = Button(popup, command=lambda:self.Updatesuggest_deckTable(suggest_table,
                                                                                           deck_colors_value,
                                                                                           suggested_decks,
                                                                                           deck_color_options),
@@ -1426,7 +1427,7 @@ class Overlay:
             suggest_table_frame = Frame(popup)
             suggest_scrollbar = Scrollbar(suggest_table_frame, orient=VERTICAL)
             suggest_scrollbar.pack(side=RIGHT, fill=Y)
-            suggest_table = CreateHeader(suggest_table_frame, 0, 8, headers, self.table_widths_dict[constants.TABLE_SUGGEST], True, True, "Suggest.Treeview", False)
+            suggest_table = CreateHeader(suggest_table_frame, 0, 8, headers, 450, True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
             
@@ -1438,9 +1439,9 @@ class Overlay:
             
             suggest_table.pack(expand = True, fill = 'both')
             
-            self.UpdateSuggestDeckTable(suggest_table, deck_colors_value, suggested_decks, deck_color_options)
+            self.Updatesuggest_deckTable(suggest_table, deck_colors_value, suggested_decks, deck_color_options)
         except Exception as error:
-            overlay_logger.info(f"SuggestDeckPopup Error: {error}")      
+            overlay_logger.info(f"suggest_deckPopup Error: {error}")      
 
     def SettingsExit(self, popup):
         self.column_2_options = None
@@ -1523,28 +1524,28 @@ class Overlay:
             optionsStyle.configure('my.TMenubutton', font=(constants.FONT_SANS_SERIF, 9))
             
             self.column_2_options = OptionMenu(popup, self.column_2_selection, self.column_2_selection.get(), *self.column_2_list, style="my.TMenubutton")
-            #self.column_2_options.config(width=15)
+            self.column_2_options.config(width=15)
             
             self.column_3_options = OptionMenu(popup, self.column_3_selection, self.column_3_selection.get(), *self.column_3_list, style="my.TMenubutton")
-            #self.column_3_options.config(width=15)
+            self.column_3_options.config(width=15)
             
             self.column_4_options = OptionMenu(popup, self.column_4_selection, self.column_4_selection.get(), *self.column_4_list, style="my.TMenubutton")
-            #self.column_4_options.config(width=15)
+            self.column_4_options.config(width=15)
 
             self.column_5_options = OptionMenu(popup, self.column_5_selection, self.column_5_selection.get(), *self.column_5_list, style="my.TMenubutton")
-            #self.column_5_options.config(width=15)
+            self.column_5_options.config(width=15)
 
             self.column_6_options = OptionMenu(popup, self.column_6_selection, self.column_6_selection.get(), *self.column_6_list, style="my.TMenubutton")
-            #self.column_6_options.config(width=15)
+            self.column_6_options.config(width=15)
 
             self.column_7_options = OptionMenu(popup, self.column_7_selection, self.column_7_selection.get(), *self.column_7_list, style="my.TMenubutton")
-            #self.column_7_options.config(width=15)
+            self.column_7_options.config(width=15)
             
             filter_format_options = OptionMenu(popup, self.filter_format_selection, self.filter_format_selection.get(), *self.filter_format_list, style="my.TMenubutton")
-            #filter_format_options.config(width=15)
+            filter_format_options.config(width=15)
             
             result_format_options = OptionMenu(popup, self.result_format_selection, self.result_format_selection.get(), *self.result_format_list, style="my.TMenubutton")
-            #result_format_options.config(width=15)
+            result_format_options.config(width=15)
             
             default_button = Button(popup, command=self.DefaultSettingsCallback, text="Default Settings")
             
@@ -1649,7 +1650,7 @@ class Overlay:
             message_box = MessageBox.showwarning(title="Error", message=message_string)
         else:
             self.configuration.database_size = return_size
-            CL.WriteConfig(self.configuration)
+            CL.write_config(self.configuration)
         popup.update()
         return
         
@@ -1683,7 +1684,7 @@ class Overlay:
                                 if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
                                     if k in constants.WIN_RATE_FIELDS_DICT.keys():
                                         winrate_count = constants.WIN_RATE_FIELDS_DICT[k]
-                                        color_dict[color][k] = CL.CalculateWinRate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
+                                        color_dict[color][k] = CL.calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
                                                                                    card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
                                                                                    self.configuration.bayesian_average_enabled)
                                     else:
@@ -1711,10 +1712,10 @@ class Overlay:
         if filename:
             self.arena_file = filename
             self.DraftReset(True)
-            self.draft.ArenaFile(filename)
-            self.draft.LogSuspend(True)
+            self.draft.set_arena_file(filename)
+            self.draft.log_suspend(True)
             self.UpdateCallback(True)
-            self.draft.LogSuspend(False)
+            self.draft.log_suspend(False)
         
     def ControlTrace(self, enabled):
         try:
@@ -1760,7 +1761,7 @@ class Overlay:
             overlay_logger.info(f"ControlTrace Error: {error}")
 
     def DraftReset(self, full_reset):
-        self.draft.ClearDraft(full_reset)
+        self.draft.clear_draft(full_reset)
         
     def VersionCheck(self):
         #Version Check
@@ -1816,27 +1817,6 @@ class Overlay:
             self.missing_frame.grid(row = 8, column = 0, columnspan = 2, sticky = 'nsew')
             self.missing_table_frame.grid(row = 9, column = 0, columnspan = 2)
 
-    def TableColumnControl(self, table, column_fields, table_id):
-        visible_columns = []
-        last_field_index = 0
-        try:
-            for count, (key, value) in enumerate(column_fields.items()):
-                if value != constants.DATA_FIELD_DISABLED:
-                    table.heading(key, text = value.upper())
-                    visible_columns.append(key)
-                    last_field_index = count
-        
-            visible_length = len(visible_columns)
-            if visible_length < len(constants.TABLE_PROPORTIONS) + 1:
-                #full_length = self.table_length_dict[table_id]
-                full_length = self.table_widths_dict[table_id]
-                proportions = constants.TABLE_PROPORTIONS[visible_length - 1]
-                for count, column in enumerate(visible_columns):
-                    table.column(column, width=int(proportions[count]*full_length))
-            table["displaycolumns"] = visible_columns
-        except Exception as error:
-            overlay_logger.info(f"TableColumnControl Error: {error}")
-        return last_field_index
 
 class CreateCardToolTip(object):
     def __init__(self, widget, event, card_name, color_dict, image, images_enabled):

@@ -9,14 +9,14 @@
 # A program that utilizes 17Lands data to dispay pick ratings, deck statistics, and deck suggestions
 #
 # @section notes_main Notes
-# - 
+# -
 #
 
 
 ##
 # @file main.py
 #
-# @brief 
+# @brief
 #
 # @section Description
 # A program that utilizes 17Lands data to dispay pick ratings, deck statistics, and deck suggestions
@@ -65,25 +65,26 @@ import argparse
 import sys
 import overlay as OL
 
-__version__= 3.02
-            
+__version__ = 3.02
+
+
 def Startup(argv):
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument('-f','--file')
-    parser.add_argument('-d','--data')
+
+    parser.add_argument('-f', '--file')
+    parser.add_argument('-d', '--data')
     parser.add_argument('--step', action='store_true')
-    
+
     args = parser.parse_args()
-        
-    overlay = OL.Overlay(__version__, args)  
-    
+
+    overlay = OL.Overlay(__version__, args)
+
     overlay.MainLoop()
-    
-    
+
+
 def main(argv):
     Startup(argv)
-    
+
+
 if __name__ == "__main__":
     main(sys.argv[1:])
-  
