@@ -1,7 +1,7 @@
 # MTGA_Draft_17Lands
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Latest Supported Set:** Alchemy Horizons: Baldur's Gate
+**Latest Supported Set:** Dominaria United
 
 **Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
