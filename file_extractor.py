@@ -397,11 +397,7 @@ class FileExtractor:
 
                 status.set("Building Data Set File")
                 ui_root.update()
-                if not self.__assemble_set(matching_only):
-                    result = False
-                    result_string = "Couldn't Assemble Set Data"
-                    break
-
+                self.__assemble_set(matching_only)
                 break
 
         except Exception as error:
@@ -530,7 +526,7 @@ class FileExtractor:
                                 # self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
                                 types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
                                     ',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                                card_data[set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
                                     types)
                                 continue
 
@@ -546,8 +542,8 @@ class FileExtractor:
                         card_data[card_set][group_id]["mana_cost"] = mana_cost
 
                         result = True
-                    except Exception:
-                        file_logger.info("Card Read Error: %s", card)
+                    except Exception as error:
+                        file_logger.info("Card Read Error: %s, %s", error, card)
                         break
                         # pass
         except Exception as error:

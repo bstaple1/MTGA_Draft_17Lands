@@ -567,8 +567,7 @@ class Overlay:
                     self.missing_table.config(height=0)
 
                 if list_length:
-                    missing_pick = self.draft.current_pick - 8
-                    result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, missing_pick)
+                    result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                     result_list = result_class.return_results(missing_cards, filtered_colors, fields)
 
                     result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
