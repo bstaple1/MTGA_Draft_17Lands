@@ -976,7 +976,7 @@ class ArenaScanner:
                             if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
                                 filter_label = constants.COLOR_NAMES_DICT[deck_color]
                             ratings_string = filter_label + \
-                                f' ({self.set_data["color_ratings"][colors]}%%)'
+                                f' ({self.set_data["color_ratings"][colors]}%)'
                             deck_colors[deck_color] = ratings_string
         except Exception as error:
             scanner_logger.info("retrieve_color_win_rate Error: %s", error)
