@@ -1,15 +1,19 @@
 """This module contains the functions that are used for processing the collected cards"""
-# pylint: disable=broad-except
-# pylint: disable=too-many-lines
-# pylint: disable=line-too-long
+from itertools import combinations
+from dataclasses import dataclass, asdict
 import json
 import logging
 import math
-from itertools import combinations
-from dataclasses import dataclass, asdict
+import numpy
 import constants
 
+
 logic_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
+
+@dataclass
+class Metrics:
+    mean: float = 0.0
+    standard_deviation: float = 0.0
 
 
 @dataclass
@@ -44,6 +48,7 @@ class Config:
     color_bonus_enabled: bool = False
     bayesian_average_enabled: bool = False
     draft_log_enabled: bool = False
+    color_identity_enabled: bool = False
     taken_alsa_enabled: bool = False
     taken_ata_enabled: bool = False
     taken_gpwr_enabled: bool = False
@@ -62,7 +67,160 @@ class Config:
 
     database_size: int = 0
 
+class CardResult:
+    def __init__(self, set_metrics, tier_data, configuration, pick_number):
+        self.metrics = set_metrics
+        self.tier_data = tier_data
+        self.configuration = configuration
+        self.pick_number = pick_number
+        
+    def return_results(self, card_list, colors, fields):
+        """This function processes a card_list and produces a result based on a list of fields"""
+        return_list = []
+    
+        for card in card_list:
+            try:
+                selected_card = card
+                selected_card["results"] = ["NA"] * len(fields)
+    
+                for count, option in enumerate(fields.values()):
+                    if constants.FILTER_OPTION_TIER in option:
+                        selected_card["results"][count] = self.__process_tier(card, option)
+                    elif option == constants.DATA_FIELD_COLORS:
+                        selected_card["results"][count] = self.__process_colors(card)
+                    elif option in constants.WIN_RATE_OPTIONS:
+                        selected_card["results"][count] = self.__process_win_rate(card, option, colors)
+                    elif option == constants.DATA_FIELD_WHEEL:
+                        selected_card["results"][count] = self.__process_wheel(card)
+                    elif option in card:
+                        selected_card["results"][count] = card[option]
+                   
+                return_list.append(selected_card)
+            except Exception as error:
+                logic_logger.info("return_results error: %s", error)
+        return return_list
+    
+    def __process_tier(self, card, option):
+        """Retrieve tier list rating for this card"""
+        result = "NA"
+        try:
+            card_name = card[constants.DATA_FIELD_NAME].split(" // ")
+            if card_name[0] in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
+                result = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name[0]]
+        except Exception as error:
+            logic_logger.info("__process_tier error: %s", error)
+        
+        return result
+        
+    def __process_colors(self, card):
+        """Retrieve card colors"""
+        result = "NA"
+        
+        try:
+            result = "".join(card[constants.DATA_FIELD_COLORS])
+        except Exception as error:
+            logic_logger.info("__process_colors error: %s", error)
+        
+        return result
+        
+    def __process_wheel(self, card):
+        """Calculate wheel percentage"""
+        result = 0
+        
+        try:
+            if self.pick_number <= len(constants.WHEEL_COEFFICIENTS):
+                self.pick_number = max(self.pick_number, 1)
+                alsa = card[constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
+                coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
+                result = round(numpy.polyval(coefficients, alsa),1) if alsa >= 2 else 0
+        except Exception as error:
+            logic_logger.info("__process_wheel error: %s", error)
+        
+        return result
+        
+    def __process_win_rate(self, card, option, colors):
+        """Retrieve win rate result based on the application settings"""
+        result = "NA"
+        
+        try:
+            rated_colors = []
+            for color in colors:
+                if option in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                    rating_data = self.__format_win_rate(card,
+                                                         option,
+                                                         constants.WIN_RATE_FIELDS_DICT[option],
+                                                         color)
+                    rated_colors.append(rating_data)
+                elif option in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                    result = card[constants.DATA_FIELD_DECK_COLORS][color][option]
+            if rated_colors:
+                result = sorted(
+                    rated_colors, key=field_process_sort, reverse=True)[0]
+        except Exception as error:
+            logic_logger.info("__process_win_rate error: %s", error)
+        
+        return result
+        
+    def __format_win_rate(self, card, winrate_field, winrate_count, color):
+        """The function will return a grade, rating, or win rate depending on the application's Result Format setting"""
+        result = 0
+        # Produce a result that matches the Result Format setting
+        if self.configuration.result_format == constants.RESULT_FORMAT_RATING:
+            result = self.__card_rating(card, winrate_field, winrate_count, color)
+        elif self.configuration.result_format == constants.RESULT_FORMAT_GRADE:
+            result = self.__card_grade(card, winrate_field, winrate_count, color)
+        else:
+            result = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
+                                        card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
+                                        self.configuration.bayesian_average_enabled)
+    
+        return result
 
+    def __card_rating(self, card, winrate_field, winrate_count, color):
+        """The function will take a card's win rate and calculate a 5-point rating"""
+        result = 0
+        try:
+            winrate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
+                                         card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
+                                         self.configuration.bayesian_average_enabled)
+    
+            deviation_list = list(constants.GRADE_DEVIATION_DICT.values())
+            upper_limit = self.metrics.mean + \
+                self.metrics.standard_deviation * deviation_list[0]
+            lower_limit = self.metrics.mean + \
+                self.metrics.standard_deviation * deviation_list[-1]
+    
+            if (winrate != 0) and (upper_limit != lower_limit):
+                result = round(
+                    ((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0, 1)
+                result = min(result, 5.0)
+                result = max(result, 0)
+    
+        except Exception as error:
+            logic_logger.info("__card_rating error: %s", error)
+        return result
+        
+    def __card_grade(self, card, winrate_field, winrate_count, color):
+        """The function will take a card's win rate and assign a letter grade based on the number of standard deviations from the mean"""
+        result = constants.LETTER_GRADE_NA
+        try:
+            winrate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
+                                        card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
+                                        self.configuration.bayesian_average_enabled)
+    
+            if ((winrate != 0) and (self.metrics.standard_deviation != 0)):
+                result = constants.LETTER_GRADE_F
+                for grade, deviation in constants.GRADE_DEVIATION_DICT.items():
+                    standard_score = (
+                        winrate - self.metrics.mean) / self.metrics.standard_deviation
+                    if standard_score >= deviation:
+                        result = grade
+                        break
+    
+        except Exception as error:
+            logic_logger.info("__card_grade error: %s", error)
+        return result
+        
 def field_process_sort(field_value):
     """This function collects the numeric order of a letter grade for the purpose of sorting"""
     processed_value = field_value
@@ -134,7 +292,7 @@ def deck_card_search(deck, search_colors, card_types, include_types, include_col
         except Exception as error:
             logic_logger.info("deck_card_search error: %s", error)
 
-    for key, value in card_color_sorted:
+    for key, value in card_color_sorted.items():
         if key in search_colors:
             combined_cards.extend(value)
 
@@ -155,7 +313,7 @@ def deck_metrics(deck):
             distribution[index] += 1
 
     except Exception as error:
-        logic_logger.info("color_cmc error: %s", error)
+        logic_logger.info("deck_metrics error: %s", error)
 
     return cmc_total, count, distribution
 
@@ -178,7 +336,7 @@ def deck_colors(deck, colors_max, metrics, configuration):
     colors_result = {}
     try:
         colors = calculate_color_affinity(
-            deck, constants.FILTER_OPTION_ALL_DECKS, metrics["mean"], configuration)
+            deck, constants.FILTER_OPTION_ALL_DECKS, metrics.mean, configuration)
 
         # Modify the dictionary to include ratings
         color_list = list(
@@ -217,7 +375,7 @@ def deck_colors(deck, colors_max, metrics, configuration):
                 color_dict[color_string] += colors[color]
 
         for color_option in constants.DECK_COLORS:
-            for key, value in color_dict:
+            for key, value in color_dict.items():
                 if (len(key) == len(color_option)) and set(key).issubset(color_option):
                     colors_result[color_option] = value
 
@@ -270,47 +428,6 @@ def calculate_color_affinity(deck_cards, color_filter, threshold, configuration)
         except Exception as error:
             logic_logger.info("calculate_color_affinity error: %s", error)
     return colors
-
-
-def card_field_results(card_list, filtered_colors, fields,  metrics, tier_list, configuration):
-    """This function processes a card_list and produces a result based on a list of fields"""
-    filtered_list = []
-
-    for card in card_list:
-        try:
-            selected_card = card
-            selected_card["results"] = ["NA"] * len(fields)
-
-            for count, option in enumerate(fields.values()):
-                if constants.FILTER_OPTION_TIER in option:
-                    card_name = card[constants.DATA_FIELD_NAME].split(" // ")
-                    if card_name[0] in tier_list[option][constants.DATA_SECTION_RATINGS]:
-                        selected_card["results"][count] = tier_list[option][constants.DATA_SECTION_RATINGS][card_name[0]]
-                elif option == constants.DATA_FIELD_COLORS:
-                    selected_card["results"][count] = "".join(card[option])
-                elif option in card:
-                    selected_card["results"][count] = card[option]
-                else:
-                    rated_colors = []
-                    for color in filtered_colors:
-                        if (option in constants.WIN_RATE_OPTIONS) and (option in card[constants.DATA_FIELD_DECK_COLORS][color]):
-                            rating_data = formatted_result(card,
-                                                           option,
-                                                           constants.WIN_RATE_FIELDS_DICT[option],
-                                                           metrics,
-                                                           configuration,
-                                                           color)
-                            rated_colors.append(rating_data["result"])
-                        elif option in card[constants.DATA_FIELD_DECK_COLORS][color]:
-                            selected_card["results"][count] = card[constants.DATA_FIELD_DECK_COLORS][color][option]
-                    if rated_colors:
-                        selected_card["results"][count] = sorted(
-                            rated_colors, key=field_process_sort, reverse=True)[0]
-            filtered_list.append(selected_card)
-        except Exception as error:
-            logic_logger.info("card_field_results error: %s", error)
-
-    return filtered_list
 
 
 def row_color_tag(colors):
@@ -426,71 +543,6 @@ def calculate_win_rate(winrate, count, bayesian_enabled):
     except Exception as error:
         logic_logger.info("calculate_win_rate error: %s", error)
     return calculated_winrate
-
-
-def formatted_result(card_data, winrate_field, winrate_count, metrics, configuration, color_filter):
-    """The function will return a grade, rating, or win rate depending on the application's Result Format setting"""
-    rating_data = {"result": 0}
-    # Produce a result that matches the Result Format setting
-    if configuration.result_format == constants.RESULT_FORMAT_RATING:
-        rating_data = card_rating(card_data, winrate_field, winrate_count, metrics,
-                                  configuration, color_filter)
-    elif configuration.result_format == constants.RESULT_FORMAT_GRADE:
-        rating_data = card_grade(card_data, winrate_field,
-                                 winrate_count, metrics, configuration, color_filter)
-    else:
-        rating_data["result"] = calculate_win_rate(card_data[constants.DATA_FIELD_DECK_COLORS][color_filter][winrate_field],
-                                                   card_data[constants.DATA_FIELD_DECK_COLORS][color_filter][winrate_count],
-                                                   configuration.bayesian_average_enabled)
-
-    return rating_data
-
-
-def card_grade(card_data, winrate_field, winrate_count, metrics, configuration, color_filter):
-    """The function will take a card's win rate and assign a letter grade based on the number of standard deviations from the mean"""
-    rating_data = {"result": constants.LETTER_GRADE_NA}
-    try:
-        winrate = calculate_win_rate(card_data[constants.DATA_FIELD_DECK_COLORS][color_filter][winrate_field],
-                                     card_data[constants.DATA_FIELD_DECK_COLORS][color_filter][winrate_count],
-                                     configuration.bayesian_average_enabled)
-
-        if ((winrate != 0) and (metrics["standard_deviation"] != 0)):
-            rating_data["result"] = constants.LETTER_GRADE_F
-            for grade, deviation in constants.GRADE_DEVIATION_DICT.items():
-                standard_score = (
-                    winrate - metrics["mean"]) / metrics["standard_deviation"]
-                if standard_score >= deviation:
-                    rating_data["result"] = grade
-                    break
-
-    except Exception as error:
-        logic_logger.info("card_grade error: %s", error)
-    return rating_data
-
-
-def card_rating(card_data, winrate_field, winrate_count, metrics, configuration, color_filter):
-    """The function will take a card's win rate and calculate a 5-point rating"""
-    rating_data = {"result": 0}
-    try:
-        winrate = calculate_win_rate(card_data[constants.DATA_FIELD_DECK_COLORS][color_filter][winrate_field],
-                                     card_data[constants.DATA_FIELD_DECK_COLORS][color_filter][winrate_count],
-                                     configuration.bayesian_average_enabled)
-
-        deviation_list = list(constants.GRADE_DEVIATION_DICT.values())
-        upper_limit = metrics["mean"] + \
-            metrics["standard_deviation"] * deviation_list[0]
-        lower_limit = metrics["mean"] + \
-            metrics["standard_deviation"] * deviation_list[-1]
-
-        if (winrate != 0) and (upper_limit != lower_limit):
-            rating_data["result"] = round(
-                ((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0, 1)
-            rating_data["result"] = min(rating_data["result"], 5.0)
-            rating_data["result"] = max(rating_data["result"], 0)
-
-    except Exception as error:
-        logic_logger.info("card_rating error: %s", error)
-    return rating_data
 
 
 def deck_color_stats(deck, color):
@@ -823,8 +875,8 @@ def build_deck(deck_type, cards, color, metrics, configuration):
                                                   configuration.bayesian_average_enabled)]
 
         # identify a splashable color
-        splash_threshold = metrics["mean"] + \
-            2.33 * metrics["standard_deviation"]
+        splash_threshold = metrics.mean + \
+            2.33 * metrics.standard_deviation
         color += (color_splash(cards, color, splash_threshold, configuration))
 
         card_colors_sorted = deck_card_search(
@@ -954,6 +1006,7 @@ def read_config():
         config.card_colors_enabled = config_data["settings"]["card_colors_enabled"]
         config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
         config.draft_log_enabled = config_data["settings"]["draft_log_enabled"]
+        config.color_identity_enabled = config_data["settings"]["color_identity_enabled"]
     except Exception as error:
         logic_logger.info("read_config error: %s", error)
     return config
@@ -991,6 +1044,7 @@ def write_config(config):
         config_data["settings"]["card_colors_enabled"] = config.card_colors_enabled
         config_data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
         config_data["settings"]["draft_log_enabled"] = config.draft_log_enabled
+        config_data["settings"]["color_identity_enabled"] = config.color_identity_enabled
 
         with open('config.json', 'w', encoding='utf-8') as file:
             json.dump(config_data, file, ensure_ascii=False, indent=4)
@@ -1038,6 +1092,7 @@ def reset_config():
         data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
         data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
         data["settings"]["card_colors_enabled"] = config.card_colors_enabled
+        data["settings"]["color_identity_enabled"] = config.color_identity_enabled
 
         data["card_logic"] = {}
         data["card_logic"]["alsa_weight"] = config.alsa_weight

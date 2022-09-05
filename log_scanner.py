@@ -1,7 +1,4 @@
 """This module contains the functions that are used for parsing the Arena log"""
-# pylint: disable=broad-except
-# pylint: disable=too-many-lines
-# pylint: disable=line-too-long
 import os
 import json
 import re
@@ -17,6 +14,7 @@ scanner_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
 
 class ArenaScanner:
+    '''Class that handles the processing of the information within Arena Player.log file'''
     def __init__(self, filename, step_through, set_list):
         self.arena_file = filename
         self.set_list = set_list
@@ -45,19 +43,23 @@ class ArenaScanner:
         self.data_source = "None"
 
     def set_arena_file(self, filename):
+        '''Public function that's used for storing the location of the Player.log file'''
         self.arena_file = filename
 
     def log_enable(self, enable):
+        '''Enable/disable the application draft log feature that records draft data in a log file within the Logs folder'''
         self.logging_enabled = enable
         self.log_suspend(not enable)
 
     def log_suspend(self, suspended):
+        '''Prevents the application from updating the draft log file'''
         if suspended:
             self.logger.setLevel(logging.CRITICAL)
         elif self.logging_enabled:
             self.logger.setLevel(logging.INFO)
 
     def __new_log(self, card_set, event, draft_id):
+        '''Create a new draft log file'''
         try:
             log_name = f"DraftLog_{card_set}_{event}_{draft_id}.log"
             log_path = os.path.join(constants.DRAFT_LOG_FOLDER, log_name)
@@ -74,6 +76,7 @@ class ArenaScanner:
             scanner_logger.info("__new_log Error: %s", error)
 
     def clear_draft(self, full_clear):
+        '''Clear the stored draft data collected from the Player.log file'''
         if full_clear:
             self.search_offset = 0
             self.file_size = 0
@@ -94,6 +97,7 @@ class ArenaScanner:
         self.data_source = "None"
 
     def draft_start_search(self):
+        '''Search for the string that represents the start of a draft'''
         update = False
         event_type = ""
         event_line = ""
@@ -138,6 +142,7 @@ class ArenaScanner:
         return update
 
     def draft_start_search_v1(self, event_data):
+        '''Parse a draft start string and extract pertinent information'''
         update = False
         event_type = ""
         draft_id = ""
@@ -184,8 +189,8 @@ class ArenaScanner:
 
         return update, event_type, draft_id
 
-    # Wrapper function for performing a search based on the draft type
     def draft_data_search(self):
+        '''Collect draft data from the Player.log file based on the current active format'''
         update = False
         previous_pick = self.current_pick
         previous_pack = self.current_pack
@@ -215,12 +220,13 @@ class ArenaScanner:
         if not update:
             if ((previous_pack != self.current_pack) or
                 (previous_pick != self.current_pick) or
-                    (previous_picked != self.current_picked_pick)):
+                (previous_picked != self.current_picked_pick)):
                 update = True
 
         return update
 
     def __draft_pack_search_premier_p1p1(self):
+        '''Parse premier draft string that contains the P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "CardsInPack"
@@ -286,6 +292,7 @@ class ArenaScanner:
         return pack_cards
 
     def __draft_picked_search_premier_v1(self):
+        '''Parse the premier draft string that contains the player pick information'''
         offset = self.pick_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
@@ -341,6 +348,7 @@ class ArenaScanner:
             self.logger.info("__draft_picked_search_premier_v1 Error: %s", error)
 
     def __draft_pack_search_premier_v1(self):
+        '''Parse the premier draft string that contains the non-P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]Draft.Notify "
@@ -369,7 +377,7 @@ class ArenaScanner:
                         draft_data = json.loads(line[start_offset:])
                         try:
 
-                            cards = draft_data["retrieve_pack_cards"].split(',')
+                            cards = draft_data["PackCards"].split(',')
 
                             for card in cards:
                                 pack_cards.append(str(card))
@@ -402,6 +410,7 @@ class ArenaScanner:
         return pack_cards
 
     def __draft_pack_search_premier_v2(self):
+        '''Parse the premier draft string that contains the non-P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]Draft.Notify "
@@ -429,7 +438,7 @@ class ArenaScanner:
                         draft_data = json.loads(line[len(draft_string):])
                         try:
 
-                            cards = draft_data["retrieve_pack_cards"].split(',')
+                            cards = draft_data["PackCards"].split(',')
 
                             for card in cards:
                                 pack_cards.append(str(card))
@@ -462,6 +471,7 @@ class ArenaScanner:
         return pack_cards
 
     def __draft_picked_search_premier_v2(self):
+        '''Parse the premier draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]==> Draft.MakeHumanDraftPick "
@@ -516,6 +526,7 @@ class ArenaScanner:
             self.logger.info("__draft_picked_search_premier_v2 Error: %s", error)
 
     def __draft_pack_search_quick(self):
+        '''Parse the quick draft string that contains the current pack data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "DraftPack"
@@ -581,6 +592,7 @@ class ArenaScanner:
         return pack_cards
 
     def __draft_picked_search_quick(self):
+        '''Parse the quick draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]==> BotDraft_DraftPick "
@@ -636,6 +648,7 @@ class ArenaScanner:
             self.logger.info("__draft_picked_search_quick Error: %s", error)
 
     def __draft_pack_search_traditional_p1p1(self):
+        '''Parse the traditional draft string that contains the P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "CardsInPack"
@@ -701,6 +714,7 @@ class ArenaScanner:
         return pack_cards
 
     def __draft_picked_search_traditional(self):
+        '''Parse the traditional draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
@@ -756,6 +770,7 @@ class ArenaScanner:
             self.logger.info("__draft_picked_search_traditional Error: %s", error)
 
     def __draft_pack_search_traditional(self):
+        '''Parse the quick draft string that contains the non-P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "[UnityCrossThreadLogger]Draft.Notify "
@@ -784,7 +799,7 @@ class ArenaScanner:
                         draft_data = json.loads(line[start_offset:])
                         try:
 
-                            cards = draft_data["retrieve_pack_cards"].split(',')
+                            cards = draft_data["PackCards"].split(',')
 
                             for card in cards:
                                 pack_cards.append(str(card))
@@ -817,6 +832,7 @@ class ArenaScanner:
         return pack_cards
 
     def __sealed_pack_search(self):
+        '''Parse sealed string that contains all of the card data'''
         offset = self.pack_offset
         draft_data = object()
         draft_string = "EventGrantCardPool"
@@ -860,6 +876,7 @@ class ArenaScanner:
         return update
 
     def retrieve_data_sources(self):
+        '''Return a list of set files that can be used with the current active draft'''
         data_sources = {}
 
         try:
@@ -875,10 +892,10 @@ class ArenaScanner:
                     for draft_type in draft_list:
                         file_name = "_".join(
                             (draft_set, draft_type, constants.SET_FILE_SUFFIX))
-                        file = FE.SearchLocalFiles(
+                        file = FE.search_local_files(
                             [constants.SETS_FOLDER], [file_name])
                         if file:
-                            result = FE.FileIntegrityCheck(file[0])
+                            result = FE.check_file_integrity(file[0])
 
                             if result[0] == FE.Result.VALID:
                                 type_string = f"[{draft_set[0:3]}]{draft_type}" if re.findall(
@@ -888,17 +905,18 @@ class ArenaScanner:
         except Exception as error:
             scanner_logger.info("retrieve_data_sources Error: %s", error)
 
-        if len(data_sources) == 0:
+        if not data_sources:
             data_sources = constants.DATA_SOURCES_NONE
 
         return data_sources
 
     def retrieve_tier_source(self):
+        '''Return a list of tier files that can be used with the current active draft'''
         tier_sources = []
 
         try:
             if self.draft_sets:
-                file = FE.SearchLocalFiles([constants.TIER_FOLDER], [
+                file = FE.search_local_files([constants.TIER_FOLDER], [
                                            constants.TIER_FILE_PREFIX])
 
                 if file:
@@ -910,11 +928,12 @@ class ArenaScanner:
         return tier_sources
 
     def retrieve_set_data(self, file):
+        '''Retrieve set data from the set data files'''
         result = FE.Result.ERROR_MISSING_FILE
         self.set_data = None
 
         try:
-            result, json_data = FE.FileIntegrityCheck(file)
+            result, json_data = FE.check_file_integrity(file)
 
             if result == FE.Result.VALID:
                 self.set_data = json_data
@@ -925,22 +944,22 @@ class ArenaScanner:
         return result
 
     def retrieve_set_metrics(self, bayesian_enabled):
-        set_metrics = {"mean": 0, "standard_deviation": 0}
+        '''Parse set data and calculate the mean and standard deviation for a set'''
+        set_metrics = CL.Metrics()
 
         try:
             if self.set_data:
-                mean = CL.calculate_mean(
+                set_metrics.mean = CL.calculate_mean(
                     self.set_data["card_ratings"], bayesian_enabled)
-                standard_deviation = CL.calculate_standard_deviation(
-                    self.set_data["card_ratings"], mean, bayesian_enabled)
-                set_metrics = {"mean": mean,
-                               "standard_deviation": standard_deviation}
+                set_metrics.standard_deviation = CL.calculate_standard_deviation(
+                    self.set_data["card_ratings"], set_metrics.mean, bayesian_enabled)
                 #print(f"Mean:{mean}, Standard Deviation: {standard_deviation}")
         except Exception as error:
             scanner_logger.info("retrieve_set_metrics Error: %s", error)
         return set_metrics
 
     def retrieve_color_win_rate(self, label_type):
+        '''Parse set data and return a list of color win rates'''
         deck_colors = {}
         for colors in constants.DECK_FILTERS:
             deck_color = colors
@@ -968,6 +987,7 @@ class ArenaScanner:
         return deck_colors
 
     def retrieve_picked_cards(self, pack_index):
+        '''Return the card data for the card that was picked from a from a specific pack'''
         picked_cards = []
 
         if self.set_data is not None:
@@ -982,6 +1002,7 @@ class ArenaScanner:
         return picked_cards
 
     def retrieve_initial_pack_cards(self, pack_index):
+        '''Return the card data for a list of cards from a specific pack'''
         pack_cards = []
 
         if self.set_data is not None:
@@ -995,6 +1016,7 @@ class ArenaScanner:
         return pack_cards
 
     def retrieve_pack_cards(self, pack_index):
+        '''Return the card data for a list of cards from a specific pack'''
         pack_cards = []
 
         if self.set_data is not None:
@@ -1008,6 +1030,7 @@ class ArenaScanner:
         return pack_cards
 
     def retrieve_taken_cards(self):
+        '''Return the card data for all of the cards that were picked during the draft'''
         taken_cards = []
 
         if self.set_data is not None:
@@ -1020,6 +1043,7 @@ class ArenaScanner:
         return taken_cards
 
     def retrieve_tier_data(self, files):
+        '''Parse a tier list file and return the tier data'''
         tier_data = {}
         tier_options = {}
         count = 0
