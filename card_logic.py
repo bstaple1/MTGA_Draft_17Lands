@@ -694,6 +694,8 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
     except Exception as error:
         logic_logger.info("deck_rating error: %s", error)
 
+    rating = int(rating)
+    
     return rating
 
 
@@ -831,8 +833,8 @@ def mana_base(deck):
                 land_count = 1
                 number_of_lands -= 1
             else:
-                land_count = round(
-                    (mana_types[land][constants.DATA_FIELD_COUNT] / total_count) * number_of_lands, 0)
+                land_count = int(round(
+                    (mana_types[land][constants.DATA_FIELD_COUNT] / total_count) * number_of_lands, 0))
                 # Minimum of 2 lands for a  splash
                 if (land_count == 1) and (number_of_lands > 1):
                     land_count = 2
@@ -879,7 +881,7 @@ def suggest_deck(taken_cards, metrics, configuration):
                 deck, sideboard_cards = build_deck(
                     value, taken_cards, color, metrics, configuration)
                 rating = deck_rating(
-                    deck, value, color, metrics["mean"], configuration.bayesian_average_enabled)
+                    deck, value, color, metrics.mean, configuration.bayesian_average_enabled)
                 if rating >= configuration.ratings_threshold:
 
                     if ((color not in decks) or
@@ -998,7 +1000,7 @@ def build_deck(deck_type, cards, color, metrics, configuration):
             if total_card_count >= maximum_deck_size:
                 break
 
-            if card["results"][0] >= metrics["mean"]:
+            if card["results"][0] >= metrics.mean:
                 used_list.append(card)
                 total_card_count += 1
 

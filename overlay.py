@@ -9,6 +9,7 @@ import sys
 import io
 import logging
 import logging.handlers
+import ctypes
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk
@@ -118,8 +119,7 @@ def create_header(frame, height, font, headers, total_width, include_header, fix
     show_header = "headings" if include_header else ""
     column_stretch = tkinter.YES if stretch_enabled else tkinter.NO
     list_box = Treeview(frame, columns=header_labels,
-                        show=show_header, style=table_style)
-    list_box.config(height=height)
+                        show=show_header, style=table_style, height=height)
 
     try:
         for key, value in constants.ROW_TAGS_BW_DICT.items():
@@ -213,15 +213,26 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
 
     return location_x, location_y
 
+class ScaledWindow:
+    def __init__(self):
+        self.scaling_factor = 1
+        
+    def _scale_value(self, value):
+        scaled_value = int(value * self.scaling_factor)
+        
+        return scaled_value
 
-class Overlay:
+class Overlay(ScaledWindow):
     '''Class that handles all of the UI widgets'''
     def __init__(self, version, args):
         self.root = tkinter.Tk()
         self.version = version
         self.root.title(f"Magic Draft {version}")
-        self.root.tk.call("source", "dark_mode.tcl")
         self.configuration = CL.read_config()
+        
+        self.scaling_factor = self._adjust_overlay_scale()
+        self.configuration.table_width = self._scale_value(self.configuration.table_width)
+        
         self.listener = None
 
         if args.file is None:
@@ -243,7 +254,9 @@ class Overlay:
             self.configuration.hotkey_enabled = False
             self.root.resizable(width=True, height=True)
         else:
+            self.root.tk.call("source", "dark_mode.tcl")
             self.root.resizable(False, False)
+            
         overlay_logger.info("Platform: %s", platform)
 
         self.extractor = FE.FileExtractor(self.data_file)
@@ -293,7 +306,7 @@ class Overlay:
         style.map("Treeview",
                   foreground=fixed_map(style, "foreground"),
                   background=fixed_map(style, "background"))
-
+        style.configure("Treeview", rowheight=self._scale_value(25))
         current_draft_label_frame = tkinter.Frame(self.root)
         self.current_draft_label = tkinter.Label(
             current_draft_label_frame, text="Current Draft:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
@@ -473,6 +486,28 @@ class Overlay:
 
         if self.configuration.hotkey_enabled:
             self._start_hotkey_listener()
+
+    def _adjust_overlay_scale(self):
+        pixel_scaling_factor = 1
+        '''Adjust widget scale based on DPI'''
+        if sys.platform == constants.PLATFORM_ID_WINDOWS:
+            #Support High DPI for windows
+            try:
+                ctypes.windll.shcore.SetProcessDpiAwareness(2) # Windows >= 8.1
+            except:
+                ctypes.windll.user32.SetProcessDPIAware() # Windows < 8.1
+        
+        try:
+            dpi = self.root.winfo_fpixels('1i')
+            overlay_logger.info("DPI %d", dpi)
+            widget_scaling_factor = dpi / constants.DEFAULT_DPI
+            self.root.tk.call("tk", "scaling", widget_scaling_factor)
+            pixel_scaling_factor = (dpi/constants.PIXEL_SCALING_DPI)
+        except Exception as error:
+            overlay_logger.info("_adjust_scale Error: %s", error)
+        
+        return pixel_scaling_factor
+        
 
     def _start_hotkey_listener(self):
         '''Start listener that detects the minimize hotkey'''
@@ -745,6 +780,10 @@ class Overlay:
 
             for row in self.stat_table.get_children():
                 self.stat_table.delete(row)
+                
+            if total_width == 1:
+                self.stat_table.config(height=0)
+                return
 
             # Adjust the width for each column
             for column in self.stat_table["columns"]:
@@ -756,6 +795,7 @@ class Overlay:
                 self.stat_table.config(height=list_length)
             else:
                 self.stat_table.config(height=0)
+                #return
 
             for count, (color, values) in enumerate(colors_filtered.items()):
                 row_tag = identify_table_row_tag(
@@ -1266,7 +1306,11 @@ class Overlay:
         popup.resizable(width=False, height=True)
         popup.attributes("-topmost", True)
 
-        location_x, location_y = identify_safe_coordinates(self.root, 1000, 170, 250, 20)
+        location_x, location_y = identify_safe_coordinates(self.root, 
+                                                           self._scale_value(1000), 
+                                                           self._scale_value(170), 
+                                                           self._scale_value(250), 
+                                                           self._scale_value(20))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         tkinter.Grid.rowconfigure(popup, 1, weight=1)
@@ -1279,14 +1323,14 @@ class Overlay:
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
 
             style = Style()
-            style.configure("Set.Treeview", rowheight=25)
+            style.configure("Set.Treeview", rowheight=self._scale_value(25))
 
             list_box_frame = tkinter.Frame(popup)
             list_box_scrollbar = tkinter.Scrollbar(list_box_frame, orient=tkinter.VERTICAL)
             list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
             list_box = create_header(
-                list_box_frame, 0, 10, headers, 500, True, True, "Set.Treeview", True)
+                list_box_frame, 0, 10, headers, self._scale_value(500), True, True, "Set.Treeview", True)
 
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
@@ -1365,7 +1409,11 @@ class Overlay:
         popup.wm_title("Card Compare")
         popup.resizable(width=False, height=True)
         popup.attributes("-topmost", True)
-        location_x, location_y = identify_safe_coordinates(self.root, 400, 170, 250, 0)
+        location_x, location_y = identify_safe_coordinates(self.root, 
+                                                           self._scale_value(400), 
+                                                           self._scale_value(170), 
+                                                           self._scale_value(250), 
+                                                           self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         try:
@@ -1450,7 +1498,11 @@ class Overlay:
         popup.wm_title("Taken Cards")
         popup.attributes("-topmost", True)
         popup.resizable(width=False, height=True)
-        location_x, location_y = identify_safe_coordinates(self.root, 400, 170, 250, 0)
+        location_x, location_y = identify_safe_coordinates(self.root, 
+                                                           self._scale_value(400), 
+                                                           self._scale_value(170), 
+                                                           self._scale_value(250), 
+                                                           self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         popup.protocol(
@@ -1477,13 +1529,13 @@ class Overlay:
                        }
 
             style = Style()
-            style.configure("Taken.Treeview", rowheight=25)
+            style.configure("Taken.Treeview", rowheight=self._scale_value(25))
 
             taken_table_frame = tkinter.Frame(popup)
             taken_scrollbar = tkinter.Scrollbar(taken_table_frame, orient=tkinter.VERTICAL)
             taken_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             self.taken_table = create_header(
-                taken_table_frame, 0, 8, headers, 410, True, True, "Taken.Treeview", False)
+                taken_table_frame, 0, 8, headers, self._scale_value(410), True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
 
@@ -1575,7 +1627,11 @@ class Overlay:
         popup.attributes("-topmost", True)
         popup.resizable(width=False, height=True)
 
-        location_x, location_y = identify_safe_coordinates(self.root, 400, 170, 250, 0)
+        location_x, location_y = identify_safe_coordinates(self.root, 
+                                                           self._scale_value(400), 
+                                                           self._scale_value(170), 
+                                                           self._scale_value(250), 
+                                                           self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         try:
@@ -1589,7 +1645,7 @@ class Overlay:
 
             if suggested_decks:
                 choices = []
-                for key, value in suggested_decks:
+                for key, value in suggested_decks.items():
                     rating_label = f"{key} {value['type']} (Rating:{value['rating']})"
                     deck_color_options[rating_label] = key
                     choices.append(rating_label)
@@ -1604,8 +1660,8 @@ class Overlay:
             deck_colors_button = Button(popup, command=lambda: self._update_suggest_table(suggest_table,
                                                                                             deck_colors_value,
                                                                                             suggested_decks,
-                                                                                            deck_color_options),
-                                        text="Update")
+                                                                                            deck_color_options), 
+                                                                                            text="Update")
 
             copy_button = Button(popup, command=lambda: copy_suggested(deck_colors_value,
                                                                       suggested_decks,
@@ -1619,13 +1675,13 @@ class Overlay:
                        "TYPE": {"width": .29, "anchor": tkinter.CENTER}}
 
             style = Style()
-            style.configure("Suggest.Treeview", rowheight=25)
+            style.configure("Suggest.Treeview", rowheight=self._scale_value(25))
 
             suggest_table_frame = tkinter.Frame(popup)
             suggest_scrollbar = tkinter.Scrollbar(suggest_table_frame, orient=tkinter.VERTICAL)
             suggest_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             suggest_table = create_header(
-                suggest_table_frame, 0, 8, headers, 450, True, True, "Suggest.Treeview", False)
+                suggest_table_frame, 0, 8, headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
 
@@ -1663,7 +1719,11 @@ class Overlay:
         popup.protocol("WM_DELETE_WINDOW",
                        lambda window=popup: self._close_settings_window(window))
         popup.attributes("-topmost", True)
-        location_x, location_y = identify_safe_coordinates(self.root, 400, 170, 250, 0)
+        location_x, location_y = identify_safe_coordinates(self.root, 
+                                                           self._scale_value(400), 
+                                                           self._scale_value(170), 
+                                                           self._scale_value(250), 
+                                                           self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         try:
@@ -1947,7 +2007,8 @@ class Overlay:
                                           card[constants.DATA_FIELD_NAME],
                                           color_dict,
                                           card[constants.DATA_SECTION_IMAGES],
-                                          self.configuration.images_enabled)
+                                          self.configuration.images_enabled,
+                                          self.scaling_factor)
                     except Exception as error:
                         overlay_logger.info("__process_table_click Error: %s", error)
                     break
@@ -2112,9 +2173,10 @@ class Overlay:
             self.missing_table_frame.grid(row=9, column=0, columnspan=2)
 
 
-class CreateCardToolTip(object):
+class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scaling_factor):
+        self.scaling_factor = scaling_factor
         self.waittime = 1  # miliseconds
         self.wraplength = 180  # pixels
         self.widget = widget
@@ -2154,7 +2216,8 @@ class CreateCardToolTip(object):
     def _display_tooltip(self, event=None):
         '''Function that builds and populates the tooltip window '''
         try:
-            tt_width = 400
+            row_height = self._scale_value(23)
+            tt_width = self._scale_value(400)
             # creates a toplevel window
             self.tw = tkinter.Toplevel(self.widget)
             # Leaves only the label and removes the app window
@@ -2173,15 +2236,15 @@ class CreateCardToolTip(object):
                 headers = {"Label": {"width": .70, "anchor": tkinter.W},
                            "Value1": {"width": .15, "anchor": tkinter.CENTER},
                            "Value2": {"width": .15, "anchor": tkinter.CENTER}}
-                width = 400
-                tt_width += 150
+                width = self._scale_value(400)
+                tt_width += self._scale_value(150)
             else:
                 headers = {"Label": {"width": .80, "anchor": tkinter.W},
                            "Value1": {"width": .20, "anchor": tkinter.CENTER}}
-                width = 340
+                width = self._scale_value(340)
 
             style = Style()
-            style.configure("Tooltip.Treeview", rowheight=23)
+            style.configure("Tooltip.Treeview", rowheight=row_height)
 
             stats_main_table = create_header(
                 tt_frame, 0, 8, headers, width, False, True, "Tooltip.Treeview", False)
@@ -2247,15 +2310,13 @@ class CreateCardToolTip(object):
             for x in range(2):
                 main_field_list.append(tuple(["", ""]))
 
-            if main_field_list:
-                stats_main_table.config(height=len(main_field_list))
-            else:
-                stats_main_table.config(height=1)
+            stats_main_table.config(height=len(main_field_list))
 
             column_offset = 0
             # Add scryfall image
             if self.images_enabled:
-                size = 280, 390
+                image_size_y = len(main_field_list) * row_height
+                size = self._scale_value(280), image_size_y
                 self.images = []
                 for count, picture in enumerate(self.image):
                     try:
@@ -2269,7 +2330,7 @@ class CreateCardToolTip(object):
                                 column=count, row=1, columnspan=1, rowspan=3)
                             self.images.append(image)
                             column_offset += 1
-                            tt_width += 300
+                            tt_width += self._scale_value(300)
                     except Exception as error:
                         overlay_logger.info("__display_tooltip Image Error: %s", error)
 
@@ -2283,7 +2344,11 @@ class CreateCardToolTip(object):
 
             stats_main_table.grid(row=1, column=column_offset, sticky=tkinter.NSEW)
 
-            location_x, location_y = identify_safe_coordinates(self.widget, tt_width, 500, 25, 20)
+            location_x, location_y = identify_safe_coordinates(self.tw, 
+                                                               self._scale_value(tt_width), 
+                                                               self._scale_value(500), 
+                                                               self._scale_value(25), 
+                                                               self._scale_value(20))
             self.tw.wm_geometry(f"+{location_x}+{location_y}")
 
             tt_frame.pack()
