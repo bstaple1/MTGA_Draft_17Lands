@@ -53,6 +53,7 @@ class Config:
     taken_ata_enabled: bool = False
     taken_gpwr_enabled: bool = False
     taken_ohwr_enabled: bool = False
+    taken_gdwr_enabled: bool = False
     taken_gndwr_enabled: bool = False
     taken_iwd_enabled: bool = False
     minimum_creatures: int = 13
@@ -82,7 +83,7 @@ class CardResult:
         return_list = []
         wheel_sum = 0
         if constants.DATA_FIELD_WHEEL in fields.values():
-            wheel_sum = self.__retrieve_wheel_sum(card_list)
+            wheel_sum = self._retrieve_wheel_sum(card_list)
 
         for card in card_list:
             try:
@@ -91,19 +92,19 @@ class CardResult:
 
                 for count, option in enumerate(fields.values()):
                     if constants.FILTER_OPTION_TIER in option:
-                        selected_card["results"][count] = self.__process_tier(
+                        selected_card["results"][count] = self._process_tier(
                             card, option)
                     elif option == constants.DATA_FIELD_COLORS:
-                        selected_card["results"][count] = self.__process_colors(
+                        selected_card["results"][count] = self._process_colors(
                             card)
                     elif option == constants.DATA_FIELD_WHEEL:
-                        selected_card["results"][count] = self.__process_wheel_normalized(
+                        selected_card["results"][count] = self._process_wheel_normalized(
                             card, wheel_sum)
-                        #selected_card["results"][count] = self.__process_wheel(card)
+                        #selected_card["results"][count] = self._process_wheel(card)
                     elif option in card:
                         selected_card["results"][count] = card[option]
                     else:
-                        selected_card["results"][count] = self.__process_filter_fields(
+                        selected_card["results"][count] = self._process_filter_fields(
                             card, option, colors)
 
                 return_list.append(selected_card)
@@ -111,7 +112,7 @@ class CardResult:
                 logic_logger.info("return_results error: %s", error)
         return return_list
 
-    def __process_tier(self, card, option):
+    def _process_tier(self, card, option):
         """Retrieve tier list rating for this card"""
         result = "NA"
         try:
@@ -119,31 +120,31 @@ class CardResult:
             if card_name[0] in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
                 result = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name[0]]
         except Exception as error:
-            logic_logger.info("__process_tier error: %s", error)
+            logic_logger.info("_process_tier error: %s", error)
 
         return result
 
-    def __process_colors(self, card):
+    def _process_colors(self, card):
         """Retrieve card colors"""
         result = "NA"
 
         try:
             result = "".join(card[constants.DATA_FIELD_COLORS])
         except Exception as error:
-            logic_logger.info("__process_colors error: %s", error)
+            logic_logger.info("_process_colors error: %s", error)
 
         return result
 
-    def __retrieve_wheel_sum(self, card_list):
+    def _retrieve_wheel_sum(self, card_list):
         """Calculate the sum of all wheel percentage values for the card list"""
         total_sum = 0
 
         for card in card_list:
-            total_sum += self.__process_wheel(card)
+            total_sum += self._process_wheel(card)
 
         return total_sum
 
-    def __process_wheel(self, card):
+    def _process_wheel(self, card):
         """Calculate wheel percentage"""
         result = 0
 
@@ -158,24 +159,24 @@ class CardResult:
                                1) if alsa >= 2 else 0
                 result = max(result, 0)
         except Exception as error:
-            logic_logger.info("__process_wheel error: %s", error)
+            logic_logger.info("_process_wheel error: %s", error)
 
         return result
 
-    def __process_wheel_normalized(self, card, total_sum):
+    def _process_wheel_normalized(self, card, total_sum):
         """Calculate the normalized wheel percentage using the sum of all percentages within the card list"""
         result = 0
 
         try:
-            result = self.__process_wheel(card)
+            result = self._process_wheel(card)
 
             result = round((result / total_sum)*100, 1) if total_sum > 0 else 0
         except Exception as error:
-            logic_logger.info("__process_wheel_normalized error: %s", error)
+            logic_logger.info("_process_wheel_normalized error: %s", error)
 
         return result
 
-    def __process_filter_fields(self, card, option, colors):
+    def _process_filter_fields(self, card, option, colors):
         """Retrieve win rate result based on the application settings"""
         result = "NA"
 
@@ -184,7 +185,7 @@ class CardResult:
             for color in colors:
                 if option in card[constants.DATA_FIELD_DECK_COLORS][color]:
                     if (option in constants.WIN_RATE_OPTIONS):
-                        rating_data = self.__format_win_rate(card,
+                        rating_data = self._format_win_rate(card,
                                                              option,
                                                              constants.WIN_RATE_FIELDS_DICT[option],
                                                              color)
@@ -195,19 +196,19 @@ class CardResult:
                 result = sorted(
                     rated_colors, key=field_process_sort, reverse=True)[0]
         except Exception as error:
-            logic_logger.info("__process_filter_fields error: %s", error)
+            logic_logger.info("_process_filter_fields error: %s", error)
 
         return result
 
-    def __format_win_rate(self, card, winrate_field, winrate_count, color):
+    def _format_win_rate(self, card, winrate_field, winrate_count, color):
         """The function will return a grade, rating, or win rate depending on the application's Result Format setting"""
         result = 0
         # Produce a result that matches the Result Format setting
         if self.configuration.result_format == constants.RESULT_FORMAT_RATING:
-            result = self.__card_rating(
+            result = self._card_rating(
                 card, winrate_field, winrate_count, color)
         elif self.configuration.result_format == constants.RESULT_FORMAT_GRADE:
-            result = self.__card_grade(
+            result = self._card_grade(
                 card, winrate_field, winrate_count, color)
         else:
             result = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
@@ -216,7 +217,7 @@ class CardResult:
 
         return result
 
-    def __card_rating(self, card, winrate_field, winrate_count, color):
+    def _card_rating(self, card, winrate_field, winrate_count, color):
         """The function will take a card's win rate and calculate a 5-point rating"""
         result = 0
         try:
@@ -237,10 +238,10 @@ class CardResult:
                 result = max(result, 0)
 
         except Exception as error:
-            logic_logger.info("__card_rating error: %s", error)
+            logic_logger.info("_card_rating error: %s", error)
         return result
 
-    def __card_grade(self, card, winrate_field, winrate_count, color):
+    def _card_grade(self, card, winrate_field, winrate_count, color):
         """The function will take a card's win rate and assign a letter grade based on the number of standard deviations from the mean"""
         result = constants.LETTER_GRADE_NA
         try:
@@ -258,7 +259,7 @@ class CardResult:
                         break
 
         except Exception as error:
-            logic_logger.info("__card_grade error: %s", error)
+            logic_logger.info("_card_grade error: %s", error)
         return result
 
 
@@ -1045,6 +1046,7 @@ def read_config():
         config.taken_gpwr_enabled = config_data["settings"]["taken_gpwr_enabled"]
         config.taken_ohwr_enabled = config_data["settings"]["taken_ohwr_enabled"]
         config.taken_iwd_enabled = config_data["settings"]["taken_iwd_enabled"]
+        config.taken_gdwr_enabled = config_data["settings"]["taken_gdwr_enabled"]
         config.taken_gndwr_enabled = config_data["settings"]["taken_gndwr_enabled"]
         config.card_colors_enabled = config_data["settings"]["card_colors_enabled"]
         config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
@@ -1082,6 +1084,7 @@ def write_config(config):
         config_data["settings"]["taken_ata_enabled"] = config.taken_ata_enabled
         config_data["settings"]["taken_gpwr_enabled"] = config.taken_gpwr_enabled
         config_data["settings"]["taken_ohwr_enabled"] = config.taken_ohwr_enabled
+        config_data["settings"]["taken_gdwr_enabled"] = config.taken_gdwr_enabled
         config_data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
         config_data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
         config_data["settings"]["card_colors_enabled"] = config.card_colors_enabled
@@ -1132,6 +1135,7 @@ def reset_config():
         data["settings"]["taken_ata_enabled"] = config.taken_ata_enabled
         data["settings"]["taken_gpwr_enabled"] = config.taken_gpwr_enabled
         data["settings"]["taken_ohwr_enabled"] = config.taken_ohwr_enabled
+        data["settings"]["taken_gdwr_enabled"] = config.taken_gdwr_enabled
         data["settings"]["taken_gndwr_enabled"] = config.taken_gndwr_enabled
         data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
         data["settings"]["card_colors_enabled"] = config.card_colors_enabled

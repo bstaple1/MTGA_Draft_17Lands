@@ -1,4 +1,4 @@
-
+"""This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton
 from tkinter import filedialog
@@ -267,21 +267,21 @@ class Overlay:
         # Menu Bar
         self.menubar = tkinter.Menu(self.root)
         self.filemenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.filemenu.add_command(label="Open", command=self.__open_draft_log)
+        self.filemenu.add_command(label="Open", command=self._open_draft_log)
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(label="View Sets", command=self.__open_set_view_window)
+        self.datamenu.add_command(label="View Sets", command=self._open_set_view_window)
 
         self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(
-            label="Taken Cards", command=self.__open_taken_cards_window)
+            label="Taken Cards", command=self._open_taken_cards_window)
         self.cardmenu.add_command(
-            label="Suggest Decks", command=self.__open_suggest_deck_window)
+            label="Suggest Decks", command=self._open_suggest_deck_window)
         self.cardmenu.add_command(
-            label="Compare Cards", command=self.__open_card_compare_window)
+            label="Compare Cards", command=self._open_card_compare_window)
 
         self.settingsmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.settingsmenu.add_command(
-            label="Settings", command=self.__open_settings_window)
+            label="Settings", command=self._open_settings_window)
 
         self.menubar.add_cascade(label="File", menu=self.filemenu)
         self.menubar.add_cascade(label="Data", menu=self.datamenu)
@@ -326,6 +326,7 @@ class Overlay:
         self.taken_ohwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gndwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_iwd_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
         self.card_colors_checkbox_value = tkinter.IntVar(self.root)
         self.column_2_selection = tkinter.StringVar(self.root)
         self.column_2_list = self.main_options_dict.keys()
@@ -370,7 +371,7 @@ class Overlay:
 
         self.refresh_button_frame = tkinter.Frame(self.root)
         self.refresh_button = Button(
-            self.refresh_button_frame, command=lambda: self.__update_overlay_callback(True), text="Refresh")
+            self.refresh_button_frame, command=lambda: self._update_overlay_callback(True), text="Refresh")
 
         self.status_frame = tkinter.Frame(self.root)
         self.pack_pick_label = tkinter.Label(
@@ -444,8 +445,8 @@ class Overlay:
         self.status_frame.grid(row=6, column=0, columnspan=2, sticky='nsew')
         self.pack_table_frame.grid(row=7, column=0, columnspan=2)
         footnote_label.grid(row=12, column=0, columnspan=2)
-        self.__enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self.__enable_missing_cards_table(self.missing_cards_checkbox_value.get())
+        self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
+        self._enable_missing_cards_table(self.missing_cards_checkbox_value.get())
 
         self.refresh_button.pack(expand=True, fill="both")
 
@@ -464,21 +465,21 @@ class Overlay:
         self.current_timestamp = 0
         self.previous_timestamp = 0
 
-        self.__update_settings_data()
+        self._update_settings_data()
 
         self.root.attributes("-topmost", True)
-        self.__initialize_overlay_widgets()
-        self.__update_overlay_build()
+        self._initialize_overlay_widgets()
+        self._update_overlay_build()
 
         if self.configuration.hotkey_enabled:
-            self.__start_hotkey_listener()
+            self._start_hotkey_listener()
 
-    def __start_hotkey_listener(self):
+    def _start_hotkey_listener(self):
         '''Start listener that detects the minimize hotkey'''
         self.listener = Listener(
-            on_press=lambda event: self.__process_hotkey_press(event)).start()
+            on_press=lambda event: self._process_hotkey_press(event)).start()
 
-    def __process_hotkey_press(self, key):
+    def _process_hotkey_press(self, key):
         '''Determine if the minimize hotkey was pressed'''
         if key == KeyCode.from_char(constants.HOTKEY_CTRL_G):
             self.lift_window()
@@ -487,7 +488,7 @@ class Overlay:
         '''Run the TKinter overlay'''
         self.root.mainloop()
 
-    def __identify_auto_colors(self, cards, selected_option):
+    def _identify_auto_colors(self, cards, selected_option):
         '''Update the Deck Filter option menu when the Auto option is selected'''
         filtered_colors = [constants.FILTER_OPTION_ALL_DECKS]
 
@@ -504,14 +505,14 @@ class Overlay:
                     new_dict = {new_key: constants.FILTER_OPTION_AUTO}
                     new_dict.update(self.deck_colors)
                     self.deck_colors = new_dict
-                    self.__update_column_options()
+                    self._update_column_options()
 
         except Exception as error:
             overlay_logger.info("__identify_auto_colors Error: %s",error)
 
         return filtered_colors
 
-    def __update_pack_table(self, card_list, filtered_colors, fields):
+    def _update_pack_table(self, card_list, filtered_colors, fields):
         '''Update the table that lists the cards within the current pack'''
         try:
             result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
@@ -540,12 +541,12 @@ class Overlay:
                 field_values = tuple(card["results"])
                 self.pack_table.insert(
                     "", index=count, iid=count, values=field_values, tag=(row_tag,))
-            self.pack_table.bind("<<TreeviewSelect>>", lambda event: self.__process_table_click(
+            self.pack_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                 event, table=self.pack_table, card_list=card_list, selected_color=filtered_colors))
         except Exception as error:
             overlay_logger.info("__update_pack_table Error: %s", error)
 
-    def __update_missing_table(self, current_pack, previous_pack, picked_cards, filtered_colors, fields):
+    def _update_missing_table(self, current_pack, previous_pack, picked_cards, filtered_colors, fields):
         '''Update the table that lists the cards that are missing from the current pack'''
         try:
             for row in self.missing_table.get_children():
@@ -584,18 +585,18 @@ class Overlay:
                         field_values = tuple(card["results"])
                         self.missing_table.insert(
                             "", index=count, iid=count, values=field_values, tag=(row_tag,))
-                    self.missing_table.bind("<<TreeviewSelect>>", lambda event: self.__process_table_click(
+                    self.missing_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                         event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_colors))
         except Exception as error:
             overlay_logger.info("__update_missing_table Error: %s",error)
 
-    def __clear_compare_table(self, compare_table, matching_cards):
+    def _clear_compare_table(self, compare_table, matching_cards):
         '''Clear the rows within the Card Compare table'''
         matching_cards.clear()
         compare_table.delete(*compare_table.get_children())
         compare_table.config(height=0)
 
-    def __update_compare_table(self, compare_table, matching_cards, entry_box, card_list, filtered_colors, fields):
+    def _update_compare_table(self, compare_table, matching_cards, entry_box, card_list, filtered_colors, fields):
         '''Update the Card Compare table that lists the searched cards'''
         try:
             added_card = entry_box.get()
@@ -630,12 +631,12 @@ class Overlay:
                 field_values = tuple(card["results"])
                 compare_table.insert(
                     "", index=count, iid=count, values=field_values, tag=(row_tag,))
-            compare_table.bind("<<TreeviewSelect>>", lambda event: self.__process_table_click(
+            compare_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                 event, table=compare_table, card_list=matching_cards, selected_color=filtered_colors))
         except Exception as error:
             overlay_logger.info("__update_compare_table Error: %s", error)
 
-    def __update_taken_table(self, *args):
+    def _update_taken_table(self, *args):
         '''Update the table that lists the taken cards'''
         try:
             while True:
@@ -650,12 +651,13 @@ class Overlay:
                           "Column6": (constants.DATA_FIELD_IWD if self.taken_iwd_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column7": (constants.DATA_FIELD_GPWR if self.taken_gpwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column8": (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column9": (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column10": constants.DATA_FIELD_GIHWR}
+                          "Column9": (constants.DATA_FIELD_GDWR if self.taken_gdwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column10": (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column11": constants.DATA_FIELD_GIHWR}
 
                 taken_cards = self.draft.retrieve_taken_cards()
 
-                filtered_colors = self.__identify_auto_colors(
+                filtered_colors = self._identify_auto_colors(
                     taken_cards, self.taken_filter_selection.get())
 
                 stacked_cards = CL.stack_cards(taken_cards)
@@ -682,13 +684,13 @@ class Overlay:
                         self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
                     self.taken_table.insert(
                         "", index=count, iid=count, values=field_values, tag=(row_tag,))
-                self.taken_table.bind("<<TreeviewSelect>>", lambda event: self.__process_table_click(
+                self.taken_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                     event, table=self.taken_table, card_list=result_list, selected_color=filtered_colors))
                 break
         except Exception as error:
             overlay_logger.info("__update_taken_table Error: %s",error)
 
-    def __update_suggest_table(self, suggest_table, selected_color, suggested_decks, color_options):
+    def _update_suggest_table(self, suggest_table, selected_color, suggested_decks, color_options):
         '''Update the table that lists the suggested decks'''
         try:
             color = color_options[selected_color.get()]
@@ -712,13 +714,13 @@ class Overlay:
                                                               card[constants.DATA_FIELD_COLORS],
                                                               card[constants.DATA_FIELD_CMC],
                                                               card[constants.DATA_FIELD_TYPES]), tag=(row_tag,))
-            suggest_table.bind("<<TreeviewSelect>>", lambda event: self.__process_table_click(
+            suggest_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                 event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
 
         except Exception as error:
             overlay_logger.info("UpdateSuggestTable Error: %s", error)
 
-    def __update_deck_stats_table(self, taken_cards, filter_type, total_width):
+    def _update_deck_stats_table(self, taken_cards, filter_type, total_width):
         '''Update the table that lists the deck stats'''
         try:
             card_types = constants.CARD_TYPE_DICT[filter_type]
@@ -769,7 +771,7 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__update_deck_stats_table Error: %s", error)
 
-    def __update_pack_pick_label(self, pack, pick):
+    def _update_pack_pick_label(self, pack, pick):
         '''Update the label that lists the pack and pick numbers'''
         try:
             new_label = f"Pack: {pack}, Pick: {pick}"
@@ -778,7 +780,7 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__update_pack_pick_label Error: %s", error)
 
-    def __update_current_draft_label(self, card_set, draft_type):
+    def _update_current_draft_label(self, card_set, draft_type):
         '''Update the label that lists the current draft set and type (e.g., DMU PremierDraft)'''
         try:
             draft_type_string = ''
@@ -793,9 +795,9 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__update_current_draft_label Error: %s", error)
 
-    def __update_data_source_options(self, new_list):
+    def _update_data_source_options(self, new_list):
         '''Update the option menu that lists the available data sets for the current draft set (i.e., QuickDraft, PremierDraft, TradDraft, etc.)'''
-        self.__control_trace(False)
+        self._control_trace(False)
         try:
             if new_list:
                 self.data_source_selection.set(next(iter(self.data_sources)))
@@ -815,11 +817,11 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__update_data_source_options Error: %s", error)
 
-        self.__control_trace(True)
+        self._control_trace(True)
 
-    def __update_column_options(self):
+    def _update_column_options(self):
         '''Update the option menus whenever the application settings change'''
-        self.__control_trace(False)
+        self._control_trace(False)
         try:
             if self.filter_format_selection.get() not in self.filter_format_list:
                 self.filter_format_selection.set(
@@ -927,30 +929,30 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__update_column_options Error: %s", error)
 
-        self.__control_trace(True)
+        self._control_trace(True)
 
-    def __default_settings_callback(self, *args):
+    def _default_settings_callback(self, *args):
         '''Callback function that's called when the Default Settings button is pressed'''
         CL.reset_config()
         self.configuration = CL.read_config()
-        self.__update_settings_data()
-        self.__update_draft_data()
-        self.__update_overlay_callback(False)
+        self._update_settings_data()
+        self._update_draft_data()
+        self._update_overlay_callback(False)
 
-    def __update_source_callback(self, *args):
+    def _update_source_callback(self, *args):
         '''Callback function that collects the set data a new data source is selected'''
-        self.__update_settings_storage()
-        self.__update_draft_data()
-        self.__update_settings_data()
-        self.__update_overlay_callback(False)
+        self._update_settings_storage()
+        self._update_draft_data()
+        self._update_settings_data()
+        self._update_overlay_callback(False)
 
-    def __update_settings_callback(self, *args):
+    def _update_settings_callback(self, *args):
         '''Callback function reconfigures the application whenever the settings change'''
-        self.__update_settings_storage()
-        self.__update_settings_data()
-        self.__update_overlay_callback(False)
+        self._update_settings_storage()
+        self._update_settings_data()
+        self._update_overlay_callback(False)
 
-    def __update_draft_data(self):
+    def _update_draft_data(self):
         '''Function that collects pertinent draft data from the LogScanner class'''
         self.draft.retrieve_set_data(
             self.data_sources[self.data_source_selection.get()])
@@ -965,21 +967,21 @@ class Overlay:
             self.main_options_dict[key] = value
             self.extra_options_dict[key] = value
 
-    def __update_draft(self):
+    def _update_draft(self):
         '''Function that that triggers a search of the Arena log for draft data'''
         update = False
         if self.draft.draft_start_search():
             update = True
             self.data_sources = self.draft.retrieve_data_sources()
             self.tier_sources = self.draft.retrieve_tier_source()
-            self.__update_data_source_options(True)
-            self.__update_draft_data()
+            self._update_data_source_options(True)
+            self._update_draft_data()
 
         if self.draft.draft_data_search():
             update = True
         return update
 
-    def __update_settings_storage(self):
+    def _update_settings_storage(self):
         '''Function that transfers settings data from the overlay widgets to a data class'''
         try:
             selection = self.column_2_selection.get()
@@ -1032,15 +1034,17 @@ class Overlay:
                 self.taken_iwd_checkbox_value.get())
             self.configuration.taken_gndwr_enabled = bool(
                 self.taken_gndwr_checkbox_value.get())
+            self.configuration.taken_gdwr_enabled = bool(
+                self.taken_gdwr_checkbox_value.get())
             self.configuration.card_colors_enabled = bool(
                 self.card_colors_checkbox_value.get())
             CL.write_config(self.configuration)
         except Exception as error:
             overlay_logger.info("__update_settings_storage Error: %s", error)
 
-    def __update_settings_data(self):
+    def _update_settings_data(self):
         '''Function that transfers settings data from a data class to the overlay widgets'''
-        self.__control_trace(False)
+        self._control_trace(False)
         try:
             selection = [k for k, v in self.main_options_dict.items(
             ) if v == self.configuration.column_2]
@@ -1094,6 +1098,8 @@ class Overlay:
                 self.configuration.taken_gpwr_enabled)
             self.taken_ohwr_checkbox_value.set(
                 self.configuration.taken_ohwr_enabled)
+            self.taken_gdwr_checkbox_value.set(
+                self.configuration.taken_gdwr_enabled)
             self.taken_gndwr_checkbox_value.set(
                 self.configuration.taken_gndwr_enabled)
             self.taken_iwd_checkbox_value.set(
@@ -1119,23 +1125,24 @@ class Overlay:
             self.taken_ata_checkbox_value.set(True)
             self.taken_gpwr_checkbox_value.set(True)
             self.taken_ohwr_checkbox_value.set(True)
+            self.taken_gdwr_checkbox_value.set(True)
             self.taken_gndwr_checkbox_value.set(True)
             self.taken_iwd_checkbox_value.set(True)
             self.card_colors_checkbox_value.set(True)
             overlay_logger.info("__update_settings_data Error: %s", error)
-        self.__control_trace(True)
+        self._control_trace(True)
 
         self.draft.log_enable(self.configuration.draft_log_enabled)
 
-    def __initialize_overlay_widgets(self):
+    def _initialize_overlay_widgets(self):
         '''Set the overlay widgets in the main window to a known state at startup'''
-        self.__update_data_source_options(False)
-        self.__update_column_options()
+        self._update_data_source_options(False)
+        self._update_column_options()
 
-        self.__enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self.__enable_missing_cards_table(self.missing_cards_checkbox_value.get())
-        self.__update_current_draft_label(self.draft.draft_sets, self.draft.draft_type)
-        self.__update_pack_pick_label(self.draft.current_pack, self.draft.current_pick)
+        self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
+        self._enable_missing_cards_table(self.missing_cards_checkbox_value.get())
+        self._update_current_draft_label(self.draft.draft_sets, self.draft.draft_type)
+        self._update_pack_pick_label(self.draft.current_pack, self.draft.current_pick)
 
         fields = {"Column1": constants.DATA_FIELD_NAME,
                   "Column2": self.main_options_dict[self.column_2_selection.get()],
@@ -1144,33 +1151,33 @@ class Overlay:
                   "Column5": self.extra_options_dict[self.column_5_selection.get()],
                   "Column6": self.extra_options_dict[self.column_6_selection.get()],
                   "Column7": self.extra_options_dict[self.column_7_selection.get()], }
-        self.__update_pack_table([],  self.deck_filter_selection.get(), fields)
+        self._update_pack_table([],  self.deck_filter_selection.get(), fields)
 
-        self.__update_missing_table(
+        self._update_missing_table(
             [], [], [], self.deck_filter_selection.get(), fields)
 
-        self.__update_deck_stats_callback()
+        self._update_deck_stats_callback()
 
         self.root.update()
 
-    def __update_overlay_callback(self, enable_draft_search):
+    def _update_overlay_callback(self, enable_draft_search):
         '''Callback function that updates all of the widgets in the main window'''
         update = True
         if enable_draft_search:
-            update = self.__update_draft()
+            update = self._update_draft()
 
         if not update:
             return
 
-        self.__update_data_source_options(False)
-        self.__update_column_options()
+        self._update_data_source_options(False)
+        self._update_column_options()
 
-        self.__enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self.__enable_missing_cards_table(self.missing_cards_checkbox_value.get())
+        self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
+        self._enable_missing_cards_table(self.missing_cards_checkbox_value.get())
 
         taken_cards = self.draft.retrieve_taken_cards()
 
-        filtered = self.__identify_auto_colors(
+        filtered = self._identify_auto_colors(
             taken_cards, self.deck_filter_selection.get())
         fields = {"Column1": constants.DATA_FIELD_NAME,
                   "Column2": self.main_options_dict[self.column_2_selection.get()],
@@ -1180,32 +1187,32 @@ class Overlay:
                   "Column6": self.extra_options_dict[self.column_6_selection.get()],
                   "Column7": self.extra_options_dict[self.column_7_selection.get()], }
 
-        self.__update_current_draft_label(self.draft.draft_sets, self.draft.draft_type)
-        self.__update_pack_pick_label(self.draft.current_pack, self.draft.current_pick)
+        self._update_current_draft_label(self.draft.draft_sets, self.draft.draft_type)
+        self._update_pack_pick_label(self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
 
         pack_cards = self.draft.retrieve_pack_cards(pack_index)
-        self.__update_pack_table(pack_cards,
+        self._update_pack_table(pack_cards,
                                  filtered,
                                  fields)
 
-        self.__update_missing_table(pack_cards,
+        self._update_missing_table(pack_cards,
                                 self.draft.retrieve_initial_pack_cards(
                                     pack_index),
                                 self.draft.retrieve_picked_cards(pack_index),
                                 filtered,
                                 fields)
 
-        self.__update_deck_stats_callback()
-        self.__update_taken_table()
+        self._update_deck_stats_callback()
+        self._update_taken_table()
 
-    def __update_deck_stats_callback(self, *args):
+    def _update_deck_stats_callback(self, *args):
         '''Callback function that updates the Deck Stats table in the main window'''
         self.root.update_idletasks()
-        self.__update_deck_stats_table(self.draft.retrieve_taken_cards(
+        self._update_deck_stats_table(self.draft.retrieve_taken_cards(
         ), self.stat_options_selection.get(), self.pack_table.winfo_width())
 
-    def __arena_log_check(self):
+    def _arena_log_check(self):
         '''Function that monitors the Arena log every 1000ms to determine if there's new draft data'''
         try:
             self.current_timestamp = os.stat(self.arena_file).st_mtime
@@ -1215,16 +1222,16 @@ class Overlay:
 
                 while True:
 
-                    self.__update_overlay_callback(True)
+                    self._update_overlay_callback(True)
                     if self.draft.step_through:
                         input("Continue?")
                     else:
                         break
         except Exception as error:
             overlay_logger.info("__arena_log_check Error: %s", error)
-            self.__reset_draft(True)
+            self._reset_draft(True)
 
-        self.root.after(1000, self.__arena_log_check)
+        self.root.after(1000, self._arena_log_check)
 
     def lift_window(self):
         '''Function that's used to minimize a window or set it as the top most window'''
@@ -1236,7 +1243,7 @@ class Overlay:
             self.root.attributes("-topmost", False)
             self.root.iconify()
 
-    def __update_set_start_date(self, start, selection, set_list, *args):
+    def _update_set_start_date(self, start, selection, set_list, *args):
         '''Function that's used to determine if a set in the Set View window has minimum start data
            Example: The user shouldn't download Arena Cube data that's more than a couple of months old
            or else they risk downloading data from multiple separate cubes
@@ -1252,7 +1259,7 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__update_set_start_date Error: %s", error)
 
-    def __open_set_view_window(self):
+    def _open_set_view_window(self):
         '''Creates the Set View window'''
         popup = tkinter.Toplevel()
         popup.wm_title("Set Data")
@@ -1315,12 +1322,12 @@ class Overlay:
             set_entry = OptionMenu(
                 popup, set_value, set_choices[0], *set_choices)
             set_value.trace("w", lambda *args, start=start_entry, selection=set_value,
-                            set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
+                            set_list=sets: self._update_set_start_date(start, selection, set_list, *args))
 
             progress = Progressbar(
                 popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
 
-            add_button = Button(popup, command=lambda: self.__add_set(popup,
+            add_button = Button(popup, command=lambda: self._add_set(popup,
                                                                    set_value,
                                                                    draft_value,
                                                                    start_entry,
@@ -1348,11 +1355,11 @@ class Overlay:
 
             list_box.pack(expand=True, fill="both")
 
-            self.__update_set_table(list_box, sets)
+            self._update_set_table(list_box, sets)
         except Exception as error:
             overlay_logger.info("__open_set_view_window Error: %s", error)
 
-    def __open_card_compare_window(self):
+    def _open_card_compare_window(self):
         '''Creates the Card Compare window'''
         popup = tkinter.Toplevel()
         popup.wm_title("Card Compare")
@@ -1367,7 +1374,7 @@ class Overlay:
 
             taken_cards = self.draft.retrieve_taken_cards()
 
-            filtered = self.__identify_auto_colors(
+            filtered = self._identify_auto_colors(
                 taken_cards, self.deck_filter_selection.get())
             fields = {"Column1": constants.DATA_FIELD_NAME,
                       "Column2": self.main_options_dict[self.column_2_selection.get()],
@@ -1404,7 +1411,7 @@ class Overlay:
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
 
-            clear_button = Button(popup, text="Clear", command=lambda: self.__clear_compare_table(
+            clear_button = Button(popup, text="Clear", command=lambda: self._clear_compare_table(
                 compare_table, matching_cards))
 
             card_frame.grid(row=0, column=0, sticky="nsew")
@@ -1414,14 +1421,14 @@ class Overlay:
             compare_table.pack(expand=True, fill="both")
             card_entry.pack(side=tkinter.LEFT, expand=True, fill="both")
 
-            card_entry.bind("<Return>", lambda event: self.__update_compare_table(compare_table,
+            card_entry.bind("<Return>", lambda event: self._update_compare_table(compare_table,
                                                                               matching_cards,
                                                                               card_entry,
                                                                               self.draft.set_data["card_ratings"],
                                                                               filtered,
                                                                               fields))
 
-            self.__update_compare_table(compare_table,
+            self._update_compare_table(compare_table,
                                     matching_cards,
                                     card_entry,
                                     self.draft.set_data["card_ratings"],
@@ -1431,13 +1438,13 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__open_card_compare_window Error: %s", error)
 
-    def __close_taken_cards_window(self, popup):
+    def _close_taken_cards_window(self, popup):
         '''Clear taken card table data when the Taken Cards window is closed'''
         self.taken_table = None
 
         popup.destroy()
 
-    def __open_taken_cards_window(self):
+    def _open_taken_cards_window(self):
         '''Creates the Taken Cards window'''
         popup = tkinter.Toplevel()
         popup.wm_title("Taken Cards")
@@ -1447,7 +1454,7 @@ class Overlay:
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         popup.protocol(
-            "WM_DELETE_WINDOW", lambda window=popup: self.__close_taken_cards_window(window))
+            "WM_DELETE_WINDOW", lambda window=popup: self._close_taken_cards_window(window))
         try:
             tkinter.Grid.rowconfigure(popup, 3, weight=1)
             tkinter.Grid.columnconfigure(popup, 6, weight=1)
@@ -1466,6 +1473,7 @@ class Overlay:
                        "Column8": {"width": .20, "anchor": tkinter.CENTER},
                        "Column9": {"width": .20, "anchor": tkinter.CENTER},
                        "Column10": {"width": .20, "anchor": tkinter.CENTER},
+                       "Column11": {"width": .20, "anchor": tkinter.CENTER},
                        }
 
             style = Style()
@@ -1489,36 +1497,54 @@ class Overlay:
             ), *taken_filter_list, style="my.TMenubutton")
 
             checkbox_frame = tkinter.Frame(popup)
+            
+            checkbox_style = Style()
+            checkbox_style.configure('taken.TCheckbutton', font=(
+                constants.FONT_SANS_SERIF, 9))
+            
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
                                               text="ALSA",
+                                              style="taken.TCheckbutton",
                                               variable=self.taken_alsa_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
             taken_ata_checkbox = Checkbutton(checkbox_frame,
                                              text="ATA",
+                                             style="taken.TCheckbutton",
                                              variable=self.taken_ata_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
             taken_gpwr_checkbox = Checkbutton(checkbox_frame,
                                               text="GPWR",
+                                              style="taken.TCheckbutton",
                                               variable=self.taken_gpwr_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
             taken_ohwr_checkbox = Checkbutton(checkbox_frame,
                                               text="OHWR",
+                                              style="taken.TCheckbutton",
                                               variable=self.taken_ohwr_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
+            taken_gdwr_checkbox = Checkbutton(checkbox_frame,
+                                             text="GDWR",
+                                             style="taken.TCheckbutton",
+                                             variable=self.taken_gdwr_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
             taken_gndwr_checkbox = Checkbutton(checkbox_frame,
                                                text="GNDWR",
+                                               style="taken.TCheckbutton",
                                                variable=self.taken_gndwr_checkbox_value,
                                                onvalue=1,
                                                offvalue=0)
             taken_iwd_checkbox = Checkbutton(checkbox_frame,
                                              text="IWD",
+                                             style="taken.TCheckbutton",
                                              variable=self.taken_iwd_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
+                                             
 
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             checkbox_frame.grid(row=1, column=0, columnspan=7, sticky="nsew")
@@ -1530,18 +1556,19 @@ class Overlay:
             taken_ata_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
             taken_gpwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
             taken_ohwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
+            taken_gdwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
             taken_gndwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
             taken_iwd_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
 
             taken_filter_label.pack(side=tkinter.LEFT, expand=True, fill=None)
             taken_option.pack(side=tkinter.LEFT, expand=True, fill="both")
 
-            self.__update_taken_table()
+            self._update_taken_table()
             popup.update()
         except Exception as error:
             overlay_logger.info("__open_taken_cards_window Error: %s", error)
 
-    def __open_suggest_deck_window(self):
+    def _open_suggest_deck_window(self):
         '''Creates the Suggest Deck window'''
         popup = tkinter.Toplevel()
         popup.wm_title("Suggested Decks")
@@ -1574,7 +1601,7 @@ class Overlay:
             deck_colors_entry = OptionMenu(
                 popup, deck_colors_value, choices[0], *choices)
 
-            deck_colors_button = Button(popup, command=lambda: self.__update_suggest_table(suggest_table,
+            deck_colors_button = Button(popup, command=lambda: self._update_suggest_table(suggest_table,
                                                                                             deck_colors_value,
                                                                                             suggested_decks,
                                                                                             deck_color_options),
@@ -1614,12 +1641,12 @@ class Overlay:
 
             suggest_table.pack(expand=True, fill='both')
 
-            self.__update_suggest_table(
+            self._update_suggest_table(
                 suggest_table, deck_colors_value, suggested_decks, deck_color_options)
         except Exception as error:
             overlay_logger.info("__open_suggest_deck_window Error: %s", error)
 
-    def __close_settings_window(self, popup):
+    def _close_settings_window(self, popup):
         '''Clears settings data when the Settings window is closed'''
         self.column_2_options = None
         self.column_3_options = None
@@ -1629,12 +1656,12 @@ class Overlay:
         self.column_7_options = None
         popup.destroy()
 
-    def __open_settings_window(self):
+    def _open_settings_window(self):
         '''Creates the Settings window'''
         popup = tkinter.Toplevel()
         popup.wm_title("Settings")
         popup.protocol("WM_DELETE_WINDOW",
-                       lambda window=popup: self.__close_settings_window(window))
+                       lambda window=popup: self._close_settings_window(window))
         popup.attributes("-topmost", True)
         location_x, location_y = identify_safe_coordinates(self.root, 400, 170, 250, 0)
         popup.wm_geometry(f"+{location_x}+{location_y}")
@@ -1643,7 +1670,7 @@ class Overlay:
             tkinter.Grid.rowconfigure(popup, 1, weight=1)
             tkinter.Grid.columnconfigure(popup, 0, weight=1)
 
-            self.__control_trace(False)
+            self._control_trace(False)
 
             column_2_label = tkinter.Label(
                 popup, text="Column 2:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
@@ -1740,7 +1767,7 @@ class Overlay:
             result_format_options.config(width=15)
 
             default_button = Button(
-                popup, command=self.__default_settings_callback, text="Default Settings")
+                popup, command=self._default_settings_callback, text="Default Settings")
 
             column_2_label.grid(row=0, column=0, columnspan=1,
                                 sticky="nsew", padx=(10,))
@@ -1800,12 +1827,12 @@ class Overlay:
                 row=16, column=1, columnspan=1, sticky="nsew", padx=(5,))
             default_button.grid(row=17, column=0, columnspan=2, sticky="nsew")
 
-            self.__control_trace(True)
+            self._control_trace(True)
 
         except Exception as error:
             overlay_logger.info("__open_settings_window Error: %s", error)
 
-    def __add_set(self, popup, draft_set, draft, start, end, button, progress, list_box, sets, status, version):
+    def _add_set(self, popup, draft_set, draft, start, end, button, progress, list_box, sets, status, version):
         '''Initiates the set download process when the Add Set button is clicked'''
         result = True
         result_string = ""
@@ -1851,9 +1878,9 @@ class Overlay:
                 return_size = temp_size
                 popup.update()
                 status.set("Updating Set List")
-                self.__update_set_table(list_box, sets)
-                self.__reset_draft(True)
-                self.__update_overlay_callback(True)
+                self._update_set_table(list_box, sets)
+                self._reset_draft(True)
+                self._update_overlay_callback(True)
                 status.set("Download Complete")
             except Exception as error:
                 result = False
@@ -1874,7 +1901,7 @@ class Overlay:
         popup.update()
         return
 
-    def __update_set_table(self, list_box, sets):
+    def _update_set_table(self, list_box, sets):
         '''Updates the set list in the Set View table'''
         # Delete the content of the list box
         for row in list_box.get_children():
@@ -1892,7 +1919,7 @@ class Overlay:
             list_box.insert("", index=count, iid=count,
                             values=file, tag=(row_tag,))
 
-    def __process_table_click(self, event, table, card_list, selected_color):
+    def _process_table_click(self, event, table, card_list, selected_color):
         '''Creates the card tooltip when a table row is clicked'''
         color_dict = {}
         for item in table.selection():
@@ -1925,79 +1952,81 @@ class Overlay:
                         overlay_logger.info("__process_table_click Error: %s", error)
                     break
 
-    def __open_draft_log(self):
+    def _open_draft_log(self):
         '''Reads and processes a stored draft log when File->Open is selected'''
         filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),
                                                          ("All files", "*.*")))
 
         if filename:
             self.arena_file = filename
-            self.__reset_draft(True)
+            self._reset_draft(True)
             self.draft.set_arena_file(filename)
             self.draft.log_suspend(True)
-            self.__update_overlay_callback(True)
+            self._update_overlay_callback(True)
             self.draft.log_suspend(False)
 
-    def __control_trace(self, enabled):
+    def _control_trace(self, enabled):
         '''Enable/Disable all of the overlay widget traces. This function is used when the application needs
            to modify a widget value without triggering a callback
         '''
         try:
             trace_list = [
                 (self.column_2_selection, lambda: self.column_2_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.column_3_selection, lambda: self.column_3_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.column_4_selection, lambda: self.column_4_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.column_5_selection, lambda: self.column_5_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.column_6_selection, lambda: self.column_6_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.column_7_selection, lambda: self.column_7_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.deck_stats_checkbox_value, lambda: self.deck_stats_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.missing_cards_checkbox_value, lambda: self.missing_cards_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.auto_highest_checkbox_value, lambda: self.auto_highest_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.curve_bonus_checkbox_value, lambda: self.curve_bonus_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.color_bonus_checkbox_value, lambda: self.color_bonus_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.bayesian_average_checkbox_value, lambda: self.bayesian_average_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.data_source_selection, lambda: self.data_source_selection.trace(
-                    "w", self.__update_source_callback)),
+                    "w", self._update_source_callback)),
                 (self.stat_options_selection, lambda: self.stat_options_selection.trace(
-                    "w", self.__update_deck_stats_callback)),
+                    "w", self._update_deck_stats_callback)),
                 (self.draft_log_checkbox_value, lambda: self.draft_log_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.filter_format_selection, lambda: self.filter_format_selection.trace(
-                    "w", self.__update_source_callback)),
+                    "w", self._update_source_callback)),
                 (self.result_format_selection, lambda: self.result_format_selection.trace(
-                    "w", self.__update_source_callback)),
+                    "w", self._update_source_callback)),
                 (self.deck_filter_selection, lambda: self.deck_filter_selection.trace(
-                    "w", self.__update_source_callback)),
+                    "w", self._update_source_callback)),
                 (self.taken_alsa_checkbox_value, lambda: self.taken_alsa_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.taken_ata_checkbox_value, lambda: self.taken_ata_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.taken_gpwr_checkbox_value, lambda: self.taken_gpwr_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.taken_ohwr_checkbox_value, lambda: self.taken_ohwr_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
+                (self.taken_gdwr_checkbox_value, lambda: self.taken_gdwr_checkbox_value.trace(
+                    "w", self._update_settings_callback)),
                 (self.taken_gndwr_checkbox_value, lambda: self.taken_gndwr_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.taken_iwd_checkbox_value, lambda: self.taken_iwd_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.taken_filter_selection, lambda: self.taken_filter_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.taken_type_selection, lambda: self.taken_type_selection.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
                 (self.card_colors_checkbox_value, lambda: self.card_colors_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
+                    "w", self._update_settings_callback)),
             ]
 
             if enabled:
@@ -2011,11 +2040,11 @@ class Overlay:
         except Exception as error:
             overlay_logger.info("__control_trace Error: %s", error)
 
-    def __reset_draft(self, full_reset):
+    def _reset_draft(self, full_reset):
         '''Clear all of the stored draft data (i.e., draft type, draft set, collected cards, etc.)'''
         self.draft.clear_draft(full_reset)
 
-    def __update_overlay_build(self):
+    def _update_overlay_build(self):
         '''Checks the version.txt file in Github to determine if a new version of the application is available'''
         # Version Check
         update_flag = False
@@ -2049,10 +2078,10 @@ class Overlay:
             update_flag = True
 
         if update_flag:
-            self.__arena_log_check()
-            self.__control_trace(True)
+            self._arena_log_check()
+            self._control_trace(True)
 
-    def __enable_deck_stats_table(self, enable):
+    def _enable_deck_stats_table(self, enable):
         '''Hide/Display the Deck Stats table based on the application settings'''
         try:
             if enable:
@@ -2067,7 +2096,7 @@ class Overlay:
             self.stat_frame.grid(row=10, column=0, columnspan=2, sticky='nsew')
             self.stat_table.grid(row=11, column=0, columnspan=2, sticky='nsew')
 
-    def __enable_missing_cards_table(self, enable):
+    def _enable_missing_cards_table(self, enable):
         '''Hide/Display the Missing Cards table based on the application settings'''
         try:
             if enable:
@@ -2093,36 +2122,36 @@ class CreateCardToolTip(object):
         self.color_dict = color_dict
         self.image = image
         self.images_enabled = images_enabled
-        self.widget.bind("<Leave>", self.__leave)
-        self.widget.bind("<ButtonPress>", self.__leave)
+        self.widget.bind("<Leave>", self._leave)
+        self.widget.bind("<ButtonPress>", self._leave)
         self.id = None
         self.tw = None
         self.event = event
         self.images = []
-        self.__enter()
+        self._enter()
 
-    def __enter(self, event=None):
+    def _enter(self, event=None):
         '''Initiate creation of the tooltip widget'''
-        self.__schedule()
+        self._schedule()
 
-    def __leave(self, event=None):
+    def _leave(self, event=None):
         '''Remove tooltip when the user hovers over the tooltip or clicks elsewhere'''
-        self.__unschedule()
-        self.__hide_tooltip()
+        self._unschedule()
+        self._hide_tooltip()
 
-    def __schedule(self):
+    def _schedule(self):
         '''Creates the tooltip window widget and stores the id'''
-        self.__unschedule()
-        self.id = self.widget.after(self.waittime, self.__display_tooltip)
+        self._unschedule()
+        self.id = self.widget.after(self.waittime, self._display_tooltip)
 
-    def __unschedule(self):
+    def _unschedule(self):
         '''Clear the stored widget data when the closing the tooltip'''
         widget_id = self.id
         self.id = None
         if widget_id:
             self.widget.after_cancel(widget_id)
 
-    def __display_tooltip(self, event=None):
+    def _display_tooltip(self, event=None):
         '''Function that builds and populates the tooltip window '''
         try:
             tt_width = 400
@@ -2141,13 +2170,13 @@ class CreateCardToolTip(object):
                                "bold", ), background="#3d3d3d", foreground="#e6ecec", relief="groove", anchor="c",)
 
             if len(self.color_dict) == 2:
-                headers = {"tkinter.Label": {"width": .70, "anchor": tkinter.W},
+                headers = {"Label": {"width": .70, "anchor": tkinter.W},
                            "Value1": {"width": .15, "anchor": tkinter.CENTER},
                            "Value2": {"width": .15, "anchor": tkinter.CENTER}}
                 width = 400
                 tt_width += 150
             else:
-                headers = {"tkinter.Label": {"width": .80, "anchor": tkinter.W},
+                headers = {"Label": {"width": .80, "anchor": tkinter.W},
                            "Value1": {"width": .20, "anchor": tkinter.CENTER}}
                 width = 340
 
@@ -2184,6 +2213,10 @@ class CreateCardToolTip(object):
             values = ["Games Played Win Rate:"] + \
                 [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
+            
+            values = ["Games Drawn Win Rate:"] + \
+                [f"{x[constants.DATA_FIELD_GDWR]}%" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
 
             values = ["Games Not Drawn Win Rate:"] + \
                 [f"{x[constants.DATA_FIELD_GNDWR]}%" for x in self.color_dict.values()]
@@ -2202,12 +2235,16 @@ class CreateCardToolTip(object):
             values = ["Number of Games Played:"] + \
                 [f"{x[constants.DATA_FIELD_NGP]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
+            
+            values = ["Number of Games Drawn:"] + \
+                [f"{x[constants.DATA_FIELD_NGD]}" for x in self.color_dict.values()]
+            main_field_list.append(tuple(values))
 
             values = ["Number of Games Not Drawn:"] + \
                 [f"{x[constants.DATA_FIELD_NGND]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
 
-            for x in range(4):
+            for x in range(2):
                 main_field_list.append(tuple(["", ""]))
 
             if main_field_list:
@@ -2255,7 +2292,7 @@ class CreateCardToolTip(object):
         except Exception as error:
             overlay_logger.info("__display_tooltip Error: %s", error)
 
-    def __hide_tooltip(self):
+    def _hide_tooltip(self):
         tw = self.tw
         self.tw = None
         if tw:

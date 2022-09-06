@@ -1,4 +1,4 @@
-
+"""This module contains the functions and classes that are used for building the set files and communicating with platforms"""
 from enum import Enum
 from urllib.parse import quote as urlencode
 import sys
@@ -340,7 +340,7 @@ class FileExtractor:
         result_string = ""
         temp_size = 0
         try:
-            result, result_string, temp_size = self.__download_expansion(
+            result, result_string, temp_size = self._download_expansion(
                 ui_root, progress_bar, status, database_size)
 
         except Exception as error:
@@ -349,7 +349,7 @@ class FileExtractor:
 
         return result, result_string, temp_size
 
-    def __download_expansion(self, ui_root, progress_bar, status, database_size):
+    def _download_expansion(self, ui_root, progress_bar, status, database_size):
         ''' Function that performs the following steps:
             1. Build a card data file from local Arena files (stored as temp_card_data.json in the Temp folder)
                - The card sets contains the Arena IDs, card name, mana cost, colors, etc.
@@ -365,7 +365,7 @@ class FileExtractor:
                 progress_bar['value'] = 5
                 ui_root.update()
 
-                result, result_string, temp_size = self.__retrieve_local_arena_data(
+                result, result_string, temp_size = self._retrieve_local_arena_data(
                     ui_root, status, database_size)
 
                 if not result:
@@ -393,20 +393,20 @@ class FileExtractor:
                     constants.SET_LIST_ARENA] else False
 
                 if not matching_only:
-                    self.__initialize_17lands_data()
+                    self._initialize_17lands_data()
 
                 status.set("Building Data Set File")
                 ui_root.update()
-                self.__assemble_set(matching_only)
+                self._assemble_set(matching_only)
                 break
 
         except Exception as error:
-            file_logger.info("__download_expansion Error: %s", error)
+            file_logger.info("_download_expansion Error: %s", error)
             result_string = error
 
         return result, result_string, temp_size
 
-    def __retrieve_local_arena_data(self, root, status, previous_database_size):
+    def _retrieve_local_arena_data(self, root, status, previous_database_size):
         '''Builds a card data file from raw Arena files'''
         result_string = "Couldn't Collect Local Card Data"
         result = False
@@ -450,7 +450,7 @@ class FileExtractor:
                         arena_database_locations[0])
                     status.set("Retrieving Localization Data")
                     root.update()
-                    result, card_text, card_enumerators = self.__retrieve_local_database(
+                    result, card_text, card_enumerators = self._retrieve_local_database(
                         arena_database_locations[0])
 
                     if not result:
@@ -461,7 +461,7 @@ class FileExtractor:
                         arena_cards_locations[0])
                     status.set("Retrieving Raw Card Data")
                     root.update()
-                    result, raw_card_data = self.__retrieve_local_cards(
+                    result, raw_card_data = self._retrieve_local_cards(
                         arena_cards_locations[0])
 
                     if not result:
@@ -469,7 +469,7 @@ class FileExtractor:
 
                     status.set("Building Temporary Card Data File")
                     root.update()
-                    result = self.__assemble_stored_data(
+                    result = self._assemble_stored_data(
                         card_text, card_enumerators, raw_card_data)
 
                     if not result:
@@ -478,13 +478,13 @@ class FileExtractor:
                 # Assemble information for local data set
                 status.set("Retrieving Temporary Card Data")
                 root.update()
-                result = self.__retrieve_stored_data(
+                result = self._retrieve_stored_data(
                     self.selected_sets[constants.SET_LIST_ARENA])
 
                 database_size = current_database_size
 
             except Exception as error:
-                file_logger.info("__retrieve_local_arena_data Error: %s", error)
+                file_logger.info("_retrieve_local_arena_data Error: %s", error)
             break
 
         if not result:
@@ -492,7 +492,7 @@ class FileExtractor:
 
         return result, result_string, database_size
 
-    def __retrieve_local_cards(self, file_location):
+    def _retrieve_local_cards(self, file_location):
         '''Function that retrieves pertinent card data from raw Arena files'''
         result = False
         card_data = {}
@@ -540,6 +540,7 @@ class FileExtractor:
                             card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("", 0)
                         card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
                         card_data[card_set][group_id]["mana_cost"] = mana_cost
+                        card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]] if constants.LOCAL_CARDS_KEY_RARITY in card else constants.CARD_RARITY_COMMON
 
                         result = True
                     except Exception as error:
@@ -547,11 +548,11 @@ class FileExtractor:
                         break
                         # pass
         except Exception as error:
-            file_logger.info("__retrieve_local_cards Error: %s", error)
+            file_logger.info("_retrieve_local_cards Error: %s", error)
 
         return result, card_data
 
-    def __retrieve_local_database(self, file_location):
+    def _retrieve_local_database(self, file_location):
         '''Retrieves localization and enumeration data from an Arena database'''
         result = False
         card_text = {}
@@ -569,7 +570,7 @@ class FileExtractor:
                 if not rows:
                     break
 
-                result, card_text = self.__retrieve_local_card_text(rows)
+                result, card_text = self._retrieve_local_card_text(rows)
 
                 if not result:
                     break
@@ -580,7 +581,7 @@ class FileExtractor:
                 if not rows:
                     break
 
-                result, card_enumerators = self.__retrieve_local_card_enumerators(
+                result, card_enumerators = self._retrieve_local_card_enumerators(
                     rows)
 
                 if not result:
@@ -590,11 +591,11 @@ class FileExtractor:
 
         except Exception as error:
             result = False
-            file_logger.info("__retrieve_local_database Error: %s", error)
+            file_logger.info("_retrieve_local_database Error: %s", error)
 
         return result, card_text, card_enumerators
 
-    def __retrieve_local_card_text(self, data):
+    def _retrieve_local_card_text(self, data):
         '''Returns a dict containing localization data'''
         result = True
         card_text = {}
@@ -605,11 +606,11 @@ class FileExtractor:
 
         except Exception as error:
             result = False
-            file_logger.info("__retrieve_local_card_text Error: %s", error)
+            file_logger.info("_retrieve_local_card_text Error: %s", error)
 
         return result, card_text
 
-    def __retrieve_local_card_enumerators(self, data):
+    def _retrieve_local_card_enumerators(self, data):
         '''Returns a dict containing card enumeration data'''
         result = True
         card_enumerators = {constants.DATA_FIELD_COLORS: {},
@@ -625,11 +626,11 @@ class FileExtractor:
 
         except Exception as error:
             result = False
-            file_logger.info("__retrieve_local_card_enumerators Error: %s", error)
+            file_logger.info("_retrieve_local_card_enumerators Error: %s", error)
 
         return result, card_enumerators
 
-    def __assemble_stored_data(self, card_text, card_enumerators, card_data):
+    def _assemble_stored_data(self, card_text, card_enumerators, card_data):
         '''Creates a temporary card data file from data collected from local Arena files'''
         result = False
         try:
@@ -658,11 +659,11 @@ class FileExtractor:
 
         except Exception as error:
             result = False
-            file_logger.info("__assemble_stored_data Error: %s", error)
+            file_logger.info("_assemble_stored_data Error: %s", error)
 
         return result
 
-    def __retrieve_stored_data(self, set_list):
+    def _retrieve_stored_data(self, set_list):
         '''Retrieves card data from the temp_card_data.json file stored in the Temp folder'''
         result = False
         self.card_dict = {}
@@ -686,7 +687,7 @@ class FileExtractor:
 
         except Exception as error:
             result = False
-            file_logger.info("__retrieve_stored_data Error: %s", error)
+            file_logger.info("_retrieve_stored_data Error: %s", error)
 
         return result
 
@@ -697,7 +698,7 @@ class FileExtractor:
             url = "https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/version.txt"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
-            version = self.__process_repository_version(url_data)
+            version = self._process_repository_version(url_data)
 
         except Exception as error:
             file_logger.info("retrieve_repository_version Error: %s", error)
@@ -741,7 +742,7 @@ class FileExtractor:
 
                     set_json_data = json.loads(url_data)
 
-                    result, result_string = self.__process_scryfall_data(
+                    result, result_string = self._process_scryfall_data(
                         set_json_data["data"])
 
                     while set_json_data["has_more"] and result:
@@ -749,7 +750,7 @@ class FileExtractor:
                         url_data = urllib.request.urlopen(
                             url, context=self.context).read()
                         set_json_data = json.loads(url_data)
-                        result, result_string = self.__process_scryfall_data(
+                        result, result_string = self._process_scryfall_data(
                             set_json_data["data"])
 
                     if result:
@@ -773,7 +774,7 @@ class FileExtractor:
                             constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS)
         return result, result_string
 
-    def __initialize_17lands_data(self):
+    def _initialize_17lands_data(self):
         '''Initialize the 17Lands data by setting the fields to 0 in case there are gaps in the downloaded card data'''
         for data in self.card_dict.values():
             data[constants.DATA_FIELD_DECK_COLORS] = {}
@@ -806,7 +807,7 @@ class FileExtractor:
                             url, context=self.context).read()
 
                         set_json_data = json.loads(url_data)
-                        self.__process_17lands_data(color, set_json_data)
+                        self._process_17lands_data(color, set_json_data)
                         result = True
                         break
                     except Exception as error:
@@ -837,11 +838,11 @@ class FileExtractor:
 
         return result
 
-    def __assemble_set(self, matching_only):
+    def _assemble_set(self, matching_only):
         '''Combine the 17Lands ratings and the card data to form the complete set data'''
         self.combined_data["card_ratings"] = {}
         for card, card_data in self.card_dict.items():
-            if self.__process_card_data(card_data):
+            if self._process_card_data(card_data):
                 self.combined_data["card_ratings"][card] = card_data
             elif not matching_only:
                 self.combined_data["card_ratings"][card] = card_data
@@ -857,13 +858,13 @@ class FileExtractor:
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             set_json_data = json.loads(url_data)
-            sets = self.__process_set_data(sets, set_json_data["data"])
+            sets = self._process_set_data(sets, set_json_data["data"])
             while set_json_data["has_more"]:
                 url = set_json_data["next_page"]
                 url_data = urllib.request.urlopen(
                     url, context=self.context).read()
                 set_json_data = json.loads(url_data)
-                sets = self.__process_set_data(sets, set_json_data["data"])
+                sets = self._process_set_data(sets, set_json_data["data"])
 
         except Exception as error:
             file_logger.info("retrieve_set_list Error: %s", error)
@@ -877,13 +878,13 @@ class FileExtractor:
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)
-            self.__process_17lands_color_ratings(color_json_data)
+            self._process_17lands_color_ratings(color_json_data)
 
         except Exception as error:
             file_logger.info(url)
             file_logger.info("retrieve_17lands_color_ratings Error: %s", error)
 
-    def __process_17lands_data(self, colors, cards):
+    def _process_17lands_data(self, colors, cards):
         '''Parse the 17Lands json data to extract the card ratings'''
         result = True
 
@@ -920,11 +921,11 @@ class FileExtractor:
 
             except Exception as error:
                 result = False
-                file_logger.info("__process_17lands_data Error: %s", error)
+                file_logger.info("_process_17lands_data Error: %s", error)
 
         return result
 
-    def __process_17lands_color_ratings(self, colors):
+    def _process_17lands_color_ratings(self, colors):
         '''Parse the 17Lands json data to collect the color ratings'''
         color_ratings_dict = {
             "Mono-White": constants.CARD_COLOR_SYMBOL_WHITE,
@@ -974,9 +975,9 @@ class FileExtractor:
                             self.combined_data["color_ratings"][processed_colors] = winrate
 
         except Exception as error:
-            file_logger.info("__process_17lands_color_ratings Error: %s", error)
+            file_logger.info("_process_17lands_color_ratings Error: %s", error)
 
-    def __process_scryfall_data(self, data):
+    def _process_scryfall_data(self, data):
         '''Parse json data from the Scryfall API to extract pertinent card data'''
         result = False
         result_string = "Scryfall Data Unavailable"
@@ -1011,12 +1012,12 @@ class FileExtractor:
                 result = True
 
             except Exception as error:
-                file_logger.info("__process_scryfall_data Error: %s", error)
+                file_logger.info("_process_scryfall_data Error: %s", error)
                 result_string = error
 
         return result, result_string
 
-    def __process_card_data(self, card):
+    def _process_card_data(self, card):
         '''Link the 17Lands card ratings with the card data'''
         result = False
         try:
@@ -1040,11 +1041,11 @@ class FileExtractor:
                             card[constants.DATA_FIELD_DECK_COLORS][key][field] = value[field]
 
         except Exception as error:
-            file_logger.info("__process_card_data Error: %s", error)
+            file_logger.info("_process_card_data Error: %s", error)
 
         return result
 
-    def __process_set_data(self, sets, data):
+    def _process_set_data(self, sets, data):
         '''Parse the Scryfall set list data to extract information for sets that are supported by Arena
            - Scryfall lists all Magic sets (paper and digital), so the application needs to filter out non-Arena sets
            - The application will only display sets that have been released
@@ -1099,7 +1100,7 @@ class FileExtractor:
                 if counter >= constants.SET_LIST_COUNT_MAX:
                     break
             except Exception as error:
-                file_logger.info("__process_set_data Error: %s", error)
+                file_logger.info("_process_set_data Error: %s", error)
 
         # Insert the cube sets
         sets["Arena Cube"] = {constants.SET_LIST_ARENA: [constants.SET_SELECTION_ALL], constants.SET_LIST_SCRYFALL: [
@@ -1109,7 +1110,7 @@ class FileExtractor:
 
         return sets
 
-    def __process_repository_version(self, data):
+    def _process_repository_version(self, data):
         '''Convert a version string to float'''
         version = round(float(data.decode("ascii")) * 100)
 

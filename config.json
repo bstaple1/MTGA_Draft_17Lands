@@ -28,6 +28,7 @@
         "taken_ata_enabled": false,
         "taken_gpwr_enabled": false,
         "taken_ohwr_enabled": false,
+        "taken_gdwr_enabled": false,
         "taken_gndwr_enabled": false,
         "taken_iwd_enabled": false,
         "card_colors_enabled": false,

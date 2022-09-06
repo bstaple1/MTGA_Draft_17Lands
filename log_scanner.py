@@ -58,7 +58,7 @@ class ArenaScanner:
         elif self.logging_enabled:
             self.logger.setLevel(logging.INFO)
 
-    def __new_log(self, card_set, event, draft_id):
+    def _new_log(self, card_set, event, draft_id):
         '''Create a new draft log file'''
         try:
             log_name = f"DraftLog_{card_set}_{event}_{draft_id}.log"
@@ -73,7 +73,7 @@ class ArenaScanner:
             self.logger.addHandler(new_handler)
             scanner_logger.info("Creating new draft log: %s", log_path)
         except Exception as error:
-            scanner_logger.info("__new_log Error: %s", error)
+            scanner_logger.info("_new_log Error: %s", error)
 
     def clear_draft(self, full_clear):
         '''Clear the stored draft data collected from the Player.log file'''
@@ -130,7 +130,7 @@ class ArenaScanner:
                             event_line = line
 
             if update:
-                self.__new_log(self.draft_sets[0], event_type, draft_id)
+                self._new_log(self.draft_sets[0], event_type, draft_id)
                 self.logger.info(event_line)
                 self.pick_offset = self.search_offset
                 self.pack_offset = self.search_offset
@@ -198,24 +198,24 @@ class ArenaScanner:
 
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
-                self.__draft_pack_search_premier_p1p1()
-            self.__draft_pack_search_premier_v1()
-            self.__draft_picked_search_premier_v1()
+                self._draft_pack_search_premier_p1p1()
+            self._draft_pack_search_premier_v1()
+            self._draft_picked_search_premier_v1()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V2:
             if len(self.initial_pack[0]) == 0:
-                self.__draft_pack_search_premier_p1p1()
-            self.__draft_pack_search_premier_v2()
-            self.__draft_picked_search_premier_v2()
+                self._draft_pack_search_premier_p1p1()
+            self._draft_pack_search_premier_v2()
+            self._draft_picked_search_premier_v2()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK:
-            self.__draft_pack_search_quick()
-            self.__draft_picked_search_quick()
+            self._draft_pack_search_quick()
+            self._draft_picked_search_quick()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
             if len(self.initial_pack[0]) == 0:
-                self.__draft_pack_search_traditional_p1p1()
-            self.__draft_pack_search_traditional()
-            self.__draft_picked_search_traditional()
+                self._draft_pack_search_traditional_p1p1()
+            self._draft_pack_search_traditional()
+            self._draft_picked_search_traditional()
         elif (self.draft_type == constants.LIMITED_TYPE_SEALED) or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL):
-            update = self.__sealed_pack_search()
+            update = self._sealed_pack_search()
 
         if not update:
             if ((previous_pack != self.current_pack) or
@@ -225,7 +225,7 @@ class ArenaScanner:
 
         return update
 
-    def __draft_pack_search_premier_p1p1(self):
+    def _draft_pack_search_premier_p1p1(self):
         '''Parse premier draft string that contains the P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
@@ -285,13 +285,13 @@ class ArenaScanner:
 
                         except Exception as error:
                             self.logger.info(
-                                "__draft_pack_search_premier_p1p1 Sub Error: %s", error)
+                                "_draft_pack_search_premier_p1p1 Sub Error: %s", error)
         except Exception as error:
-            self.logger.info("__draft_pack_search_premier_p1p1 Error: %s", error)
+            self.logger.info("_draft_pack_search_premier_p1p1 Error: %s", error)
 
         return pack_cards
 
-    def __draft_picked_search_premier_v1(self):
+    def _draft_picked_search_premier_v1(self):
         '''Parse the premier draft string that contains the player pick information'''
         offset = self.pick_offset
         draft_data = object()
@@ -343,11 +343,11 @@ class ArenaScanner:
 
                         except Exception as error:
                             self.logger.info(
-                                "__draft_picked_search_premier_v1 Error: %s", error)
+                                "_draft_picked_search_premier_v1 Error: %s", error)
         except Exception as error:
-            self.logger.info("__draft_picked_search_premier_v1 Error: %s", error)
+            self.logger.info("_draft_picked_search_premier_v1 Error: %s", error)
 
-    def __draft_pack_search_premier_v1(self):
+    def _draft_pack_search_premier_v1(self):
         '''Parse the premier draft string that contains the non-P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
@@ -409,7 +409,7 @@ class ArenaScanner:
             self.logger.info("__draft_pack_search_premier_v1 Error: %s", error)
         return pack_cards
 
-    def __draft_pack_search_premier_v2(self):
+    def _draft_pack_search_premier_v2(self):
         '''Parse the premier draft string that contains the non-P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
@@ -470,7 +470,7 @@ class ArenaScanner:
             self.logger.info("__draft_pack_search_premier_v2 Error: %s", error)
         return pack_cards
 
-    def __draft_picked_search_premier_v2(self):
+    def _draft_picked_search_premier_v2(self):
         '''Parse the premier draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
@@ -525,7 +525,7 @@ class ArenaScanner:
         except Exception as error:
             self.logger.info("__draft_picked_search_premier_v2 Error: %s", error)
 
-    def __draft_pack_search_quick(self):
+    def _draft_pack_search_quick(self):
         '''Parse the quick draft string that contains the current pack data'''
         offset = self.pack_offset
         draft_data = object()
@@ -591,7 +591,7 @@ class ArenaScanner:
 
         return pack_cards
 
-    def __draft_picked_search_quick(self):
+    def _draft_picked_search_quick(self):
         '''Parse the quick draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
@@ -647,7 +647,7 @@ class ArenaScanner:
         except Exception as error:
             self.logger.info("__draft_picked_search_quick Error: %s", error)
 
-    def __draft_pack_search_traditional_p1p1(self):
+    def _draft_pack_search_traditional_p1p1(self):
         '''Parse the traditional draft string that contains the P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
@@ -713,7 +713,7 @@ class ArenaScanner:
 
         return pack_cards
 
-    def __draft_picked_search_traditional(self):
+    def _draft_picked_search_traditional(self):
         '''Parse the traditional draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
@@ -769,7 +769,7 @@ class ArenaScanner:
         except Exception as error:
             self.logger.info("__draft_picked_search_traditional Error: %s", error)
 
-    def __draft_pack_search_traditional(self):
+    def _draft_pack_search_traditional(self):
         '''Parse the quick draft string that contains the non-P1P1 pack data'''
         offset = self.pack_offset
         draft_data = object()
@@ -831,7 +831,7 @@ class ArenaScanner:
             self.logger.info("__draft_pack_search_traditional Error: %s", error)
         return pack_cards
 
-    def __sealed_pack_search(self):
+    def _sealed_pack_search(self):
         '''Parse sealed string that contains all of the card data'''
         offset = self.pack_offset
         draft_data = object()
