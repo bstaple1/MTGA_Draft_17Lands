@@ -252,7 +252,7 @@ class Overlay(ScaledWindow):
         platform = sys.platform
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.hotkey_enabled = False
-            self.root.resizable(width=True, height=True)
+            self.root.resizable(width=False, height=False)
         else:
             self.root.tk.call("source", "dark_mode.tcl")
             self.root.resizable(False, False)
