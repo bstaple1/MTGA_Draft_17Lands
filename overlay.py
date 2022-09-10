@@ -1,6 +1,6 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
-from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton
+from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label
 from tkinter import filedialog
 from datetime import date
 import urllib
@@ -10,6 +10,7 @@ import io
 import logging
 import logging.handlers
 import ctypes
+import math
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk
@@ -216,6 +217,7 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
 class ScaledWindow:
     def __init__(self):
         self.scaling_factor = 1
+        self.fonts_dict = {}
         
     def _scale_value(self, value):
         scaled_value = int(value * self.scaling_factor)
@@ -225,12 +227,15 @@ class ScaledWindow:
 class Overlay(ScaledWindow):
     '''Class that handles all of the UI widgets'''
     def __init__(self, version, args):
+        super().__init__()
         self.root = tkinter.Tk()
         self.version = version
         self.root.title(f"Magic Draft {version}")
         self.configuration = CL.read_config()
+        self.root.resizable(False, False)
         
-        self.scaling_factor = self._adjust_overlay_scale()
+        self._set_os_configuration()
+        
         self.configuration.table_width = self._scale_value(self.configuration.table_width)
         
         self.listener = None
@@ -248,16 +253,6 @@ class Overlay(ScaledWindow):
         overlay_logger.info("Card Data Location: %s",self.data_file)
 
         self.step_through = args.step
-
-        platform = sys.platform
-        if platform == constants.PLATFORM_ID_OSX:
-            self.configuration.hotkey_enabled = False
-            self.root.resizable(width=False, height=False)
-        else:
-            self.root.tk.call("source", "dark_mode.tcl")
-            self.root.resizable(False, False)
-            
-        overlay_logger.info("Platform: %s", platform)
 
         self.extractor = FE.FileExtractor(self.data_file)
         self.draft = LS.ArenaScanner(
@@ -302,26 +297,20 @@ class Overlay(ScaledWindow):
         self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
         self.root.config(menu=self.menubar)
 
-        style = Style()
-        style.map("Treeview",
-                  foreground=fixed_map(style, "foreground"),
-                  background=fixed_map(style, "background"))
-        style.configure("Treeview", rowheight=self._scale_value(25))
         current_draft_label_frame = tkinter.Frame(self.root)
-        self.current_draft_label = tkinter.Label(
-            current_draft_label_frame, text="Current Draft:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
-
+        self.current_draft_label = Label(
+            current_draft_label_frame, text="Current Draft:", style="MainSections.TLabel", anchor="e")
         current_draft_value_frame = tkinter.Frame(self.root)
-        self.current_draft_value_label = tkinter.Label(
-            current_draft_value_frame, text="", font=f'{constants.FONT_SANS_SERIF} 9', anchor="w")
+        self.current_draft_value_label = Label(
+            current_draft_value_frame, text="", anchor="w")
 
         data_source_label_frame = tkinter.Frame(self.root)
-        self.data_source_label = tkinter.Label(
-            data_source_label_frame, text="Data Source:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
+        self.data_source_label = Label(
+            data_source_label_frame, text="Data Source:", style="MainSections.TLabel", anchor="e")
 
         deck_colors_label_frame = tkinter.Frame(self.root)
-        self.deck_colors_label = tkinter.Label(
-            deck_colors_label_frame, text="Deck Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e")
+        self.deck_colors_label = Label(
+            deck_colors_label_frame, text="Deck Filter:", style="MainSections.TLabel", anchor="e")
 
         self.data_source_selection = tkinter.StringVar(self.root)
         self.data_source_list = self.data_sources
@@ -362,14 +351,12 @@ class Overlay(ScaledWindow):
         self.taken_filter_selection = tkinter.StringVar(self.root)
         self.taken_type_selection = tkinter.StringVar(self.root)
 
-        option_style = Style()
-        option_style.configure('my.TMenubutton', font=(
-            constants.FONT_SANS_SERIF, 9))
-
         data_source_option_frame = tkinter.Frame(self.root)
         self.data_source_options = OptionMenu(data_source_option_frame, self.data_source_selection,
-                                              self.data_source_selection.get(), *self.data_source_list, style="my.TMenubutton")
-
+                                              self.data_source_selection.get(), *self.data_source_list, style="All.TMenubutton")
+        menu = self.root.nametowidget(self.data_source_options['menu'])
+        menu.config(font=self.fonts_dict["All.TMenubutton"])
+        
         self.column_2_options = None
         self.column_3_options = None
         self.column_4_options = None
@@ -380,15 +367,17 @@ class Overlay(ScaledWindow):
 
         deck_colors_option_frame = tkinter.Frame(self.root)
         self.deck_colors_options = OptionMenu(deck_colors_option_frame, self.deck_filter_selection,
-                                              self.deck_filter_selection.get(), *self.deck_filter_list, style="my.TMenubutton")
-
+                                              self.deck_filter_selection.get(), *self.deck_filter_list, style="All.TMenubutton")
+        menu = self.root.nametowidget(self.deck_colors_options['menu'])
+        menu.config(font=self.fonts_dict["All.TMenubutton"])
+        
         self.refresh_button_frame = tkinter.Frame(self.root)
         self.refresh_button = Button(
             self.refresh_button_frame, command=lambda: self._update_overlay_callback(True), text="Refresh")
 
         self.status_frame = tkinter.Frame(self.root)
-        self.pack_pick_label = tkinter.Label(
-            self.status_frame, text="Pack: 0, Pick: 0", font=f'{constants.FONT_SANS_SERIF} 9 bold')
+        self.pack_pick_label = Label(
+            self.status_frame, text="Pack: 0, Pick: 0", style="MainSections.TLabel")
 
         self.pack_table_frame = tkinter.Frame(self.root, width=10)
 
@@ -399,45 +388,43 @@ class Overlay(ScaledWindow):
                    "Column5": {"width": .18, "anchor": tkinter.CENTER},
                    "Column6": {"width": .18, "anchor": tkinter.CENTER},
                    "Column7": {"width": .18, "anchor": tkinter.CENTER}}
-        style = Style()
-        style.configure("TButton", foreground="black")
-        style.configure("TEntry", foreground="black")
-        style.configure("Treeview.Heading", font=(
-            constants.FONT_SANS_SERIF, 7), foreground="black")
 
-        self.pack_table = create_header(self.pack_table_frame, 0, 7, headers,
+        self.pack_table = create_header(self.pack_table_frame, 0, self._scale_value(7), headers,
                                        self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.missing_frame = tkinter.Frame(self.root)
-        self.missing_cards_label = tkinter.Label(
-            self.missing_frame, text="Missing Cards", font=f'{constants.FONT_SANS_SERIF} 9 bold')
+        self.missing_cards_label = Label(
+            self.missing_frame, text="Missing Cards", style="MainSections.TLabel")
 
         self.missing_table_frame = tkinter.Frame(self.root, width=10)
 
-        self.missing_table = create_header(self.missing_table_frame, 0, 7, headers,
+        self.missing_table = create_header(self.missing_table_frame, 0, self._scale_value(7), headers,
                                           self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.stat_frame = tkinter.Frame(self.root)
 
-        self.stat_table = create_header(self.root, 0, 7, constants.STATS_HEADER_CONFIG,
+        self.stat_table = create_header(self.root, 0, self._scale_value(7), constants.STATS_HEADER_CONFIG,
                                        self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
-        self.stat_label = tkinter.Label(self.stat_frame, text="Draft Stats:",
-                                font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="e", width=15)
+        self.stat_label = Label(self.stat_frame, text="Draft Stats:",
+                                style="MainSections.TLabel", anchor="e", width=15)
 
         self.stat_options_selection = tkinter.StringVar(self.root)
         self.stat_options_list = [constants.CARD_TYPE_SELECTION_CREATURES,
                                   constants.CARD_TYPE_SELECTION_NONCREATURES, constants.CARD_TYPE_SELECTION_ALL]
 
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection,
-                                       self.stat_options_list[0], *self.stat_options_list, style="my.TMenubutton")
-        self.stat_options.config(width=11)
+                                       self.stat_options_list[0], *self.stat_options_list, style="All.TMenubutton")
+        #self.stat_options.config(width=11)
+        menu = self.root.nametowidget(self.stat_options['menu'])
+        menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-        citation_label = tkinter.Label(self.root, text="Powered by 17Lands*",
-                               font=f'{constants.FONT_SANS_SERIF} 9 ', anchor="e", borderwidth=2, relief="groove")
-        hotkey_label = tkinter.Label(self.root, text="CTRL+G to Minimize",
-                             font=f'{constants.FONT_SANS_SERIF} 8 ', anchor="e")
-        footnote_label = tkinter.Label(self.root, text="*This application is not endorsed by 17Lands",
-                               font=f'{constants.FONT_SANS_SERIF} 8 ', anchor="e")
+        citation_label = Label(self.root, text="Powered by 17Lands*",
+                                       anchor="e", borderwidth=2, relief="groove")                     
+        
+        hotkey_label = Label(self.root, text="CTRL+G to Minimize",
+                             style="Notes.TLabel", anchor="e")
+        footnote_label = Label(self.root, text="*This application is not endorsed by 17Lands",
+                               style="Notes.TLabel", anchor="e")
 
         citation_label.grid(row=0, column=0, columnspan=2)
         current_draft_label_frame.grid(
@@ -487,27 +474,119 @@ class Overlay(ScaledWindow):
         if self.configuration.hotkey_enabled:
             self._start_hotkey_listener()
 
-    def _adjust_overlay_scale(self):
-        pixel_scaling_factor = 1
-        '''Adjust widget scale based on DPI'''
-        if sys.platform == constants.PLATFORM_ID_WINDOWS:
-            #Support High DPI for windows
-            try:
-                ctypes.windll.shcore.SetProcessDpiAwareness(2) # Windows >= 8.1
-            except:
-                ctypes.windll.user32.SetProcessDPIAware() # Windows < 8.1
+    def _set_os_configuration(self):
+        '''Configure the overlay based on the operating system'''
+        platform = sys.platform
         
+        overlay_logger.info("Platform: %s", platform)
+        
+        if platform == constants.PLATFORM_ID_OSX:
+            self.configuration.hotkey_enabled = False
+        else:
+            self.root.tk.call("source", "dark_mode.tcl")
+        self._adjust_overlay_scale(platform)
+        self._configure_fonts(platform)
+        
+
+    def _adjust_overlay_scale(self, platform):
+        '''Adjust widget scale based on DPI'''
+        self.scaling_factor = 1
         try:
-            dpi = self.root.winfo_fpixels('1i')
-            overlay_logger.info("DPI %d", dpi)
-            widget_scaling_factor = dpi / constants.DEFAULT_DPI
-            self.root.tk.call("tk", "scaling", widget_scaling_factor)
-            pixel_scaling_factor = (dpi/constants.PIXEL_SCALING_DPI)
+            if platform == constants.PLATFORM_ID_WINDOWS:
+                #Support High DPI for windows
+                try:
+                    ctypes.windll.shcore.SetProcessDpiAwareness(2) # Windows >= 8.1
+                except:
+                    ctypes.windll.user32.SetProcessDPIAware() # Windows < 8.1
+                    
+            screen_width = self.root.winfo_screenwidth()
+            overlay_logger.info("Screen Width %d", screen_width)
+            screen_width = 1920
+            self.scaling_factor = screen_width / constants.DEFAULT_RESOLUTION_WIDTH
+
         except Exception as error:
             overlay_logger.info("_adjust_scale Error: %s", error)
         
-        return pixel_scaling_factor
+        return 
         
+    def _configure_fonts(self, platform):
+        '''Set size and family for the overlay fonts'''
+        try:
+            default_font = tkinter.font.nametofont("TkDefaultFont")
+            default_font.configure(size=self._scale_value(9),
+                                family = constants.FONT_SANS_SERIF)
+            
+            text_font = tkinter.font.nametofont("TkTextFont")
+            text_font.configure(size=self._scale_value(9),
+                                family = constants.FONT_SANS_SERIF)
+            
+            fixed_font = tkinter.font.nametofont("TkFixedFont")
+            fixed_font.configure(size=self._scale_value(9),
+                                family = constants.FONT_SANS_SERIF)
+                                
+            menu_font = tkinter.font.nametofont("TkMenuFont")
+            menu_font.configure(size=self._scale_value(9),
+                                family = constants.FONT_SANS_SERIF)
+    
+            style = Style()
+            
+            #style.configure("SettingsMenu.TLabel", font=(constants.FONT_SANS_SERIF, 
+            #                                            self._scale_value(9)))
+                                                        
+            style.configure("MainSections.TLabel", font=(constants.FONT_SANS_SERIF, 
+                                                        self._scale_value(9),
+                                                        "bold"))
+                                                        
+            style.configure("Notes.TLabel", font=(constants.FONT_SANS_SERIF, 
+                                                self._scale_value(8)))                
+                                                        
+            #style.configure("MainValues.TLabel", font=(constants.FONT_SANS_SERIF, 
+            #                                            self._scale_value(9)))                                            
+            
+            style.configure("TooltipHeader.TLabel", font=(constants.FONT_SANS_SERIF, 
+                                                        self._scale_value(15),
+                                                        "bold")) 
+                                                        
+            style.configure("Status.TLabel", font=(constants.FONT_SANS_SERIF, 
+                                                        self._scale_value(12),
+                                                        "bold")) 
+                                                        
+            style.configure("SetOptions.TLabel", font=(constants.FONT_SANS_SERIF, 
+                                                        self._scale_value(10),
+                                                        "bold")) 
+                                                        
+            style.configure("All.TMenubutton", font=(constants.FONT_SANS_SERIF, 
+                                                    self._scale_value(9))) 
+            self.fonts_dict["All.TMenubutton"] =  (constants.FONT_SANS_SERIF, 
+                                                    self._scale_value(9))                                    
+            
+                                                    
+            style.configure("Taken.TCheckbutton", font=(constants.FONT_SANS_SERIF, 
+                                                        self._scale_value(8)))
+                                                        
+            style.map("Treeview",
+                    foreground=fixed_map(style, "foreground"),
+                    background=fixed_map(style, "background"))
+    
+            style.configure("Treeview", rowheight=self._scale_value(25))   
+    
+            style.configure("Taken.Treeview", rowheight=self._scale_value(25))        
+            
+            style.configure("Suggest.Treeview", rowheight=self._scale_value(25))
+            
+            style.configure("Set.Treeview", rowheight=self._scale_value(25))
+    
+
+            style.configure("Treeview.Heading", font=(constants.FONT_SANS_SERIF, 
+                                                    self._scale_value(7)))    
+             
+            if platform == constants.PLATFORM_ID_WINDOWS:
+                style.configure("TButton", foreground="black")
+                style.configure("Treeview.Heading", foreground="black")
+                style.configure("TEntry", foreground="black")
+
+        except Exception as error:
+            overlay_logger.info("_configure_fonts Error: %s",error)
 
     def _start_hotkey_listener(self):
         '''Start listener that detects the minimize hotkey'''
@@ -786,9 +865,12 @@ class Overlay(ScaledWindow):
                 return
 
             # Adjust the width for each column
+            width = total_width
             for column in self.stat_table["columns"]:
-                self.stat_table.column(column, width=int(
-                    constants.STATS_HEADER_CONFIG[column]["width"] * total_width))
+                column_width = min(int(math.ceil(
+                    constants.STATS_HEADER_CONFIG[column]["width"] * total_width)), width)
+                width -= column_width
+                self.stat_table.column(column, width=column_width)
 
             list_length = len(colors_filtered)
             if list_length:
@@ -1322,38 +1404,40 @@ class Overlay(ScaledWindow):
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
 
-            style = Style()
-            style.configure("Set.Treeview", rowheight=self._scale_value(25))
+            #style = Style()
+            #style.configure("Set.Treeview", rowheight=self._scale_value(25))
 
             list_box_frame = tkinter.Frame(popup)
             list_box_scrollbar = tkinter.Scrollbar(list_box_frame, orient=tkinter.VERTICAL)
             list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
             list_box = create_header(
-                list_box_frame, 0, 10, headers, self._scale_value(500), True, True, "Set.Treeview", True)
+                list_box_frame, 0, self._scale_value(10), headers, self._scale_value(500), True, True, "Set.Treeview", True)
 
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
 
-            notice_label = tkinter.Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.",
-                                 font=f'{constants.FONT_SANS_SERIF} 9', anchor="c")
-            set_label = tkinter.Label(popup, text="Set:",
-                              font=f'{constants.FONT_SANS_SERIF} 10 bold')
-            draft_label = tkinter.Label(popup, text="Draft:",
-                                font=f'{constants.FONT_SANS_SERIF} 10 bold')
-            start_label = tkinter.Label(popup, text="Start Date:",
-                                font=f'{constants.FONT_SANS_SERIF} 10 bold')
-            end_label = tkinter.Label(popup, text="End Date:",
-                              font=f'{constants.FONT_SANS_SERIF} 10 bold')
+            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.",
+                                  anchor="c")
+            set_label = Label(popup, text="Set:",
+                              style="SetOptions.TLabel")
+            draft_label = Label(popup, text="Draft:",
+                                style="SetOptions.TLabel")
+            start_label = Label(popup, text="Start Date:",
+                                style="SetOptions.TLabel")
+            end_label = Label(popup, text="End Date:",
+                              style="SetOptions.TLabel")
             draft_choices = constants.LIMITED_TYPE_LIST
 
             status_text = tkinter.StringVar()
-            status_label = tkinter.Label(popup, textvariable=status_text,
-                                 font=f'{constants.FONT_SANS_SERIF} 12 bold', anchor="c")
+            status_label = Label(popup, textvariable=status_text,
+                                 style="Status.TLabel", anchor="c")
 
             draft_value = tkinter.StringVar(self.root)
             draft_entry = OptionMenu(
                 popup, draft_value, draft_choices[0], *draft_choices)
+            menu = self.root.nametowidget(draft_entry['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             start_entry = tkinter.Entry(popup)
             start_entry.insert(tkinter.END, constants.SET_START_DATE_DEFAULT)
@@ -1365,6 +1449,9 @@ class Overlay(ScaledWindow):
             set_value = tkinter.StringVar(self.root)
             set_entry = OptionMenu(
                 popup, set_value, set_choices[0], *set_choices)
+            menu = self.root.nametowidget(set_entry['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"])  
+                
             set_value.trace("w", lambda *args, start=start_entry, selection=set_value,
                             set_list=sets: self._update_set_start_date(start, selection, set_list, *args))
 
@@ -1454,7 +1541,7 @@ class Overlay(ScaledWindow):
             compare_table_frame = tkinter.Frame(popup)
             compare_scrollbar = tkinter.Scrollbar(compare_table_frame, orient=tkinter.VERTICAL)
             compare_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-            compare_table = create_header(compare_table_frame, 0, 8, headers,
+            compare_table = create_header(compare_table_frame, 0, self._scale_value(8), headers,
                                          self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
@@ -1528,71 +1615,67 @@ class Overlay(ScaledWindow):
                        "Column11": {"width": .20, "anchor": tkinter.CENTER},
                        }
 
-            style = Style()
-            style.configure("Taken.Treeview", rowheight=self._scale_value(25))
 
             taken_table_frame = tkinter.Frame(popup)
             taken_scrollbar = tkinter.Scrollbar(taken_table_frame, orient=tkinter.VERTICAL)
             taken_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             self.taken_table = create_header(
-                taken_table_frame, 0, 8, headers, self._scale_value(410), True, True, "Taken.Treeview", False)
+                taken_table_frame, 0, self._scale_value(8), headers, self._scale_value(440), True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
 
             option_frame = tkinter.Frame(popup)
-            taken_filter_label = tkinter.Label(
-                option_frame, text="Deck Filter:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            taken_filter_label = Label(
+                option_frame, text="Deck Filter:", style="MainSections.TLabel", anchor="w")
             self.taken_filter_selection.set(self.deck_filter_selection.get())
             taken_filter_list = self.deck_filter_list
 
             taken_option = OptionMenu(option_frame, self.taken_filter_selection, self.taken_filter_selection.get(
-            ), *taken_filter_list, style="my.TMenubutton")
-
-            checkbox_frame = tkinter.Frame(popup)
+            ), *taken_filter_list, style="All.TMenubutton")
+            menu = self.root.nametowidget(taken_option['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
             
-            checkbox_style = Style()
-            checkbox_style.configure('taken.TCheckbutton', font=(
-                constants.FONT_SANS_SERIF, 9))
+            checkbox_frame = tkinter.Frame(popup)
             
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
                                               text="ALSA",
-                                              style="taken.TCheckbutton",
+                                              style="Taken.TCheckbutton",
                                               variable=self.taken_alsa_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
             taken_ata_checkbox = Checkbutton(checkbox_frame,
                                              text="ATA",
-                                             style="taken.TCheckbutton",
+                                             style="Taken.TCheckbutton",
                                              variable=self.taken_ata_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
             taken_gpwr_checkbox = Checkbutton(checkbox_frame,
                                               text="GPWR",
-                                              style="taken.TCheckbutton",
+                                              style="Taken.TCheckbutton",
                                               variable=self.taken_gpwr_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
             taken_ohwr_checkbox = Checkbutton(checkbox_frame,
                                               text="OHWR",
-                                              style="taken.TCheckbutton",
+                                              style="Taken.TCheckbutton",
                                               variable=self.taken_ohwr_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
             taken_gdwr_checkbox = Checkbutton(checkbox_frame,
                                              text="GDWR",
-                                             style="taken.TCheckbutton",
+                                             style="Taken.TCheckbutton",
                                              variable=self.taken_gdwr_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
             taken_gndwr_checkbox = Checkbutton(checkbox_frame,
                                                text="GNDWR",
-                                               style="taken.TCheckbutton",
+                                               style="Taken.TCheckbutton",
                                                variable=self.taken_gndwr_checkbox_value,
                                                onvalue=1,
                                                offvalue=0)
             taken_iwd_checkbox = Checkbutton(checkbox_frame,
                                              text="IWD",
-                                             style="taken.TCheckbutton",
+                                             style="Taken.TCheckbutton",
                                              variable=self.taken_iwd_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
@@ -1650,13 +1733,15 @@ class Overlay(ScaledWindow):
                     deck_color_options[rating_label] = key
                     choices.append(rating_label)
 
-            deck_colors_label = tkinter.Label(
-                popup, text="Deck Colors:", anchor='e', font=f'{constants.FONT_SANS_SERIF} 9 bold')
+            deck_colors_label = Label(
+                popup, text="Deck Colors:", anchor='e', style="MainSections.TLabel")
 
             deck_colors_value = tkinter.StringVar(popup)
             deck_colors_entry = OptionMenu(
                 popup, deck_colors_value, choices[0], *choices)
-
+            menu = self.root.nametowidget(deck_colors_entry['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            
             deck_colors_button = Button(popup, command=lambda: self._update_suggest_table(suggest_table,
                                                                                             deck_colors_value,
                                                                                             suggested_decks,
@@ -1674,14 +1759,14 @@ class Overlay(ScaledWindow):
                        "COST": {"width": .10, "anchor": tkinter.CENTER},
                        "TYPE": {"width": .29, "anchor": tkinter.CENTER}}
 
-            style = Style()
-            style.configure("Suggest.Treeview", rowheight=self._scale_value(25))
+            #style = Style()
+            #style.configure("Suggest.Treeview", rowheight=self._scale_value(25))
 
             suggest_table_frame = tkinter.Frame(popup)
             suggest_scrollbar = tkinter.Scrollbar(suggest_table_frame, orient=tkinter.VERTICAL)
             suggest_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             suggest_table = create_header(
-                suggest_table_frame, 0, 8, headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
+                suggest_table_frame, 0, self._scale_value(8), headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
 
@@ -1732,99 +1817,111 @@ class Overlay(ScaledWindow):
 
             self._control_trace(False)
 
-            column_2_label = tkinter.Label(
-                popup, text="Column 2:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            column_3_label = tkinter.Label(
-                popup, text="Column 3:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            column_4_label = tkinter.Label(
-                popup, text="Column 4:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            column_5_label = tkinter.Label(
-                popup, text="Column 5:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            column_6_label = tkinter.Label(
-                popup, text="Column 6:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            column_7_label = tkinter.Label(
-                popup, text="Column 7:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            filter_format_label = tkinter.Label(
-                popup, text="Deck Filter Format:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            result_format_label = tkinter.Label(
-                popup, text="Win Rate Format:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
-            deck_stats_label = tkinter.Label(popup, text="Enable Draft Stats:",
-                                     font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            column_2_label = Label(
+                popup, text="Column 2:", style="MainSections.TLabel", anchor="w")
+            column_3_label = Label(
+                popup, text="Column 3:", style="MainSections.TLabel", anchor="w")
+            column_4_label = Label(
+                popup, text="Column 4:", style="MainSections.TLabel", anchor="w")
+            column_5_label = Label(
+                popup, text="Column 5:", style="MainSections.TLabel", anchor="w")
+            column_6_label = Label(
+                popup, text="Column 6:", style="MainSections.TLabel", anchor="w")
+            column_7_label = Label(
+                popup, text="Column 7:", style="MainSections.TLabel", anchor="w")
+            filter_format_label = Label(
+                popup, text="Deck Filter Format:", style="MainSections.TLabel", anchor="w")
+            result_format_label = Label(
+                popup, text="Win Rate Format:", style="MainSections.TLabel", anchor="w")
+            deck_stats_label = Label(popup, text="Enable Draft Stats:",
+                                     style="MainSections.TLabel", anchor="w")
             deck_stats_checkbox = Checkbutton(popup,
                                               variable=self.deck_stats_checkbox_value,
                                               onvalue=1,
                                               offvalue=0)
-            missing_cards_label = tkinter.Label(
-                popup, text="Enable Missing Cards:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            missing_cards_label = Label(
+                popup, text="Enable Missing Cards:", style="MainSections.TLabel", anchor="w")
             missing_cards_checkbox = Checkbutton(popup,
                                                  variable=self.missing_cards_checkbox_value,
                                                  onvalue=1,
                                                  offvalue=0)
 
-            auto_highest_label = tkinter.Label(
-                popup, text="Enable Highest Rated:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            auto_highest_label = Label(
+                popup, text="Enable Highest Rated:", style="MainSections.TLabel", anchor="w")
             auto_highest_checkbox = Checkbutton(popup,
                                                 variable=self.auto_highest_checkbox_value,
                                                 onvalue=1,
                                                 offvalue=0)
 
 
-            bayesian_average_label = tkinter.Label(
-                popup, text="Enable Bayesian Average:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            bayesian_average_label = Label(
+                popup, text="Enable Bayesian Average:", style="MainSections.TLabel", anchor="w")
             bayesian_average_checkbox = Checkbutton(popup,
                                                     variable=self.bayesian_average_checkbox_value,
                                                     onvalue=1,
                                                     offvalue=0)
 
-            draft_log_label = tkinter.Label(popup, text="Enable Draft Log:",
-                                    font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            draft_log_label = Label(popup, text="Enable Draft Log:",
+                                    style="MainSections.TLabel", anchor="w")
             draft_log_checkbox = Checkbutton(popup,
                                              variable=self.draft_log_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
 
-            card_colors_label = tkinter.Label(
-                popup, text="Enable Card Colors:", font=f'{constants.FONT_SANS_SERIF} 9 bold', anchor="w")
+            card_colors_label = Label(
+                popup, text="Enable Card Colors:", style="MainSections.TLabel", anchor="w")
             card_colors_checkbox = Checkbutton(popup,
                                                variable=self.card_colors_checkbox_value,
                                                onvalue=1,
                                                offvalue=0)
 
-            options_style = Style()
-            options_style.configure('my.TMenubutton', font=(
-                constants.FONT_SANS_SERIF, 9))
-
             self.column_2_options = OptionMenu(popup, self.column_2_selection, self.column_2_selection.get(
-            ), *self.column_2_list, style="my.TMenubutton")
+            ), *self.column_2_list, style="All.TMenubutton")
             self.column_2_options.config(width=15)
+            menu = self.root.nametowidget(self.column_2_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             self.column_3_options = OptionMenu(popup, self.column_3_selection, self.column_3_selection.get(
-            ), *self.column_3_list, style="my.TMenubutton")
+            ), *self.column_3_list, style="All.TMenubutton")
             self.column_3_options.config(width=15)
+            menu = self.root.nametowidget(self.column_3_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             self.column_4_options = OptionMenu(popup, self.column_4_selection, self.column_4_selection.get(
-            ), *self.column_4_list, style="my.TMenubutton")
+            ), *self.column_4_list, style="All.TMenubutton")
             self.column_4_options.config(width=15)
+            menu = self.root.nametowidget(self.column_4_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             self.column_5_options = OptionMenu(popup, self.column_5_selection, self.column_5_selection.get(
-            ), *self.column_5_list, style="my.TMenubutton")
+            ), *self.column_5_list, style="All.TMenubutton")
             self.column_5_options.config(width=15)
+            menu = self.root.nametowidget(self.column_5_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             self.column_6_options = OptionMenu(popup, self.column_6_selection, self.column_6_selection.get(
-            ), *self.column_6_list, style="my.TMenubutton")
+            ), *self.column_6_list, style="All.TMenubutton")
             self.column_6_options.config(width=15)
+            menu = self.root.nametowidget(self.column_6_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             self.column_7_options = OptionMenu(popup, self.column_7_selection, self.column_7_selection.get(
-            ), *self.column_7_list, style="my.TMenubutton")
+            ), *self.column_7_list, style="All.TMenubutton")
             self.column_7_options.config(width=15)
+            menu = self.root.nametowidget(self.column_7_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             filter_format_options = OptionMenu(popup, self.filter_format_selection, self.filter_format_selection.get(
-            ), *self.filter_format_list, style="my.TMenubutton")
+            ), *self.filter_format_list, style="All.TMenubutton")
             filter_format_options.config(width=15)
+            menu = self.root.nametowidget(filter_format_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             result_format_options = OptionMenu(popup, self.result_format_selection, self.result_format_selection.get(
-            ), *self.result_format_list, style="my.TMenubutton")
+            ), *self.result_format_list, style="All.TMenubutton")
             result_format_options.config(width=15)
+            menu = self.root.nametowidget(result_format_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
 
             default_button = Button(
                 popup, command=self._default_settings_callback, text="Default Settings")
@@ -2229,8 +2326,13 @@ class CreateCardToolTip(ScaledWindow):
 
             tkinter.Grid.rowconfigure(tt_frame, 2, weight=1)
 
-            card_label = tkinter.Label(tt_frame, text=self.card_name, font=(constants.FONT_SANS_SERIF, 15,
-                               "bold", ), background="#3d3d3d", foreground="#e6ecec", relief="groove", anchor="c",)
+            card_label = Label(tt_frame, 
+                                       text=self.card_name, 
+                                       style="TooltipHeader.TLabel", 
+                                       background="#3d3d3d", 
+                                       foreground="#e6ecec", 
+                                       relief="groove", 
+                                       anchor="c",)
 
             if len(self.color_dict) == 2:
                 headers = {"Label": {"width": .70, "anchor": tkinter.W},
@@ -2247,7 +2349,7 @@ class CreateCardToolTip(ScaledWindow):
             style.configure("Tooltip.Treeview", rowheight=row_height)
 
             stats_main_table = create_header(
-                tt_frame, 0, 8, headers, width, False, True, "Tooltip.Treeview", False)
+                tt_frame, 0, self._scale_value(8), headers, width, False, True, "Tooltip.Treeview", False)
             main_field_list = []
 
             values = ["Filter:"] + list(self.color_dict.keys())
@@ -2325,7 +2427,7 @@ class CreateCardToolTip(ScaledWindow):
                             im = Image.open(io.BytesIO(raw_data))
                             im.thumbnail(size, Image.ANTIALIAS)
                             image = ImageTk.PhotoImage(im)
-                            image_label = tkinter.Label(tt_frame, image=image)
+                            image_label = Label(tt_frame, image=image)
                             image_label.grid(
                                 column=count, row=1, columnspan=1, rowspan=3)
                             self.images.append(image)

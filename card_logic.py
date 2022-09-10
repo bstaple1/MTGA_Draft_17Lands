@@ -184,7 +184,7 @@ class CardResult:
             rated_colors = []
             for color in colors:
                 if option in card[constants.DATA_FIELD_DECK_COLORS][color]:
-                    if (option in constants.WIN_RATE_OPTIONS):
+                    if option in constants.WIN_RATE_OPTIONS:
                         rating_data = self._format_win_rate(card,
                                                              option,
                                                              constants.WIN_RATE_FIELDS_DICT[option],
@@ -810,37 +810,35 @@ def mana_base(deck):
 
         # Go through the cards and count the mana types
         for card in deck:
-            mana_types["Swamp"][constants.DATA_FIELD_COUNT] += card["mana_cost"].count(
-                constants.CARD_COLOR_SYMBOL_BLACK)
-            mana_types["Forest"][constants.DATA_FIELD_COUNT] += card["mana_cost"].count(
-                constants.CARD_COLOR_SYMBOL_GREEN)
-            mana_types["Mountain"][constants.DATA_FIELD_COUNT] += card["mana_cost"].count(
-                constants.CARD_COLOR_SYMBOL_RED)
-            mana_types["Island"][constants.DATA_FIELD_COUNT] += card["mana_cost"].count(
-                constants.CARD_COLOR_SYMBOL_BLUE)
-            mana_types["Plains"][constants.DATA_FIELD_COUNT] += card["mana_cost"].count(
-                constants.CARD_COLOR_SYMBOL_WHITE)
+            if constants.CARD_TYPE_LAND in card[constants.DATA_FIELD_TYPES]:
+                #Subtract symbol for lands
+                for mana_type in mana_types.values():
+                    mana_type[constants.DATA_FIELD_COUNT] -= (1 if (mana_type["color"] in card[constants.DATA_FIELD_COLORS])
+                                                                else 0)
+            else:
+                for mana_type in mana_types.values():
+                    mana_type[constants.DATA_FIELD_COUNT] += card["mana_cost"].count(mana_type["color"])
 
         for land in mana_types.values():
+            land[constants.DATA_FIELD_COUNT] = max(land[constants.DATA_FIELD_COUNT], 0)
             total_count += land[constants.DATA_FIELD_COUNT]
 
         # Sort by lowest count
         mana_types = dict(
-            sorted(mana_types.items(), key=lambda t: t[1]['count']))
+            sorted(mana_types.items(), key=lambda t: t[1][constants.DATA_FIELD_COUNT]))
         # Add x lands with a distribution set by the mana types
+        total_lands = number_of_lands
         for land in mana_types:
-            if (mana_types[land][constants.DATA_FIELD_COUNT] == 1) and (number_of_lands > 1):
-                land_count = 1
-                number_of_lands -= 1
-            else:
-                land_count = int(round(
-                    (mana_types[land][constants.DATA_FIELD_COUNT] / total_count) * number_of_lands, 0))
-                # Minimum of 2 lands for a  splash
-                if (land_count == 1) and (number_of_lands > 1):
-                    land_count = 2
-                    number_of_lands -= 1
-
-            if mana_types[land][constants.DATA_FIELD_COUNT] != 0:
+            if not total_lands or not mana_types[land][constants.DATA_FIELD_COUNT]:
+                continue
+                
+            land_count = int(math.ceil(
+                    (mana_types[land][constants.DATA_FIELD_COUNT] / total_count) * number_of_lands))    
+            
+            land_count = min(land_count, total_lands)
+            total_lands -= land_count
+            
+            if land_count:
                 card = {constants.DATA_FIELD_COLORS: mana_types[land]["color"],
                         constants.DATA_FIELD_TYPES: constants.CARD_TYPE_LAND,
                         constants.DATA_FIELD_CMC: 0,
