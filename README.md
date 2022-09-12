@@ -22,6 +22,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
 
 - **Step 5:** Double-click the `MTGA_Draft_Tool.exe` to start the program.
+    - If you're running a higher resolution than 1920x1080, then you might want to consider modifying the scale_factor field in the config.json file
 
 - **Step 6:** Download the sets that you plan on using (`Data->View Sets`).
 
@@ -46,6 +47,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.10/` and double-clicking the file `Install Certificates.command`.
 
 - **Step 7:** Start the application by opening the terminal and entering ```python3.10 main.py```.
+    - If you're running a higher resolution than 1920x1080, then you might want to consider modifying the scale_factor field in the config.json file
 
 - **Step 8:** (Mac Only) Set Arena to window mode.
 
@@ -136,6 +138,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Card Colors:** Sets the row color to the card color.
 
+- **Enable Color Identity:** When enabled, the Colors field will display the mana symbols for a card's mana cost AND abilities (i.e., kicker, activated abilities, etc.)
+    - The Colors field in the Suggested Decks window will always display the full color identity
+
 - **Enable Draft Stats:** Displays the draft stats table and drop-down in the main window.
 
 - **Enable Missing Cards:** Displays the missing cards table in the main window.
@@ -165,16 +170,16 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 | D+               | >= -0.67           |
 | D                | >= -1              |
 | D-               | >= -1.33           |
-| F                | <  -1.67           |
+| F                | <  -1.33           |
 
-- **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.67 to 2 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
-    - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2 * 4.68 = 66.16%`, the lower limit will be `56.8 - 1.67 * 4.68 = 48.98%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 48.98) / (66.16 - 48.98)) * 5.0 = 3.8)`
+- **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.33 to 2.33 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
+    - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2.33 * 4.68 = 67.7%`, the lower limit will be `56.8 - 1.33 * 4.68 = 50.57%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 50.57) / (67.7 - 50.57)) * 5.0 = 3.3)`
 
 - **Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
     - Enabled: The application will perform this calculation on all win rate data. The adjustment made by this calculation will disappear as the sample count (e.g, Number of Games In Hand for the Games in Hand Win Rate) reaches 200.
     - Disabled: The application will not perform this calculation. If the sample count is fewer than 200, then the application will set the win rate to 0 (same as the 17Lands Card Ratings table).
 
-- **Auto Highest Rating:** If the `Auto` filter is set, and the user has taken at least 16 cards, then the application will try and determine the leading color pair from the taken cards. If the tool is unable to identify a definitive leading color pair, then it will display the highest win rate of the top two color pairs for each win rate field (e.g., GIHWR, OHWR, etc.). The filter label will display both color pairs separated by a slash (e.g., `Auto (WB/BG)`).
+- **Auto Highest Rating:** If the `Auto` filter is set, and the user has taken at least 16 cards, then the application will try and determine the leading color combination from the taken cards. If the tool is unable to identify a definitive leading color pair, then it will display the highest win rate of the top two color combinations for each win rate field (e.g., GIHWR, OHWR, etc.). The filter label will display both color combinations separated by a slash (e.g., `Auto (WB/UBG)`).
     - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG win rate of 66% and a UB rating of 15%, then the displayed win rate will be 66%.
         
 - **Deck Suggester:** For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build an intentionally synergistic deck. 
