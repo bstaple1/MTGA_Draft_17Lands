@@ -15,6 +15,7 @@ scanner_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
 class ArenaScanner:
     '''Class that handles the processing of the information within Arena Player.log file'''
+
     def __init__(self, filename, step_through, set_list):
         self.arena_file = filename
         self.set_list = set_list
@@ -29,6 +30,7 @@ class ArenaScanner:
         self.pick_offset = 0
         self.pack_offset = 0
         self.search_offset = 0
+        self.draft_start_offset = 0
         self.draft_sets = []
         self.current_pick = 0
         self.picked_cards = [[] for i in range(8)]
@@ -79,6 +81,7 @@ class ArenaScanner:
         '''Clear the stored draft data collected from the Player.log file'''
         if full_clear:
             self.search_offset = 0
+            self.draft_start_offset = 0
             self.file_size = 0
         self.set_data = None
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
@@ -109,19 +112,20 @@ class ArenaScanner:
             if self.file_size > arena_file_size:
                 self.clear_draft(True)
                 scanner_logger.info(
-                    "New Arena log detected (%d), (%d)",self.file_size, arena_file_size)
+                    "New Arena log detected (%d), (%d)", self.file_size, arena_file_size)
             self.file_size = arena_file_size
             offset = self.search_offset
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
                 while True:
                     line = log.readline()
                     if not line:
                         break
                     offset = log.tell()
+                    self.search_offset = offset
                     for start_string in constants.DRAFT_START_STRINGS:
                         if start_string in line:
-                            self.search_offset = offset
+                            self.draft_start_offset = offset
                             string_offset = line.find(start_string)
                             event_data = json.loads(
                                 line[string_offset + len(start_string):])
@@ -132,8 +136,8 @@ class ArenaScanner:
             if update:
                 self._new_log(self.draft_sets[0], event_type, draft_id)
                 self.logger.info(event_line)
-                self.pick_offset = self.search_offset
-                self.pack_offset = self.search_offset
+                self.pick_offset = self.draft_start_offset
+                self.pack_offset = self.draft_start_offset
                 scanner_logger.info(
                     "New draft detected %s, %s", event_type, self.draft_sets)
         except Exception as error:
@@ -172,7 +176,6 @@ class ArenaScanner:
                     events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
 
             if sets and events:
-                #event_set = sets[0]
                 if events[0] == constants.LIMITED_TYPE_STRING_SEALED:
                     # Trad_Sealed_NEO_20220317
                     event_type = constants.LIMITED_TYPE_STRING_TRAD_SEALED if "Trad" in event_sections else constants.LIMITED_TYPE_STRING_SEALED
@@ -214,13 +217,14 @@ class ArenaScanner:
                 self._draft_pack_search_traditional_p1p1()
             self._draft_pack_search_traditional()
             self._draft_picked_search_traditional()
-        elif (self.draft_type == constants.LIMITED_TYPE_SEALED) or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL):
+        elif ((self.draft_type == constants.LIMITED_TYPE_SEALED)
+                or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL)):
             update = self._sealed_pack_search()
 
         if not update:
             if ((previous_pack != self.current_pack) or
                 (previous_pick != self.current_pick) or
-                (previous_picked != self.current_picked_pick)):
+                    (previous_picked != self.current_picked_pick)):
                 update = True
 
         return update
@@ -235,7 +239,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -287,7 +291,8 @@ class ArenaScanner:
                             self.logger.info(
                                 "_draft_pack_search_premier_p1p1 Sub Error: %s", error)
         except Exception as error:
-            self.logger.info("_draft_pack_search_premier_p1p1 Error: %s", error)
+            self.logger.info(
+                "_draft_pack_search_premier_p1p1 Error: %s", error)
 
         return pack_cards
 
@@ -300,7 +305,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -345,7 +350,8 @@ class ArenaScanner:
                             self.logger.info(
                                 "_draft_picked_search_premier_v1 Error: %s", error)
         except Exception as error:
-            self.logger.info("_draft_picked_search_premier_v1 Error: %s", error)
+            self.logger.info(
+                "_draft_picked_search_premier_v1 Error: %s", error)
 
     def _draft_pack_search_premier_v1(self):
         '''Parse the premier draft string that contains the non-P1P1 pack data'''
@@ -357,7 +363,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -419,7 +425,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -479,7 +485,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -523,7 +529,8 @@ class ArenaScanner:
                                 "__draft_picked_search_premier_v2 Error: %s", error)
 
         except Exception as error:
-            self.logger.info("__draft_picked_search_premier_v2 Error: %s", error)
+            self.logger.info(
+                "__draft_picked_search_premier_v2 Error: %s", error)
 
     def _draft_pack_search_quick(self):
         '''Parse the quick draft string that contains the current pack data'''
@@ -535,7 +542,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -600,7 +607,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -657,7 +664,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -709,7 +716,8 @@ class ArenaScanner:
                             self.logger.info(
                                 "__draft_pack_search_traditional_p1p1 Error: %s", error)
         except Exception as error:
-            self.logger.info("__draft_pack_search_traditional_p1p1 Error: %s", error)
+            self.logger.info(
+                "__draft_pack_search_traditional_p1p1 Error: %s", error)
 
         return pack_cards
 
@@ -722,7 +730,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -767,7 +775,8 @@ class ArenaScanner:
                             self.logger.info(
                                 "__draft_picked_search_traditional Error: %s", error)
         except Exception as error:
-            self.logger.info("__draft_picked_search_traditional Error: %s", error)
+            self.logger.info(
+                "__draft_picked_search_traditional Error: %s", error)
 
     def _draft_pack_search_traditional(self):
         '''Parse the quick draft string that contains the non-P1P1 pack data'''
@@ -779,7 +788,7 @@ class ArenaScanner:
         pick = 0
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -828,7 +837,8 @@ class ArenaScanner:
                                 "__draft_pack_search_traditional Error: %s", error)
 
         except Exception as error:
-            self.logger.info("__draft_pack_search_traditional Error: %s", error)
+            self.logger.info(
+                "__draft_pack_search_traditional Error: %s", error)
         return pack_cards
 
     def _sealed_pack_search(self):
@@ -839,7 +849,7 @@ class ArenaScanner:
         update = False
         # Identify and print out the log lines that contain the draft packs
         try:
-            with open(self.arena_file, 'r', encoding="utf8") as log:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
 
                 while True:
@@ -917,7 +927,7 @@ class ArenaScanner:
         try:
             if self.draft_sets:
                 file = FE.search_local_files([constants.TIER_FOLDER], [
-                                           constants.TIER_FILE_PREFIX])
+                    constants.TIER_FILE_PREFIX])
 
                 if file:
                     tier_sources = file
@@ -945,7 +955,7 @@ class ArenaScanner:
 
     def retrieve_set_metrics(self, bayesian_enabled):
         '''Parse set data and calculate the mean and standard deviation for a set'''
-        set_metrics = CL.Metrics()
+        set_metrics = CL.SetMetrics()
 
         try:
             if self.set_data:
@@ -997,7 +1007,8 @@ class ArenaScanner:
                         picked_cards.append(
                             self.set_data["card_ratings"][card][constants.DATA_FIELD_NAME])
                     except Exception as error:
-                        scanner_logger.info("retrieve_picked_cards Error: %s", error)
+                        scanner_logger.info(
+                            "retrieve_picked_cards Error: %s", error)
 
         return picked_cards
 
@@ -1011,7 +1022,8 @@ class ArenaScanner:
                     try:
                         pack_cards.append(self.set_data["card_ratings"][card])
                     except Exception as error:
-                        scanner_logger.info("retrieve_initial_pack_cards Error: %s", error)
+                        scanner_logger.info(
+                            "retrieve_initial_pack_cards Error: %s", error)
 
         return pack_cards
 
@@ -1025,7 +1037,8 @@ class ArenaScanner:
                     try:
                         pack_cards.append(self.set_data["card_ratings"][card])
                     except Exception as error:
-                        scanner_logger.info("retrieve_pack_cards Error: %s", error)
+                        scanner_logger.info(
+                            "retrieve_pack_cards Error: %s", error)
 
         return pack_cards
 
@@ -1038,7 +1051,8 @@ class ArenaScanner:
                 try:
                     taken_cards.append(self.set_data["card_ratings"][card])
                 except Exception as error:
-                    scanner_logger.info("retrieve_taken_cards Error: %s", error)
+                    scanner_logger.info(
+                        "retrieve_taken_cards Error: %s", error)
 
         return taken_cards
 
@@ -1050,7 +1064,7 @@ class ArenaScanner:
         try:
             for file in files:
                 if os.path.exists(file):
-                    with open(file, 'r', encoding="utf8") as json_file:
+                    with open(file, 'r', encoding="utf-8", errors="replace") as json_file:
                         data = json.loads(json_file.read())
                         if [i for i in self.draft_sets if i in data["meta"]["set"]]:
                             tier_id = f"Tier{count}"
@@ -1062,8 +1076,8 @@ class ArenaScanner:
                             if data["meta"]["version"] == 1:
                                 for card_name, card_rating in data["ratings"].items():
                                     data["ratings"][card_name] = CL.format_tier_results(card_rating,
-                                                                                      constants.RESULT_FORMAT_RATING,
-                                                                                      constants.RESULT_FORMAT_GRADE)
+                                                                                        constants.RESULT_FORMAT_RATING,
+                                                                                        constants.RESULT_FORMAT_GRADE)
                             tier_data[tier_id] = data
                             count += 1
 

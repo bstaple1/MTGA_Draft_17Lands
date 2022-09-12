@@ -1,7 +1,8 @@
 {
     "features": {
         "hotkey_enabled": true,
-        "images_enabled": true
+        "images_enabled": true,
+        "scale_factor": 1.0
     },
     "card_data": {
         "database_size": 0

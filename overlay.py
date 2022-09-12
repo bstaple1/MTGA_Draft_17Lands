@@ -9,7 +9,6 @@ import sys
 import io
 import logging
 import logging.handlers
-import ctypes
 import math
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
@@ -133,8 +132,12 @@ def create_header(frame, height, font, headers, total_width, include_header, fix
 
         for column in header_labels:
             if fixed_width:
-                list_box.column(column, stretch=column_stretch, anchor=headers[column]["anchor"], width=int(
-                    headers[column]["width"] * total_width))
+                column_width = int(
+                    math.ceil(headers[column]["width"] * total_width))
+                list_box.column(column,
+                                stretch=column_stretch,
+                                anchor=headers[column]["anchor"],
+                                width=column_width)
             else:
                 list_box.column(column, stretch=column_stretch,
                                 anchor=headers[column]["anchor"])
@@ -163,11 +166,11 @@ def sort_table_column(table, column, reverse):
     row_colors = False
 
     try:
-        #Sort column that contains numeric values
+        # Sort column that contains numeric values
         row_list = [(float(table.set(k, column)), k)
                     for k in table.get_children('')]
     except ValueError:
-        #Sort column that contains string values
+        # Sort column that contains string values
         row_list = [(table.set(k, column), k) for k in table.get_children('')]
 
     row_list.sort(key=lambda x: CL.field_process_sort(x[0]), reverse=reverse)
@@ -179,7 +182,7 @@ def sort_table_column(table, column, reverse):
     for index, value in enumerate(row_list):
         table.move(value[1], "", index)
 
-        #Reset the black/white shades for sorted rows
+        # Reset the black/white shades for sorted rows
         if not row_colors:
             row_tag = identify_table_row_tag(False, "", index)
             table.item(value[1], tags=row_tag)
@@ -214,18 +217,21 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
 
     return location_x, location_y
 
+
 class ScaledWindow:
     def __init__(self):
-        self.scaling_factor = 1
+        self.scale_factor = 1
         self.fonts_dict = {}
-        
+
     def _scale_value(self, value):
-        scaled_value = int(value * self.scaling_factor)
-        
+        scaled_value = int(value * self.scale_factor)
+
         return scaled_value
+
 
 class Overlay(ScaledWindow):
     '''Class that handles all of the UI widgets'''
+
     def __init__(self, version, args):
         super().__init__()
         self.root = tkinter.Tk()
@@ -233,24 +239,25 @@ class Overlay(ScaledWindow):
         self.root.title(f"Magic Draft {version}")
         self.configuration = CL.read_config()
         self.root.resizable(False, False)
-        
+
         self._set_os_configuration()
-        
-        self.configuration.table_width = self._scale_value(self.configuration.table_width)
-        
+
+        self.configuration.table_width = self._scale_value(
+            self.configuration.table_width)
+
         self.listener = None
 
         if args.file is None:
             self.arena_file = FE.retrieve_arena_log_location()
         else:
             self.arena_file = args.file
-        overlay_logger.info("Player Log Location: %s",self.arena_file)
+        overlay_logger.info("Player Log Location: %s", self.arena_file)
 
         if args.data is None:
             self.data_file = FE.retrieve_arena_directory(self.arena_file)
         else:
             self.data_file = args.file
-        overlay_logger.info("Card Data Location: %s",self.data_file)
+        overlay_logger.info("Card Data Location: %s", self.data_file)
 
         self.step_through = args.step
 
@@ -269,7 +276,6 @@ class Overlay(ScaledWindow):
         self.tier_sources = self.draft.retrieve_tier_source()
         self.set_metrics = self.draft.retrieve_set_metrics(False)
 
-        #tkinter.Grid.rowconfigure(self.root, 9, weight = 1)
         tkinter.Grid.columnconfigure(self.root, 0, weight=1)
         tkinter.Grid.columnconfigure(self.root, 1, weight=1)
         # Menu Bar
@@ -277,7 +283,8 @@ class Overlay(ScaledWindow):
         self.filemenu = tkinter.Menu(self.menubar, tearoff=0)
         self.filemenu.add_command(label="Open", command=self._open_draft_log)
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(label="View Sets", command=self._open_set_view_window)
+        self.datamenu.add_command(
+            label="View Sets", command=self._open_set_view_window)
 
         self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(
@@ -302,7 +309,7 @@ class Overlay(ScaledWindow):
             current_draft_label_frame, text="Current Draft:", style="MainSections.TLabel", anchor="e")
         current_draft_value_frame = tkinter.Frame(self.root)
         self.current_draft_value_label = Label(
-            current_draft_value_frame, text="", anchor="w")
+            current_draft_value_frame, text="", style="CurrentDraft.TLabel", anchor="w")
 
         data_source_label_frame = tkinter.Frame(self.root)
         self.data_source_label = Label(
@@ -330,6 +337,8 @@ class Overlay(ScaledWindow):
         self.taken_iwd_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
         self.card_colors_checkbox_value = tkinter.IntVar(self.root)
+        self.color_identity_checkbox_value = tkinter.IntVar(self.root)
+
         self.column_2_selection = tkinter.StringVar(self.root)
         self.column_2_list = self.main_options_dict.keys()
         self.column_3_selection = tkinter.StringVar(self.root)
@@ -356,7 +365,7 @@ class Overlay(ScaledWindow):
                                               self.data_source_selection.get(), *self.data_source_list, style="All.TMenubutton")
         menu = self.root.nametowidget(self.data_source_options['menu'])
         menu.config(font=self.fonts_dict["All.TMenubutton"])
-        
+
         self.column_2_options = None
         self.column_3_options = None
         self.column_4_options = None
@@ -370,7 +379,7 @@ class Overlay(ScaledWindow):
                                               self.deck_filter_selection.get(), *self.deck_filter_list, style="All.TMenubutton")
         menu = self.root.nametowidget(self.deck_colors_options['menu'])
         menu.config(font=self.fonts_dict["All.TMenubutton"])
-        
+
         self.refresh_button_frame = tkinter.Frame(self.root)
         self.refresh_button = Button(
             self.refresh_button_frame, command=lambda: self._update_overlay_callback(True), text="Refresh")
@@ -389,8 +398,8 @@ class Overlay(ScaledWindow):
                    "Column6": {"width": .18, "anchor": tkinter.CENTER},
                    "Column7": {"width": .18, "anchor": tkinter.CENTER}}
 
-        self.pack_table = create_header(self.pack_table_frame, 0, self._scale_value(7), headers,
-                                       self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+        self.pack_table = create_header(self.pack_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
+                                        self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.missing_frame = tkinter.Frame(self.root)
         self.missing_cards_label = Label(
@@ -398,13 +407,13 @@ class Overlay(ScaledWindow):
 
         self.missing_table_frame = tkinter.Frame(self.root, width=10)
 
-        self.missing_table = create_header(self.missing_table_frame, 0, self._scale_value(7), headers,
-                                          self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+        self.missing_table = create_header(self.missing_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
+                                           self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.stat_frame = tkinter.Frame(self.root)
 
-        self.stat_table = create_header(self.root, 0, self._scale_value(7), constants.STATS_HEADER_CONFIG,
-                                       self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+        self.stat_table = create_header(self.root, 0, self.fonts_dict["All.TableRow"], constants.STATS_HEADER_CONFIG,
+                                        self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text="Draft Stats:",
                                 style="MainSections.TLabel", anchor="e", width=15)
 
@@ -414,13 +423,13 @@ class Overlay(ScaledWindow):
 
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection,
                                        self.stat_options_list[0], *self.stat_options_list, style="All.TMenubutton")
-        #self.stat_options.config(width=11)
+        # self.stat_options.config(width=11)
         menu = self.root.nametowidget(self.stat_options['menu'])
         menu.config(font=self.fonts_dict["All.TMenubutton"])
 
         citation_label = Label(self.root, text="Powered by 17Lands*",
-                                       anchor="e", borderwidth=2, relief="groove")                     
-        
+                               anchor="e", borderwidth=2, relief="groove")
+
         hotkey_label = Label(self.root, text="CTRL+G to Minimize",
                              style="Notes.TLabel", anchor="e")
         footnote_label = Label(self.root, text="*This application is not endorsed by 17Lands",
@@ -446,7 +455,8 @@ class Overlay(ScaledWindow):
         self.pack_table_frame.grid(row=7, column=0, columnspan=2)
         footnote_label.grid(row=12, column=0, columnspan=2)
         self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self._enable_missing_cards_table(self.missing_cards_checkbox_value.get())
+        self._enable_missing_cards_table(
+            self.missing_cards_checkbox_value.get())
 
         self.refresh_button.pack(expand=True, fill="both")
 
@@ -477,116 +487,113 @@ class Overlay(ScaledWindow):
     def _set_os_configuration(self):
         '''Configure the overlay based on the operating system'''
         platform = sys.platform
-        
+
         overlay_logger.info("Platform: %s", platform)
-        
+
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.hotkey_enabled = False
         else:
             self.root.tk.call("source", "dark_mode.tcl")
-        self._adjust_overlay_scale(platform)
+        self._adjust_overlay_scale()
         self._configure_fonts(platform)
-        
 
-    def _adjust_overlay_scale(self, platform):
-        '''Adjust widget scale based on DPI'''
-        self.scaling_factor = 1
+    def _adjust_overlay_scale(self):
+        '''Adjust widget and font scale based on the scale_factor value in config.json'''
+        self.scale_factor = 1
         try:
-            if platform == constants.PLATFORM_ID_WINDOWS:
-                #Support High DPI for windows
-                try:
-                    ctypes.windll.shcore.SetProcessDpiAwareness(2) # Windows >= 8.1
-                except:
-                    ctypes.windll.user32.SetProcessDPIAware() # Windows < 8.1
-                    
-            screen_width = self.root.winfo_screenwidth()
-            overlay_logger.info("Screen Width %d", screen_width)
-            screen_width = 1920
-            self.scaling_factor = screen_width / constants.DEFAULT_RESOLUTION_WIDTH
+            if self.configuration.scale_factor > 0.0:
+                self.scale_factor = self.configuration.scale_factor
 
+            overlay_logger.info("Scale Factor %.2f",
+                                self.scale_factor)
         except Exception as error:
-            overlay_logger.info("_adjust_scale Error: %s", error)
-        
-        return 
-        
+            overlay_logger.info("_adjust_overlay_scale Error: %s", error)
+
+        return
+
     def _configure_fonts(self, platform):
-        '''Set size and family for the overlay fonts'''
+        '''Set size and family for the overlay fonts
+            - Negative font values are in pixels and positive font values are
+              in points (1/72 inch = 1 point)
+        '''
         try:
             default_font = tkinter.font.nametofont("TkDefaultFont")
-            default_font.configure(size=self._scale_value(9),
-                                family = constants.FONT_SANS_SERIF)
-            
-            text_font = tkinter.font.nametofont("TkTextFont")
-            text_font.configure(size=self._scale_value(9),
-                                family = constants.FONT_SANS_SERIF)
-            
-            fixed_font = tkinter.font.nametofont("TkFixedFont")
-            fixed_font.configure(size=self._scale_value(9),
-                                family = constants.FONT_SANS_SERIF)
-                                
-            menu_font = tkinter.font.nametofont("TkMenuFont")
-            menu_font.configure(size=self._scale_value(9),
-                                family = constants.FONT_SANS_SERIF)
-    
-            style = Style()
-            
-            #style.configure("SettingsMenu.TLabel", font=(constants.FONT_SANS_SERIF, 
-            #                                            self._scale_value(9)))
-                                                        
-            style.configure("MainSections.TLabel", font=(constants.FONT_SANS_SERIF, 
-                                                        self._scale_value(9),
-                                                        "bold"))
-                                                        
-            style.configure("Notes.TLabel", font=(constants.FONT_SANS_SERIF, 
-                                                self._scale_value(8)))                
-                                                        
-            #style.configure("MainValues.TLabel", font=(constants.FONT_SANS_SERIF, 
-            #                                            self._scale_value(9)))                                            
-            
-            style.configure("TooltipHeader.TLabel", font=(constants.FONT_SANS_SERIF, 
-                                                        self._scale_value(15),
-                                                        "bold")) 
-                                                        
-            style.configure("Status.TLabel", font=(constants.FONT_SANS_SERIF, 
-                                                        self._scale_value(12),
-                                                        "bold")) 
-                                                        
-            style.configure("SetOptions.TLabel", font=(constants.FONT_SANS_SERIF, 
-                                                        self._scale_value(10),
-                                                        "bold")) 
-                                                        
-            style.configure("All.TMenubutton", font=(constants.FONT_SANS_SERIF, 
-                                                    self._scale_value(9))) 
-            self.fonts_dict["All.TMenubutton"] =  (constants.FONT_SANS_SERIF, 
-                                                    self._scale_value(9))                                    
-            
-                                                    
-            style.configure("Taken.TCheckbutton", font=(constants.FONT_SANS_SERIF, 
-                                                        self._scale_value(8)))
-                                                        
-            style.map("Treeview",
-                    foreground=fixed_map(style, "foreground"),
-                    background=fixed_map(style, "background"))
-    
-            style.configure("Treeview", rowheight=self._scale_value(25))   
-    
-            style.configure("Taken.Treeview", rowheight=self._scale_value(25))        
-            
-            style.configure("Suggest.Treeview", rowheight=self._scale_value(25))
-            
-            style.configure("Set.Treeview", rowheight=self._scale_value(25))
-    
+            default_font.configure(size=self._scale_value(-12),
+                                   family=constants.FONT_SANS_SERIF)
 
-            style.configure("Treeview.Heading", font=(constants.FONT_SANS_SERIF, 
-                                                    self._scale_value(7)))    
-             
+            text_font = tkinter.font.nametofont("TkTextFont")
+            text_font.configure(size=self._scale_value(-12),
+                                family=constants.FONT_SANS_SERIF)
+
+            fixed_font = tkinter.font.nametofont("TkFixedFont")
+            fixed_font.configure(size=self._scale_value(-12),
+                                 family=constants.FONT_SANS_SERIF)
+
+            menu_font = tkinter.font.nametofont("TkMenuFont")
+            menu_font.configure(size=self._scale_value(-12),
+                                family=constants.FONT_SANS_SERIF)
+
+            style = Style()
+
+            style.configure("MainSections.TLabel", font=(constants.FONT_SANS_SERIF,
+                                                         self._scale_value(-12),
+                                                         "bold"))
+
+            style.configure("CurrentDraft.TLabel", font=(constants.FONT_SANS_SERIF,
+                                                         self._scale_value(-12)))
+
+            style.configure("Notes.TLabel", font=(constants.FONT_SANS_SERIF,
+                                                  self._scale_value(-11)))
+
+            # style.configure("MainValues.TLabel", font=(constants.FONT_SANS_SERIF,
+            #                                            self._scale_value(9)))
+
+            style.configure("TooltipHeader.TLabel", font=(constants.FONT_SANS_SERIF,
+                                                          self._scale_value(-17),
+                                                          "bold"))
+
+            style.configure("Status.TLabel", font=(constants.FONT_SANS_SERIF,
+                                                   self._scale_value(-15),
+                                                   "bold"))
+
+            style.configure("SetOptions.TLabel", font=(constants.FONT_SANS_SERIF,
+                                                       self._scale_value(-13),
+                                                       "bold"))
+
+            style.configure("All.TMenubutton", font=(constants.FONT_SANS_SERIF,
+                                                     self._scale_value(-12)))
+            self.fonts_dict["All.TMenubutton"] = (constants.FONT_SANS_SERIF,
+                                                  self._scale_value(-12))
+
+            self.fonts_dict["All.TableRow"] = self._scale_value(-11)
+            self.fonts_dict["Sets.TableRow"] = self._scale_value(-13)
+
+            style.configure("Taken.TCheckbutton", font=(constants.FONT_SANS_SERIF,
+                                                        self._scale_value(-11)))
+
+            style.map("Treeview",
+                      foreground=fixed_map(style, "foreground"),
+                      background=fixed_map(style, "background"))
+
+            style.configure("Treeview", rowheight=self._scale_value(25))
+
+            style.configure("Taken.Treeview", rowheight=self._scale_value(25))
+
+            style.configure("Suggest.Treeview",
+                            rowheight=self._scale_value(25))
+
+            style.configure("Set.Treeview", rowheight=self._scale_value(25))
+
+            style.configure("Treeview.Heading", font=(constants.FONT_SANS_SERIF,
+                                                      self._scale_value(-9)))
+
             if platform == constants.PLATFORM_ID_WINDOWS:
                 style.configure("TButton", foreground="black")
                 style.configure("Treeview.Heading", foreground="black")
                 style.configure("TEntry", foreground="black")
 
         except Exception as error:
-            overlay_logger.info("_configure_fonts Error: %s",error)
+            overlay_logger.info("_configure_fonts Error: %s", error)
 
     def _start_hotkey_listener(self):
         '''Start listener that detects the minimize hotkey'''
@@ -622,15 +629,17 @@ class Overlay(ScaledWindow):
                     self._update_column_options()
 
         except Exception as error:
-            overlay_logger.info("__identify_auto_colors Error: %s",error)
+            overlay_logger.info("__identify_auto_colors Error: %s", error)
 
         return filtered_colors
 
     def _update_pack_table(self, card_list, filtered_colors, fields):
         '''Update the table that lists the cards within the current pack'''
         try:
-            result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
-            result_list = result_class.return_results(card_list, filtered_colors, fields)
+            result_class = CL.CardResult(
+                self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
+            result_list = result_class.return_results(
+                card_list, filtered_colors, fields)
 
             # clear the previous rows
             for row in self.pack_table.get_children():
@@ -651,7 +660,9 @@ class Overlay(ScaledWindow):
 
             for count, card in enumerate(result_list):
                 row_tag = identify_table_row_tag(
-                    self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
+                    self.configuration.card_colors_enabled,
+                    card[constants.DATA_FIELD_MANA_COST],
+                    count)
                 field_values = tuple(card["results"])
                 self.pack_table.insert(
                     "", index=count, iid=count, values=field_values, tag=(row_tag,))
@@ -682,8 +693,10 @@ class Overlay(ScaledWindow):
                     self.missing_table.config(height=0)
 
                 if list_length:
-                    result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
-                    result_list = result_class.return_results(missing_cards, filtered_colors, fields)
+                    result_class = CL.CardResult(
+                        self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
+                    result_list = result_class.return_results(
+                        missing_cards, filtered_colors, fields)
 
                     result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
                         d["results"][last_field_index]), reverse=True)
@@ -691,7 +704,9 @@ class Overlay(ScaledWindow):
                     #filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(result_list):
                         row_tag = identify_table_row_tag(
-                            self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
+                            self.configuration.card_colors_enabled,
+                            card[constants.DATA_FIELD_MANA_COST],
+                            count)
                         for index, field in enumerate(fields.values()):
                             if field == constants.DATA_FIELD_NAME:
                                 card["results"][index] = f'*{card["results"][index]}' if card[
@@ -702,7 +717,7 @@ class Overlay(ScaledWindow):
                     self.missing_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                         event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_colors))
         except Exception as error:
-            overlay_logger.info("__update_missing_table Error: %s",error)
+            overlay_logger.info("__update_missing_table Error: %s", error)
 
     def _clear_compare_table(self, compare_table, matching_cards):
         '''Clear the rows within the Card Compare table'''
@@ -721,8 +736,10 @@ class Overlay(ScaledWindow):
                 if cards:
                     matching_cards.append(cards[0])
 
-            result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
-            result_list = result_class.return_results(matching_cards, filtered_colors, fields)
+            result_class = CL.CardResult(
+                self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
+            result_list = result_class.return_results(
+                matching_cards, filtered_colors, fields)
 
             compare_table.delete(*compare_table.get_children())
 
@@ -741,7 +758,9 @@ class Overlay(ScaledWindow):
 
             for count, card in enumerate(result_list):
                 row_tag = identify_table_row_tag(
-                    self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
+                    self.configuration.card_colors_enabled,
+                    card[constants.DATA_FIELD_MANA_COST],
+                    count)
                 field_values = tuple(card["results"])
                 compare_table.insert(
                     "", index=count, iid=count, values=field_values, tag=(row_tag,))
@@ -779,10 +798,13 @@ class Overlay(ScaledWindow):
                 for row in self.taken_table.get_children():
                     self.taken_table.delete(row)
 
-                result_class = CL.CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
-                result_list = result_class.return_results(stacked_cards, filtered_colors, fields)
+                result_class = CL.CardResult(
+                    self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
+                result_list = result_class.return_results(
+                    stacked_cards, filtered_colors, fields)
 
-                last_field_index = control_table_column(self.taken_table, fields)
+                last_field_index = control_table_column(
+                    self.taken_table, fields)
 
                 result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
                     d["results"][last_field_index]), reverse=True)
@@ -795,14 +817,16 @@ class Overlay(ScaledWindow):
                 for count, card in enumerate(result_list):
                     field_values = tuple(card["results"])
                     row_tag = identify_table_row_tag(
-                        self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
+                        self.configuration.card_colors_enabled,
+                        card[constants.DATA_FIELD_MANA_COST],
+                        count)
                     self.taken_table.insert(
                         "", index=count, iid=count, values=field_values, tag=(row_tag,))
                 self.taken_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
                     event, table=self.taken_table, card_list=result_list, selected_color=filtered_colors))
                 break
         except Exception as error:
-            overlay_logger.info("__update_taken_table Error: %s",error)
+            overlay_logger.info("__update_taken_table Error: %s", error)
 
     def _update_suggest_table(self, suggest_table, selected_color, suggested_decks, color_options):
         '''Update the table that lists the suggested decks'''
@@ -822,7 +846,9 @@ class Overlay(ScaledWindow):
 
             for count, card in enumerate(suggested_deck):
                 row_tag = identify_table_row_tag(
-                    self.configuration.card_colors_enabled, card[constants.DATA_FIELD_COLORS], count)
+                    self.configuration.card_colors_enabled,
+                    card[constants.DATA_FIELD_MANA_COST],
+                    count)
                 suggest_table.insert("", index=count, values=(card[constants.DATA_FIELD_NAME],
                                                               f"{card[constants.DATA_FIELD_COUNT]}",
                                                               card[constants.DATA_FIELD_COLORS],
@@ -832,7 +858,7 @@ class Overlay(ScaledWindow):
                 event, table=suggest_table, card_list=suggested_deck, selected_color=[color]))
 
         except Exception as error:
-            overlay_logger.info("UpdateSuggestTable Error: %s", error)
+            overlay_logger.info("_update_suggest_table Error: %s", error)
 
     def _update_deck_stats_table(self, taken_cards, filter_type, total_width):
         '''Update the table that lists the deck stats'''
@@ -850,8 +876,8 @@ class Overlay(ScaledWindow):
                 card_metrics = CL.deck_metrics(card_colors_sorted)
                 colors_filtered[color] = {}
                 colors_filtered[color]["symbol"] = symbol
-                colors_filtered[color]["total"] = card_metrics[1]
-                colors_filtered[color]["distribution"] = card_metrics[2]
+                colors_filtered[color]["total"] = card_metrics.total_cards
+                colors_filtered[color]["distribution"] = card_metrics.distribution_all
 
             # Sort list by total
             colors_filtered = dict(sorted(colors_filtered.items(
@@ -859,16 +885,18 @@ class Overlay(ScaledWindow):
 
             for row in self.stat_table.get_children():
                 self.stat_table.delete(row)
-                
+
             if total_width == 1:
                 self.stat_table.config(height=0)
+                self._enable_deck_stats_table(False)
                 return
 
             # Adjust the width for each column
-            width = total_width
+            width = total_width - 5
             for column in self.stat_table["columns"]:
                 column_width = min(int(math.ceil(
                     constants.STATS_HEADER_CONFIG[column]["width"] * total_width)), width)
+                #column_width = int(constants.STATS_HEADER_CONFIG[column]["width"] * total_width)
                 width -= column_width
                 self.stat_table.column(column, width=column_width)
 
@@ -877,7 +905,7 @@ class Overlay(ScaledWindow):
                 self.stat_table.config(height=list_length)
             else:
                 self.stat_table.config(height=0)
-                #return
+                # return
 
             for count, (color, values) in enumerate(colors_filtered.items()):
                 row_tag = identify_table_row_tag(
@@ -915,7 +943,8 @@ class Overlay(ScaledWindow):
             new_label = f" {card_set[0]} {draft_type_string}" if card_set else " None"
             self.current_draft_value_label.config(text=new_label)
         except Exception as error:
-            overlay_logger.info("__update_current_draft_label Error: %s", error)
+            overlay_logger.info(
+                "__update_current_draft_label Error: %s", error)
 
     def _update_data_source_options(self, new_list):
         '''Update the option menu that lists the available data sets for the current draft set (i.e., QuickDraft, PremierDraft, TradDraft, etc.)'''
@@ -937,7 +966,8 @@ class Overlay(ScaledWindow):
                 self.data_source_selection.set(next(iter(self.data_sources)))
 
         except Exception as error:
-            overlay_logger.info("__update_data_source_options Error: %s", error)
+            overlay_logger.info(
+                "__update_data_source_options Error: %s", error)
 
         self._control_trace(True)
 
@@ -1098,6 +1128,10 @@ class Overlay(ScaledWindow):
             self.tier_sources = self.draft.retrieve_tier_source()
             self._update_data_source_options(True)
             self._update_draft_data()
+            overlay_logger.info("%s, Mean: %.2f, Standard Deviation: %.2f",
+                                self.draft.draft_sets,
+                                self.set_metrics.mean,
+                                self.set_metrics.standard_deviation)
 
         if self.draft.draft_data_search():
             update = True
@@ -1142,6 +1176,8 @@ class Overlay(ScaledWindow):
                 self.color_bonus_checkbox_value.get())
             self.configuration.bayesian_average_enabled = bool(
                 self.bayesian_average_checkbox_value.get())
+            self.configuration.color_identity_enabled = bool(
+                self.color_identity_checkbox_value.get())
             self.configuration.draft_log_enabled = bool(
                 self.draft_log_checkbox_value.get())
             self.configuration.taken_alsa_enabled = bool(
@@ -1210,6 +1246,8 @@ class Overlay(ScaledWindow):
                 self.configuration.color_bonus_enabled)
             self.bayesian_average_checkbox_value.set(
                 self.configuration.bayesian_average_enabled)
+            self.color_identity_checkbox_value.set(
+                self.configuration.color_identity_enabled)
             self.draft_log_checkbox_value.set(
                 self.configuration.draft_log_enabled)
             self.taken_alsa_checkbox_value.set(
@@ -1241,6 +1279,7 @@ class Overlay(ScaledWindow):
             self.auto_highest_checkbox_value.set(False)
             self.curve_bonus_checkbox_value.set(False)
             self.color_bonus_checkbox_value.set(False)
+            self.color_identity_checkbox_value.set(False)
             self.bayesian_average_checkbox_value.set(False)
             self.draft_log_checkbox_value.set(False)
             self.taken_alsa_checkbox_value.set(True)
@@ -1262,9 +1301,12 @@ class Overlay(ScaledWindow):
         self._update_column_options()
 
         self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self._enable_missing_cards_table(self.missing_cards_checkbox_value.get())
-        self._update_current_draft_label(self.draft.draft_sets, self.draft.draft_type)
-        self._update_pack_pick_label(self.draft.current_pack, self.draft.current_pick)
+        self._enable_missing_cards_table(
+            self.missing_cards_checkbox_value.get())
+        self._update_current_draft_label(
+            self.draft.draft_sets, self.draft.draft_type)
+        self._update_pack_pick_label(
+            self.draft.current_pack, self.draft.current_pick)
 
         fields = {"Column1": constants.DATA_FIELD_NAME,
                   "Column2": self.main_options_dict[self.column_2_selection.get()],
@@ -1277,6 +1319,8 @@ class Overlay(ScaledWindow):
 
         self._update_missing_table(
             [], [], [], self.deck_filter_selection.get(), fields)
+
+        self.root.update()
 
         self._update_deck_stats_callback()
 
@@ -1295,7 +1339,8 @@ class Overlay(ScaledWindow):
         self._update_column_options()
 
         self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self._enable_missing_cards_table(self.missing_cards_checkbox_value.get())
+        self._enable_missing_cards_table(
+            self.missing_cards_checkbox_value.get())
 
         taken_cards = self.draft.retrieve_taken_cards()
 
@@ -1309,21 +1354,24 @@ class Overlay(ScaledWindow):
                   "Column6": self.extra_options_dict[self.column_6_selection.get()],
                   "Column7": self.extra_options_dict[self.column_7_selection.get()], }
 
-        self._update_current_draft_label(self.draft.draft_sets, self.draft.draft_type)
-        self._update_pack_pick_label(self.draft.current_pack, self.draft.current_pick)
+        self._update_current_draft_label(
+            self.draft.draft_sets, self.draft.draft_type)
+        self._update_pack_pick_label(
+            self.draft.current_pack, self.draft.current_pick)
         pack_index = (self.draft.current_pick - 1) % 8
 
         pack_cards = self.draft.retrieve_pack_cards(pack_index)
         self._update_pack_table(pack_cards,
-                                 filtered,
-                                 fields)
-
-        self._update_missing_table(pack_cards,
-                                self.draft.retrieve_initial_pack_cards(
-                                    pack_index),
-                                self.draft.retrieve_picked_cards(pack_index),
                                 filtered,
                                 fields)
+
+        self._update_missing_table(pack_cards,
+                                   self.draft.retrieve_initial_pack_cards(
+                                       pack_index),
+                                   self.draft.retrieve_picked_cards(
+                                       pack_index),
+                                   filtered,
+                                   fields)
 
         self._update_deck_stats_callback()
         self._update_taken_table()
@@ -1388,10 +1436,13 @@ class Overlay(ScaledWindow):
         popup.resizable(width=False, height=True)
         popup.attributes("-topmost", True)
 
-        location_x, location_y = identify_safe_coordinates(self.root, 
-                                                           self._scale_value(1000), 
-                                                           self._scale_value(170), 
-                                                           self._scale_value(250), 
+        location_x, location_y = identify_safe_coordinates(self.root,
+                                                           self._scale_value(
+                                                               1000),
+                                                           self._scale_value(
+                                                               170),
+                                                           self._scale_value(
+                                                               250),
                                                            self._scale_value(20))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
@@ -1408,17 +1459,18 @@ class Overlay(ScaledWindow):
             #style.configure("Set.Treeview", rowheight=self._scale_value(25))
 
             list_box_frame = tkinter.Frame(popup)
-            list_box_scrollbar = tkinter.Scrollbar(list_box_frame, orient=tkinter.VERTICAL)
+            list_box_scrollbar = tkinter.Scrollbar(
+                list_box_frame, orient=tkinter.VERTICAL)
             list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
             list_box = create_header(
-                list_box_frame, 0, self._scale_value(10), headers, self._scale_value(500), True, True, "Set.Treeview", True)
+                list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
 
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
 
             notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.",
-                                  anchor="c")
+                                 anchor="c")
             set_label = Label(popup, text="Set:",
                               style="SetOptions.TLabel")
             draft_label = Label(popup, text="Draft:",
@@ -1432,6 +1484,7 @@ class Overlay(ScaledWindow):
             status_text = tkinter.StringVar()
             status_label = Label(popup, textvariable=status_text,
                                  style="Status.TLabel", anchor="c")
+            status_text.set("Retrieving Set List")
 
             draft_value = tkinter.StringVar(self.root)
             draft_entry = OptionMenu(
@@ -1450,8 +1503,8 @@ class Overlay(ScaledWindow):
             set_entry = OptionMenu(
                 popup, set_value, set_choices[0], *set_choices)
             menu = self.root.nametowidget(set_entry['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"])  
-                
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
+
             set_value.trace("w", lambda *args, start=start_entry, selection=set_value,
                             set_list=sets: self._update_set_start_date(start, selection, set_list, *args))
 
@@ -1459,16 +1512,16 @@ class Overlay(ScaledWindow):
                 popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
 
             add_button = Button(popup, command=lambda: self._add_set(popup,
-                                                                   set_value,
-                                                                   draft_value,
-                                                                   start_entry,
-                                                                   end_entry,
-                                                                   add_button,
-                                                                   progress,
-                                                                   list_box,
-                                                                   sets,
-                                                                   status_text,
-                                                                   constants.DATA_SET_VERSION_3), text="ADD SET")
+                                                                     set_value,
+                                                                     draft_value,
+                                                                     start_entry,
+                                                                     end_entry,
+                                                                     add_button,
+                                                                     progress,
+                                                                     list_box,
+                                                                     sets,
+                                                                     status_text,
+                                                                     constants.DATA_SET_VERSION_3), text="ADD SET")
 
             notice_label.grid(row=0, column=0, columnspan=8, sticky='nsew')
             list_box_frame.grid(row=1, column=0, columnspan=8, sticky='nsew')
@@ -1487,6 +1540,8 @@ class Overlay(ScaledWindow):
             list_box.pack(expand=True, fill="both")
 
             self._update_set_table(list_box, sets)
+            status_text.set("")
+            popup.update()
         except Exception as error:
             overlay_logger.info("__open_set_view_window Error: %s", error)
 
@@ -1496,10 +1551,13 @@ class Overlay(ScaledWindow):
         popup.wm_title("Card Compare")
         popup.resizable(width=False, height=True)
         popup.attributes("-topmost", True)
-        location_x, location_y = identify_safe_coordinates(self.root, 
-                                                           self._scale_value(400), 
-                                                           self._scale_value(170), 
-                                                           self._scale_value(250), 
+        location_x, location_y = identify_safe_coordinates(self.root,
+                                                           self._scale_value(
+                                                               400),
+                                                           self._scale_value(
+                                                               170),
+                                                           self._scale_value(
+                                                               250),
                                                            self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
@@ -1539,10 +1597,11 @@ class Overlay(ScaledWindow):
                        "Column7": {"width": .18, "anchor": tkinter.CENTER}}
 
             compare_table_frame = tkinter.Frame(popup)
-            compare_scrollbar = tkinter.Scrollbar(compare_table_frame, orient=tkinter.VERTICAL)
+            compare_scrollbar = tkinter.Scrollbar(
+                compare_table_frame, orient=tkinter.VERTICAL)
             compare_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-            compare_table = create_header(compare_table_frame, 0, self._scale_value(8), headers,
-                                         self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+            compare_table = create_header(compare_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
+                                          self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
 
@@ -1557,18 +1616,18 @@ class Overlay(ScaledWindow):
             card_entry.pack(side=tkinter.LEFT, expand=True, fill="both")
 
             card_entry.bind("<Return>", lambda event: self._update_compare_table(compare_table,
-                                                                              matching_cards,
-                                                                              card_entry,
-                                                                              self.draft.set_data["card_ratings"],
-                                                                              filtered,
-                                                                              fields))
+                                                                                 matching_cards,
+                                                                                 card_entry,
+                                                                                 self.draft.set_data["card_ratings"],
+                                                                                 filtered,
+                                                                                 fields))
 
             self._update_compare_table(compare_table,
-                                    matching_cards,
-                                    card_entry,
-                                    self.draft.set_data["card_ratings"],
-                                    filtered,
-                                    fields)
+                                       matching_cards,
+                                       card_entry,
+                                       self.draft.set_data["card_ratings"],
+                                       filtered,
+                                       fields)
 
         except Exception as error:
             overlay_logger.info("__open_card_compare_window Error: %s", error)
@@ -1585,15 +1644,19 @@ class Overlay(ScaledWindow):
         popup.wm_title("Taken Cards")
         popup.attributes("-topmost", True)
         popup.resizable(width=False, height=True)
-        location_x, location_y = identify_safe_coordinates(self.root, 
-                                                           self._scale_value(400), 
-                                                           self._scale_value(170), 
-                                                           self._scale_value(250), 
+        location_x, location_y = identify_safe_coordinates(self.root,
+                                                           self._scale_value(
+                                                               400),
+                                                           self._scale_value(
+                                                               170),
+                                                           self._scale_value(
+                                                               250),
                                                            self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         popup.protocol(
             "WM_DELETE_WINDOW", lambda window=popup: self._close_taken_cards_window(window))
+        self._control_trace(False)
         try:
             tkinter.Grid.rowconfigure(popup, 3, weight=1)
             tkinter.Grid.columnconfigure(popup, 6, weight=1)
@@ -1615,12 +1678,12 @@ class Overlay(ScaledWindow):
                        "Column11": {"width": .20, "anchor": tkinter.CENTER},
                        }
 
-
             taken_table_frame = tkinter.Frame(popup)
-            taken_scrollbar = tkinter.Scrollbar(taken_table_frame, orient=tkinter.VERTICAL)
+            taken_scrollbar = tkinter.Scrollbar(
+                taken_table_frame, orient=tkinter.VERTICAL)
             taken_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             self.taken_table = create_header(
-                taken_table_frame, 0, self._scale_value(8), headers, self._scale_value(440), True, True, "Taken.Treeview", False)
+                taken_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(440), True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
 
@@ -1633,10 +1696,10 @@ class Overlay(ScaledWindow):
             taken_option = OptionMenu(option_frame, self.taken_filter_selection, self.taken_filter_selection.get(
             ), *taken_filter_list, style="All.TMenubutton")
             menu = self.root.nametowidget(taken_option['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
-            
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
+
             checkbox_frame = tkinter.Frame(popup)
-            
+
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
                                               text="ALSA",
                                               style="Taken.TCheckbutton",
@@ -1662,11 +1725,11 @@ class Overlay(ScaledWindow):
                                               onvalue=1,
                                               offvalue=0)
             taken_gdwr_checkbox = Checkbutton(checkbox_frame,
-                                             text="GDWR",
-                                             style="Taken.TCheckbutton",
-                                             variable=self.taken_gdwr_checkbox_value,
-                                             onvalue=1,
-                                             offvalue=0)
+                                              text="GDWR",
+                                              style="Taken.TCheckbutton",
+                                              variable=self.taken_gdwr_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0)
             taken_gndwr_checkbox = Checkbutton(checkbox_frame,
                                                text="GNDWR",
                                                style="Taken.TCheckbutton",
@@ -1679,7 +1742,6 @@ class Overlay(ScaledWindow):
                                              variable=self.taken_iwd_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
-                                             
 
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             checkbox_frame.grid(row=1, column=0, columnspan=7, sticky="nsew")
@@ -1687,13 +1749,20 @@ class Overlay(ScaledWindow):
             taken_table_frame.grid(
                 row=3, column=0, columnspan=7, sticky="nsew")
             self.taken_table.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_alsa_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_ata_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_gpwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_ohwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_gdwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_gndwr_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
-            taken_iwd_checkbox.pack(side=tkinter.LEFT, expand=True, fill="both")
+            taken_alsa_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+            taken_ata_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+            taken_gpwr_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+            taken_ohwr_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+            taken_gdwr_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+            taken_gndwr_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+            taken_iwd_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
 
             taken_filter_label.pack(side=tkinter.LEFT, expand=True, fill=None)
             taken_option.pack(side=tkinter.LEFT, expand=True, fill="both")
@@ -1702,6 +1771,7 @@ class Overlay(ScaledWindow):
             popup.update()
         except Exception as error:
             overlay_logger.info("__open_taken_cards_window Error: %s", error)
+        self._control_trace(True)
 
     def _open_suggest_deck_window(self):
         '''Creates the Suggest Deck window'''
@@ -1710,10 +1780,13 @@ class Overlay(ScaledWindow):
         popup.attributes("-topmost", True)
         popup.resizable(width=False, height=True)
 
-        location_x, location_y = identify_safe_coordinates(self.root, 
-                                                           self._scale_value(400), 
-                                                           self._scale_value(170), 
-                                                           self._scale_value(250), 
+        location_x, location_y = identify_safe_coordinates(self.root,
+                                                           self._scale_value(
+                                                               400),
+                                                           self._scale_value(
+                                                               170),
+                                                           self._scale_value(
+                                                               250),
                                                            self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
@@ -1740,17 +1813,17 @@ class Overlay(ScaledWindow):
             deck_colors_entry = OptionMenu(
                 popup, deck_colors_value, choices[0], *choices)
             menu = self.root.nametowidget(deck_colors_entry['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
-            
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
+
             deck_colors_button = Button(popup, command=lambda: self._update_suggest_table(suggest_table,
-                                                                                            deck_colors_value,
-                                                                                            suggested_decks,
-                                                                                            deck_color_options), 
-                                                                                            text="Update")
+                                                                                          deck_colors_value,
+                                                                                          suggested_decks,
+                                                                                          deck_color_options),
+                                        text="Update")
 
             copy_button = Button(popup, command=lambda: copy_suggested(deck_colors_value,
-                                                                      suggested_decks,
-                                                                      deck_color_options),
+                                                                       suggested_decks,
+                                                                       deck_color_options),
                                  text="Copy to Clipboard")
 
             headers = {"CARD": {"width": .35, "anchor": tkinter.W},
@@ -1763,10 +1836,11 @@ class Overlay(ScaledWindow):
             #style.configure("Suggest.Treeview", rowheight=self._scale_value(25))
 
             suggest_table_frame = tkinter.Frame(popup)
-            suggest_scrollbar = tkinter.Scrollbar(suggest_table_frame, orient=tkinter.VERTICAL)
+            suggest_scrollbar = tkinter.Scrollbar(
+                suggest_table_frame, orient=tkinter.VERTICAL)
             suggest_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             suggest_table = create_header(
-                suggest_table_frame, 0, self._scale_value(8), headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
+                suggest_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
 
@@ -1804,16 +1878,20 @@ class Overlay(ScaledWindow):
         popup.protocol("WM_DELETE_WINDOW",
                        lambda window=popup: self._close_settings_window(window))
         popup.attributes("-topmost", True)
-        location_x, location_y = identify_safe_coordinates(self.root, 
-                                                           self._scale_value(400), 
-                                                           self._scale_value(170), 
-                                                           self._scale_value(250), 
+        popup.resizable(width=False, height=True)
+        location_x, location_y = identify_safe_coordinates(self.root,
+                                                           self._scale_value(
+                                                               400),
+                                                           self._scale_value(
+                                                               170),
+                                                           self._scale_value(
+                                                               250),
                                                            self._scale_value(0))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         try:
-            tkinter.Grid.rowconfigure(popup, 1, weight=1)
-            tkinter.Grid.columnconfigure(popup, 0, weight=1)
+            #tkinter.Grid.rowconfigure(popup, 1, weight=1)
+            tkinter.Grid.columnconfigure(popup, 1, weight=1)
 
             self._control_trace(False)
 
@@ -1853,7 +1931,6 @@ class Overlay(ScaledWindow):
                                                 onvalue=1,
                                                 offvalue=0)
 
-
             bayesian_average_label = Label(
                 popup, text="Enable Bayesian Average:", style="MainSections.TLabel", anchor="w")
             bayesian_average_checkbox = Checkbutton(popup,
@@ -1875,53 +1952,60 @@ class Overlay(ScaledWindow):
                                                onvalue=1,
                                                offvalue=0)
 
+            color_identity_label = Label(
+                popup, text="Enable Color Identity:", style="MainSections.TLabel", anchor="w")
+            color_identity_checkbox = Checkbutton(popup,
+                                                  variable=self.color_identity_checkbox_value,
+                                                  onvalue=1,
+                                                  offvalue=0)
+
             self.column_2_options = OptionMenu(popup, self.column_2_selection, self.column_2_selection.get(
             ), *self.column_2_list, style="All.TMenubutton")
             self.column_2_options.config(width=15)
             menu = self.root.nametowidget(self.column_2_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             self.column_3_options = OptionMenu(popup, self.column_3_selection, self.column_3_selection.get(
             ), *self.column_3_list, style="All.TMenubutton")
             self.column_3_options.config(width=15)
             menu = self.root.nametowidget(self.column_3_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             self.column_4_options = OptionMenu(popup, self.column_4_selection, self.column_4_selection.get(
             ), *self.column_4_list, style="All.TMenubutton")
             self.column_4_options.config(width=15)
             menu = self.root.nametowidget(self.column_4_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             self.column_5_options = OptionMenu(popup, self.column_5_selection, self.column_5_selection.get(
             ), *self.column_5_list, style="All.TMenubutton")
             self.column_5_options.config(width=15)
             menu = self.root.nametowidget(self.column_5_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             self.column_6_options = OptionMenu(popup, self.column_6_selection, self.column_6_selection.get(
             ), *self.column_6_list, style="All.TMenubutton")
             self.column_6_options.config(width=15)
             menu = self.root.nametowidget(self.column_6_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             self.column_7_options = OptionMenu(popup, self.column_7_selection, self.column_7_selection.get(
             ), *self.column_7_list, style="All.TMenubutton")
             self.column_7_options.config(width=15)
             menu = self.root.nametowidget(self.column_7_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             filter_format_options = OptionMenu(popup, self.filter_format_selection, self.filter_format_selection.get(
             ), *self.filter_format_list, style="All.TMenubutton")
             filter_format_options.config(width=15)
             menu = self.root.nametowidget(filter_format_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             result_format_options = OptionMenu(popup, self.result_format_selection, self.result_format_selection.get(
             ), *self.result_format_list, style="All.TMenubutton")
             result_format_options.config(width=15)
             menu = self.root.nametowidget(result_format_options['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"]) 
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             default_button = Button(
                 popup, command=self._default_settings_callback, text="Default Settings")
@@ -1962,27 +2046,31 @@ class Overlay(ScaledWindow):
                 row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
             card_colors_checkbox.grid(
                 row=8, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            deck_stats_label.grid(
+            color_identity_label.grid(
                 row=9, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            deck_stats_checkbox.grid(
+            color_identity_checkbox.grid(
                 row=9, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            missing_cards_label.grid(
+            deck_stats_label.grid(
                 row=10, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            missing_cards_checkbox.grid(
+            deck_stats_checkbox.grid(
                 row=10, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            auto_highest_label.grid(
+            missing_cards_label.grid(
                 row=11, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            auto_highest_checkbox.grid(
+            missing_cards_checkbox.grid(
                 row=11, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            auto_highest_label.grid(
+                row=12, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            auto_highest_checkbox.grid(
+                row=12, column=1, columnspan=1, sticky="nsew", padx=(5,))
             bayesian_average_label.grid(
-                row=15, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=13, column=0, columnspan=1, sticky="nsew", padx=(10,))
             bayesian_average_checkbox.grid(
-                row=15, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=13, column=1, columnspan=1, sticky="nsew", padx=(5,))
             draft_log_label.grid(
-                row=16, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=14, column=0, columnspan=1, sticky="nsew", padx=(10,))
             draft_log_checkbox.grid(
-                row=16, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=17, column=0, columnspan=2, sticky="nsew")
+                row=14, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=15, column=0, columnspan=2, sticky="nsew")
 
             self._control_trace(True)
 
@@ -1997,7 +2085,7 @@ class Overlay(ScaledWindow):
         while True:
             try:
                 message_box = tkinter.messagebox.askyesno(
-                    title="Download", message=f"17Lands updates their card data once a day at 01:30 UTC. Are you sure that you want to download {draft_set.get()} {draft.get()} data?")
+                    title="Download", message=f"17Lands updates their card data once a day at 03:00 UTC. Are you sure that you want to download {draft_set.get()} {draft.get()} data?")
                 if not message_box:
                     break
 
@@ -2098,16 +2186,17 @@ class Overlay(ScaledWindow):
                                     else:
                                         color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
 
-
                         CreateCardToolTip(table,
                                           event,
                                           card[constants.DATA_FIELD_NAME],
                                           color_dict,
                                           card[constants.DATA_SECTION_IMAGES],
                                           self.configuration.images_enabled,
-                                          self.scaling_factor)
+                                          self.scale_factor,
+                                          self.fonts_dict)
                     except Exception as error:
-                        overlay_logger.info("__process_table_click Error: %s", error)
+                        overlay_logger.info(
+                            "__process_table_click Error: %s", error)
                     break
 
     def _open_draft_log(self):
@@ -2184,6 +2273,8 @@ class Overlay(ScaledWindow):
                 (self.taken_type_selection, lambda: self.taken_type_selection.trace(
                     "w", self._update_settings_callback)),
                 (self.card_colors_checkbox_value, lambda: self.card_colors_checkbox_value.trace(
+                    "w", self._update_settings_callback)),
+                (self.color_identity_checkbox_value, lambda: self.color_identity_checkbox_value.trace(
                     "w", self._update_settings_callback)),
             ]
 
@@ -2272,8 +2363,11 @@ class Overlay(ScaledWindow):
 
 class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scaling_factor):
-        self.scaling_factor = scaling_factor
+
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict):
+        super().__init__()
+        self.scale_factor = scale_factor
+        self.fonts_dict = fonts_dict
         self.waittime = 1  # miliseconds
         self.wraplength = 180  # pixels
         self.widget = widget
@@ -2314,7 +2408,7 @@ class CreateCardToolTip(ScaledWindow):
         '''Function that builds and populates the tooltip window '''
         try:
             row_height = self._scale_value(23)
-            tt_width = self._scale_value(400)
+            tt_width = self._scale_value(500)
             # creates a toplevel window
             self.tw = tkinter.Toplevel(self.widget)
             # Leaves only the label and removes the app window
@@ -2326,20 +2420,20 @@ class CreateCardToolTip(ScaledWindow):
 
             tkinter.Grid.rowconfigure(tt_frame, 2, weight=1)
 
-            card_label = Label(tt_frame, 
-                                       text=self.card_name, 
-                                       style="TooltipHeader.TLabel", 
-                                       background="#3d3d3d", 
-                                       foreground="#e6ecec", 
-                                       relief="groove", 
-                                       anchor="c",)
+            card_label = Label(tt_frame,
+                               text=self.card_name,
+                               style="TooltipHeader.TLabel",
+                               background="#3d3d3d",
+                               foreground="#e6ecec",
+                               relief="groove",
+                               anchor="c",)
 
             if len(self.color_dict) == 2:
                 headers = {"Label": {"width": .70, "anchor": tkinter.W},
                            "Value1": {"width": .15, "anchor": tkinter.CENTER},
                            "Value2": {"width": .15, "anchor": tkinter.CENTER}}
                 width = self._scale_value(400)
-                tt_width += self._scale_value(150)
+                tt_width += self._scale_value(125)
             else:
                 headers = {"Label": {"width": .80, "anchor": tkinter.W},
                            "Value1": {"width": .20, "anchor": tkinter.CENTER}}
@@ -2349,7 +2443,7 @@ class CreateCardToolTip(ScaledWindow):
             style.configure("Tooltip.Treeview", rowheight=row_height)
 
             stats_main_table = create_header(
-                tt_frame, 0, self._scale_value(8), headers, width, False, True, "Tooltip.Treeview", False)
+                tt_frame, 0, self.fonts_dict["All.TableRow"], headers, width, False, True, "Tooltip.Treeview", False)
             main_field_list = []
 
             values = ["Filter:"] + list(self.color_dict.keys())
@@ -2378,7 +2472,7 @@ class CreateCardToolTip(ScaledWindow):
             values = ["Games Played Win Rate:"] + \
                 [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
-            
+
             values = ["Games Drawn Win Rate:"] + \
                 [f"{x[constants.DATA_FIELD_GDWR]}%" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
@@ -2400,7 +2494,7 @@ class CreateCardToolTip(ScaledWindow):
             values = ["Number of Games Played:"] + \
                 [f"{x[constants.DATA_FIELD_NGP]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
-            
+
             values = ["Number of Games Drawn:"] + \
                 [f"{x[constants.DATA_FIELD_NGD]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
@@ -2432,9 +2526,10 @@ class CreateCardToolTip(ScaledWindow):
                                 column=count, row=1, columnspan=1, rowspan=3)
                             self.images.append(image)
                             column_offset += 1
-                            tt_width += self._scale_value(300)
+                            tt_width += self._scale_value(200)
                     except Exception as error:
-                        overlay_logger.info("__display_tooltip Image Error: %s", error)
+                        overlay_logger.info(
+                            "__display_tooltip Image Error: %s", error)
 
             card_label.grid(column=0, row=0,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)
@@ -2444,12 +2539,16 @@ class CreateCardToolTip(ScaledWindow):
                 stats_main_table.insert(
                     "", index=count, iid=count, values=row_values, tag=(row_tag,))
 
-            stats_main_table.grid(row=1, column=column_offset, sticky=tkinter.NSEW)
+            stats_main_table.grid(
+                row=1, column=column_offset, sticky=tkinter.NSEW)
 
-            location_x, location_y = identify_safe_coordinates(self.tw, 
-                                                               self._scale_value(tt_width), 
-                                                               self._scale_value(500), 
-                                                               self._scale_value(25), 
+            location_x, location_y = identify_safe_coordinates(self.tw,
+                                                               self._scale_value(
+                                                                   tt_width),
+                                                               self._scale_value(
+                                                                   450),
+                                                               self._scale_value(
+                                                                   25),
                                                                self._scale_value(20))
             self.tw.wm_geometry(f"+{location_x}+{location_y}")
 

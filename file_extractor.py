@@ -66,7 +66,7 @@ def retrieve_local_set_list(sets):
 
                 if ((name_segments[0].upper() in main_sets) and
                     (name_segments[1] in constants.LIMITED_TYPES_DICT) and
-                    (name_segments[2] == constants.SET_FILE_SUFFIX)):
+                        (name_segments[2] == constants.SET_FILE_SUFFIX)):
 
                     set_name = list(sets.keys())[list(
                         main_sets).index(name_segments[0].upper())]
@@ -115,7 +115,7 @@ def retrieve_arena_directory(log_location):
     arena_directory = ""
     try:
         # Retrieve the arena directory
-        with open(log_location, 'r', encoding="utf8") as log_file:
+        with open(log_location, 'r', encoding="utf-8", errors="replace") as log_file:
             line = log_file.readline()
             location = re.findall(r"'(.*?)/Managed'", line, re.DOTALL)
             if location and os.path.exists(location[0]):
@@ -230,7 +230,7 @@ def check_file_integrity(filename):
     while True:
         # Check 1) File is present
         try:
-            with open(filename, 'r', encoding="utf8") as json_file:
+            with open(filename, 'r', encoding="utf-8", errors="replace") as json_file:
                 json_data = json_file.read()
         except Exception:
             result = Result.ERROR_MISSING_FILE
@@ -275,6 +275,7 @@ def check_file_integrity(filename):
 
 class FileExtractor:
     '''Class that handles the creation of set files and the retrieval of platform information'''
+
     def __init__(self, directory):
         self.selected_sets = []
         self.set_list = []
@@ -380,11 +381,11 @@ class FileExtractor:
                 ui_root.update()
 
                 if not self.retrieve_17lands_data(self.selected_sets[constants.SET_LIST_17LANDS],
-                                       self.deck_colors,
-                                       ui_root,
-                                       progress_bar,
-                                       progress_bar['value'],
-                                       status):
+                                                  self.deck_colors,
+                                                  ui_root,
+                                                  progress_bar,
+                                                  progress_bar['value'],
+                                                  status):
                     result = False
                     result_string = "Couldn't Collect 17Lands Data"
                     break
@@ -416,7 +417,7 @@ class FileExtractor:
         root.update()
         if sys.platform == constants.PLATFORM_ID_OSX:
             directory = os.path.join(os.path.expanduser('~'),
-                constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
+                                     constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
             paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
         else:
             if not self.directory:
@@ -497,7 +498,7 @@ class FileExtractor:
         result = False
         card_data = {}
         try:
-            with open(file_location, 'r', encoding="utf8") as json_file:
+            with open(file_location, 'r', encoding="utf-8", errors="replace") as json_file:
                 json_data = json.loads(json_file.read())
 
                 for card in json_data:
@@ -540,11 +541,13 @@ class FileExtractor:
                             card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("", 0)
                         card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
                         card_data[card_set][group_id]["mana_cost"] = mana_cost
-                        card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]] if constants.LOCAL_CARDS_KEY_RARITY in card else constants.CARD_RARITY_COMMON
+                        card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]
+                                                                                                                ] if constants.LOCAL_CARDS_KEY_RARITY in card else constants.CARD_RARITY_COMMON
 
                         result = True
                     except Exception as error:
-                        file_logger.info("Card Read Error: %s, %s", error, card)
+                        file_logger.info(
+                            "Card Read Error: %s, %s", error, card)
                         break
                         # pass
         except Exception as error:
@@ -601,8 +604,7 @@ class FileExtractor:
         card_text = {}
         try:
             # Retrieve the title (card name) for each of the collected arena IDs
-            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]
-                : x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
+            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]: x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
 
         except Exception as error:
             result = False
@@ -626,7 +628,8 @@ class FileExtractor:
 
         except Exception as error:
             result = False
-            file_logger.info("_retrieve_local_card_enumerators Error: %s", error)
+            file_logger.info(
+                "_retrieve_local_card_enumerators Error: %s", error)
 
         return result, card_enumerators
 
@@ -654,7 +657,7 @@ class FileExtractor:
 
             if result:
                 # Store all of the processed card data
-                with open(constants.TEMP_CARD_DATA_FILE, 'w', encoding='utf-8') as json_file:
+                with open(constants.TEMP_CARD_DATA_FILE, 'w', encoding="utf-8", errors="replace") as json_file:
                     json.dump(card_data, json_file)
 
         except Exception as error:
@@ -668,7 +671,7 @@ class FileExtractor:
         result = False
         self.card_dict = {}
         try:
-            with open(constants.TEMP_CARD_DATA_FILE, 'r', encoding='utf-8') as data:
+            with open(constants.TEMP_CARD_DATA_FILE, 'r', encoding="utf-8", errors="replace") as data:
                 json_file = data.read()
                 json_data = json.loads(json_file)
 
@@ -711,7 +714,7 @@ class FileExtractor:
             url = f"https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/{filename}"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
-            with open(filename, 'wb', encoding='utf-8') as file:
+            with open(filename, 'wb', encoding="utf-8", errors="replace") as file:
                 file.write(url_data)
         except Exception as error:
             file_logger.info("retrieve_repository_file Error: %s", error)
@@ -766,9 +769,7 @@ class FileExtractor:
                     if retry:
                         attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
                         status.set(
-                            f"""Collecting Scryfall Data - Request Failed \
-                            ({attempt_count}/{constants.SCRYFALL_REQUEST_ATTEMPT_MAX}) - \
-                            Retry in {constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS} seconds""")
+                            f"""Collecting Scryfall Data - Request Failed ({attempt_count}/{constants.SCRYFALL_REQUEST_ATTEMPT_MAX}) - Retry in {constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS} seconds""")
                         root.update()
                         time.sleep(
                             constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS)
@@ -812,22 +813,21 @@ class FileExtractor:
                         break
                     except Exception as error:
                         file_logger.info(url)
-                        file_logger.info("retrieve_17lands_data Error: %s", error)
+                        file_logger.info(
+                            "retrieve_17lands_data Error: %s", error)
                         retry -= 1
 
                         if retry:
                             attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
                             status.set(
-                                f"""Collecting {color} 17Lands Data - Request Failed \
-                                ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX}) \
-                                - Retry in {constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS} seconds""")
+                                f"""Collecting {color} 17Lands Data - Request Failed ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX}) - Retry in {constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS} seconds""")
                             root.update()
                             time.sleep(
                                 constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
 
                 if result:
-                    current_progress += 3 / \
-                        len(self.selected_sets[constants.SET_LIST_17LANDS])
+                    current_progress += (3 /
+                                         len(self.selected_sets[constants.SET_LIST_17LANDS]))
                     progress['value'] = current_progress + initial_progress
                     root.update()
                 else:
@@ -907,7 +907,8 @@ class FileExtractor:
                                 float(card[value]) * 100.0, 2) if card[value] is not None else 0.0
                         elif ((key == constants.DATA_FIELD_ATA) or
                               (key == constants.DATA_FIELD_ALSA)):
-                            color_data[colors][key] = round(float(card[value]), 2)
+                            color_data[colors][key] = round(
+                                float(card[value]), 2)
                         else:
                             color_data[colors][key] = int(card[value])
 
@@ -1056,7 +1057,8 @@ class FileExtractor:
                 # Check if the set has been released
                 if "released_at" in card_set:
                     # Sets that are not digitial only are release in Arena 1 week before paper
-                    start_offset = constants.SET_RELEASE_OFFSET_DAYS if not card_set["digital"] else 0
+                    start_offset = constants.SET_RELEASE_OFFSET_DAYS if not card_set[
+                        "digital"] else 0
                     if not check_release_date(card_set["released_at"], start_offset):
                         continue
 
@@ -1124,7 +1126,7 @@ class FileExtractor:
                 (self.selected_sets[constants.SET_LIST_17LANDS][0], self.draft, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
-            with open(location, 'w', encoding='utf-8') as file:
+            with open(location, 'w', encoding="utf-8", errors="replace") as file:
                 json.dump(self.combined_data, file)
 
             # Verify that the file was written
