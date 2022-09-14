@@ -5,7 +5,7 @@
 import argparse
 import overlay as OL
 
-__version__ = 3.02
+__version__ = 3.03
 
 
 def startup():

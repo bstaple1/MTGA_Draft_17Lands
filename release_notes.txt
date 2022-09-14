@@ -1,3 +1,21 @@
+===================== RELEASE NOTES 3.03 =====================
+* Bug Fix: The application will use the UTF-8 codec when reading the Arena player.log file (Issue #17)
+
+* Bug Fix: Made some changes to address some text color and scaling issues (Issue #15)
+** The dark mode theme is disabled for Mac users
+** The config.json file has a scale_factor field that can be used to scale the application
+
+* Data Update: Added Games Drawn Win Rate and Number of Games Drawn data
+
+* Modified Feature: The application will now set the row colors based on a card's mana cost, ignoring kicker and ability costs (Issue #16)
+
+* Modified Feature: The Auto filter is now capable of identifying decks with 3-colors
+
+* New Feature: The new Enable Color Identity setting can be used to toggle a card's listed colors
+** Enabling the setting will display a card's mana cost AND ability/kicker costs
+
+* New Feature: The Taken Cards window now has card-type filters (i.e., Creature, Lands, Instants/Sorceries, and Other)
+
 ===================== RELEASE NOTES 3.02 =====================
 * Data Update: Added support for the Arena Cube
 ** The set option is located at the bottom of the set list
