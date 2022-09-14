@@ -1972,7 +1972,7 @@ class Overlay(ScaledWindow):
         popup.protocol("WM_DELETE_WINDOW",
                        lambda window=popup: self._close_settings_window(window))
         popup.attributes("-topmost", True)
-        popup.resizable(width=False, height=True)
+        popup.resizable(width=False, height=False)
         location_x, location_y = identify_safe_coordinates(self.root,
                                                            self._scale_value(
                                                                400),

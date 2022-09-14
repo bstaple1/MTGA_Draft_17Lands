@@ -139,7 +139,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Enable Card Colors:** Sets the row color to the card color.
 
 - **Enable Color Identity:** When enabled, the Colors field will display the mana symbols for a card's mana cost AND abilities (i.e., kicker, activated abilities, etc.)
-    - The Colors field in the Suggested Decks window will always display the full color identity
 
 - **Enable Draft Stats:** Displays the draft stats table and drop-down in the main window.
 

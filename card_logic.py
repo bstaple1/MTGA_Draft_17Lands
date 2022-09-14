@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict, field
 import json
 import logging
 import math
-#import numpy
+import numpy
 import constants
 
 logic_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
@@ -113,9 +113,9 @@ class CardResult:
                     elif option == constants.DATA_FIELD_COLORS:
                         selected_card["results"][count] = self._process_colors(
                             card)
-                    #elif option == constants.DATA_FIELD_WHEEL:
-                    #    selected_card["results"][count] = self._process_wheel_normalized(
-                    #        card, wheel_sum)
+                    elif option == constants.DATA_FIELD_WHEEL:
+                        selected_card["results"][count] = self._process_wheel_normalized(
+                            card, wheel_sum)
                     elif option in card:
                         selected_card["results"][count] = card[option]
                     else:
@@ -166,37 +166,37 @@ class CardResult:
 
         return total_sum
 
-    #def _process_wheel(self, card):
-    #    """Calculate wheel percentage"""
-    #    result = 0
-    #
-    #    try:
-    #        if self.pick_number <= len(constants.WHEEL_COEFFICIENTS):
-    #            # 0 is treated as pick 1 for PremierDraft P1P1
-    #            self.pick_number = max(self.pick_number, 1)
-    #            alsa = card[constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
-    #            coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
-    #            # Exclude ALSA values below 2
-    #            result = round(numpy.polyval(coefficients, alsa),
-    #                           1) if alsa >= 2 else 0
-    #            result = max(result, 0)
-    #    except Exception as error:
-    #        logic_logger.info("_process_wheel error: %s", error)
-    #
-     #   return result
+    def _process_wheel(self, card):
+        """Calculate wheel percentage"""
+        result = 0
+    
+        try:
+            if self.pick_number <= len(constants.WHEEL_COEFFICIENTS):
+                # 0 is treated as pick 1 for PremierDraft P1P1
+                self.pick_number = max(self.pick_number, 1)
+                alsa = card[constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
+                coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
+                # Exclude ALSA values below 2
+                result = round(numpy.polyval(coefficients, alsa),
+                               1) if alsa >= 2 else 0
+                result = max(result, 0)
+        except Exception as error:
+            logic_logger.info("_process_wheel error: %s", error)
+    
+        return result
 
-    #def _process_wheel_normalized(self, card, total_sum):
-    #    """Calculate the normalized wheel percentage using the sum of all percentages within the card list"""
-    #    result = 0
-    #
-    #    try:
-    #        result = self._process_wheel(card)
-    #
-    #        result = round((result / total_sum)*100, 1) if total_sum > 0 else 0
-    #    except Exception as error:
-    #        logic_logger.info("_process_wheel_normalized error: %s", error)
-    #
-    #    return result
+    def _process_wheel_normalized(self, card, total_sum):
+        """Calculate the normalized wheel percentage using the sum of all percentages within the card list"""
+        result = 0
+    
+        try:
+            result = self._process_wheel(card)
+    
+            result = round((result / total_sum)*100, 1) if total_sum > 0 else 0
+        except Exception as error:
+            logic_logger.info("_process_wheel_normalized error: %s", error)
+    
+        return result
 
     def _process_filter_fields(self, card, option, colors):
         """Retrieve win rate result based on the application settings"""
