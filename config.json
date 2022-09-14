@@ -1,7 +1,8 @@
 {
     "features": {
         "hotkey_enabled": true,
-        "images_enabled": true
+        "images_enabled": true,
+        "scale_factor": 1.0
     },
     "card_data": {
         "database_size": 0
@@ -28,9 +29,11 @@
         "taken_ata_enabled": false,
         "taken_gpwr_enabled": false,
         "taken_ohwr_enabled": false,
+        "taken_gdwr_enabled": false,
         "taken_gndwr_enabled": false,
         "taken_iwd_enabled": false,
-        "card_colors_enabled": false
+        "card_colors_enabled": false,
+        "color_identity_enabled": false
     },
     "card_logic": {
         "alsa_weight": 0.0,

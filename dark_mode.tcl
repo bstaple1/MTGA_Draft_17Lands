@@ -21,7 +21,6 @@ array set colors {
           -insertcolor $colors(-fg) \
           -insertwidth 1 \
           -fieldbackground $colors(-selectbg) \
-          -font {"Arial" 10} \
           -borderwidth 1 \
           -relief flat
 
@@ -35,5 +34,4 @@ array set colors {
       
       ttk::style map . -foreground [list disabled $colors(-disabledfg)]
 
-      option add *font [ttk::style lookup . -font]
       option add *Menu.selectcolor $colors(-fg)

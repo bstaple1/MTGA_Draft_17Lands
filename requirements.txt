@@ -3,3 +3,4 @@ pynput>=1.7.6
 ttkwidgets>=0.12.1
 pyinstaller>=4.8
 pywin32>=303
+numpy>=1.22.2
