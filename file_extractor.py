@@ -246,7 +246,7 @@ def check_file_integrity(filename):
                 json_data["meta"]["date_range"].split("->")
             else:
                 json_data["meta"]["start_date"]
-                json_data["meta"]["end_date"]
+                json_data["meta"]["end_date_test"]
 
             # Check 2B) Card data is present
             cards = json_data["card_ratings"]

@@ -338,6 +338,15 @@ class Overlay(ScaledWindow):
         self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
         self.card_colors_checkbox_value = tkinter.IntVar(self.root)
         self.color_identity_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_creature_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_creature_checkbox_value.set(True)
+        self.taken_type_land_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_land_checkbox_value.set(True)
+        self.taken_type_instant_sorcery_checkbox_value = tkinter.IntVar(
+            self.root)
+        self.taken_type_instant_sorcery_checkbox_value.set(True)
+        self.taken_type_other_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_other_checkbox_value.set(True)
 
         self.column_2_selection = tkinter.StringVar(self.root)
         self.column_2_list = self.main_options_dict.keys()
@@ -419,7 +428,8 @@ class Overlay(ScaledWindow):
 
         self.stat_options_selection = tkinter.StringVar(self.root)
         self.stat_options_list = [constants.CARD_TYPE_SELECTION_CREATURES,
-                                  constants.CARD_TYPE_SELECTION_NONCREATURES, constants.CARD_TYPE_SELECTION_ALL]
+                                  constants.CARD_TYPE_SELECTION_NONCREATURES,
+                                  constants.CARD_TYPE_SELECTION_ALL]
 
         self.stat_options = OptionMenu(self.stat_frame, self.stat_options_selection,
                                        self.stat_options_list[0], *self.stat_options_list, style="All.TMenubutton")
@@ -701,7 +711,6 @@ class Overlay(ScaledWindow):
                     result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
                         d["results"][last_field_index]), reverse=True)
 
-                    #filtered_list.sort(key = functools.cmp_to_key(CL.CompareRatings))
                     for count, card in enumerate(result_list):
                         row_tag = identify_table_row_tag(
                             self.configuration.card_colors_enabled,
@@ -793,6 +802,35 @@ class Overlay(ScaledWindow):
                 filtered_colors = self._identify_auto_colors(
                     taken_cards, self.taken_filter_selection.get())
 
+                # Apply the card type filters
+                if not (self.taken_type_creature_checkbox_value.get() and
+                        self.taken_type_land_checkbox_value.get() and
+                        self.taken_type_instant_sorcery_checkbox_value.get() and
+                        self.taken_type_other_checkbox_value.get()):
+                    card_types = []
+
+                    if self.taken_type_creature_checkbox_value.get():
+                        card_types.append(constants.CARD_TYPE_CREATURE)
+
+                    if self.taken_type_land_checkbox_value.get():
+                        card_types.append(constants.CARD_TYPE_LAND)
+
+                    if self.taken_type_instant_sorcery_checkbox_value.get():
+                        card_types.extend(
+                            [constants.CARD_TYPE_INSTANT, constants.CARD_TYPE_SORCERY])
+
+                    if self.taken_type_other_checkbox_value.get():
+                        card_types.extend([constants.CARD_TYPE_ARTIFACT,
+                                           constants.CARD_TYPE_ENCHANTMENT,
+                                           constants.CARD_TYPE_PLANESWALKER])
+
+                    taken_cards = CL.deck_card_search(taken_cards,
+                                                      constants.CARD_COLORS,
+                                                      card_types,
+                                                      True,
+                                                      True,
+                                                      True)
+
                 stacked_cards = CL.stack_cards(taken_cards)
 
                 for row in self.taken_table.get_children():
@@ -849,9 +887,17 @@ class Overlay(ScaledWindow):
                     self.configuration.card_colors_enabled,
                     card[constants.DATA_FIELD_MANA_COST],
                     count)
+
+                if constants.CARD_TYPE_LAND in card[constants.DATA_FIELD_TYPES]:
+                    card_colors = "".join(card[constants.DATA_FIELD_COLORS])
+                else:
+                    card_colors = "".join(list(CL.card_colors(card[constants.DATA_FIELD_MANA_COST]).keys())
+                                          if not self.configuration.color_identity_enabled
+                                          else card[constants.DATA_FIELD_COLORS])
+
                 suggest_table.insert("", index=count, values=(card[constants.DATA_FIELD_NAME],
                                                               f"{card[constants.DATA_FIELD_COUNT]}",
-                                                              card[constants.DATA_FIELD_COLORS],
+                                                              card_colors,
                                                               card[constants.DATA_FIELD_CMC],
                                                               card[constants.DATA_FIELD_TYPES]), tag=(row_tag,))
             suggest_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
@@ -861,7 +907,7 @@ class Overlay(ScaledWindow):
             overlay_logger.info("_update_suggest_table Error: %s", error)
 
     def _update_deck_stats_table(self, taken_cards, filter_type, total_width):
-        '''Update the table that lists the deck stats'''
+        '''Update the table that lists the draft stats'''
         try:
             card_types = constants.CARD_TYPE_DICT[filter_type]
 
@@ -869,10 +915,10 @@ class Overlay(ScaledWindow):
             for color, symbol in constants.CARD_COLORS_DICT.items():
                 if symbol:
                     card_colors_sorted = CL.deck_card_search(
-                        taken_cards, symbol, card_types, True, True, False)
+                        taken_cards, symbol, card_types[0], card_types[1], card_types[2], card_types[3])
                 else:
                     card_colors_sorted = CL.deck_card_search(
-                        taken_cards, symbol, card_types, True, False, True)
+                        taken_cards, symbol, card_types[0], card_types[1], True, False)
                 card_metrics = CL.deck_metrics(card_colors_sorted)
                 colors_filtered[color] = {}
                 colors_filtered[color]["symbol"] = symbol
@@ -896,7 +942,6 @@ class Overlay(ScaledWindow):
             for column in self.stat_table["columns"]:
                 column_width = min(int(math.ceil(
                     constants.STATS_HEADER_CONFIG[column]["width"] * total_width)), width)
-                #column_width = int(constants.STATS_HEADER_CONFIG[column]["width"] * total_width)
                 width -= column_width
                 self.stat_table.column(column, width=column_width)
 
@@ -1414,7 +1459,7 @@ class Overlay(ScaledWindow):
             self.root.iconify()
 
     def _update_set_start_date(self, start, selection, set_list, *args):
-        '''Function that's used to determine if a set in the Set View window has minimum start data
+        '''Function that's used to determine if a set in the Set View window has minimum start date
            Example: The user shouldn't download Arena Cube data that's more than a couple of months old
            or else they risk downloading data from multiple separate cubes
         '''
@@ -1658,7 +1703,7 @@ class Overlay(ScaledWindow):
             "WM_DELETE_WINDOW", lambda window=popup: self._close_taken_cards_window(window))
         self._control_trace(False)
         try:
-            tkinter.Grid.rowconfigure(popup, 3, weight=1)
+            tkinter.Grid.rowconfigure(popup, 4, weight=1)
             tkinter.Grid.columnconfigure(popup, 6, weight=1)
 
             taken_cards = self.draft.retrieve_taken_cards()
@@ -1687,7 +1732,8 @@ class Overlay(ScaledWindow):
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
 
-            option_frame = tkinter.Frame(popup)
+            option_frame = tkinter.Frame(
+                popup, highlightbackground="white", highlightthickness=2)
             taken_filter_label = Label(
                 option_frame, text="Deck Filter:", style="MainSections.TLabel", anchor="w")
             self.taken_filter_selection.set(self.deck_filter_selection.get())
@@ -1698,7 +1744,39 @@ class Overlay(ScaledWindow):
             menu = self.root.nametowidget(taken_option['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-            checkbox_frame = tkinter.Frame(popup)
+            type_checkbox_frame = tkinter.Frame(
+                popup, highlightbackground="white", highlightthickness=2)
+
+            taken_creature_checkbox = Checkbutton(type_checkbox_frame,
+                                                  text="CREATURES",
+                                                  style="Taken.TCheckbutton",
+                                                  variable=self.taken_type_creature_checkbox_value,
+                                                  onvalue=1,
+                                                  offvalue=0)
+
+            taken_land_checkbox = Checkbutton(type_checkbox_frame,
+                                              text="LANDS",
+                                              style="Taken.TCheckbutton",
+                                              variable=self.taken_type_land_checkbox_value,
+                                              onvalue=1,
+                                              offvalue=0)
+
+            taken_instant_sorcery_checkbox = Checkbutton(type_checkbox_frame,
+                                                         text="INSTANTS/SORCERIES",
+                                                         style="Taken.TCheckbutton",
+                                                         variable=self.taken_type_instant_sorcery_checkbox_value,
+                                                         onvalue=1,
+                                                         offvalue=0)
+
+            taken_other_checkbox = Checkbutton(type_checkbox_frame,
+                                               text="OTHER",
+                                               style="Taken.TCheckbutton",
+                                               variable=self.taken_type_other_checkbox_value,
+                                               onvalue=1,
+                                               offvalue=0)
+
+            checkbox_frame = tkinter.Frame(
+                popup, highlightbackground="white", highlightthickness=2)
 
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
                                               text="ALSA",
@@ -1744,11 +1822,27 @@ class Overlay(ScaledWindow):
                                              offvalue=0)
 
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
-            checkbox_frame.grid(row=1, column=0, columnspan=7, sticky="nsew")
-            copy_button.grid(row=2, column=0, columnspan=7, sticky="nsew")
+            type_checkbox_frame.grid(
+                row=1, column=0, columnspan=7, sticky="nsew", pady=5)
+            checkbox_frame.grid(row=2, column=0, columnspan=7, sticky="nsew")
+            copy_button.grid(row=3, column=0, columnspan=7, sticky="nsew")
             taken_table_frame.grid(
-                row=3, column=0, columnspan=7, sticky="nsew")
+                row=4, column=0, columnspan=7, sticky="nsew")
+
             self.taken_table.pack(side=tkinter.LEFT, expand=True, fill="both")
+
+            taken_creature_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+
+            taken_land_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+
+            taken_instant_sorcery_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+
+            taken_other_checkbox.pack(
+                side=tkinter.LEFT, expand=True, fill="both")
+
             taken_alsa_checkbox.pack(
                 side=tkinter.LEFT, expand=True, fill="both")
             taken_ata_checkbox.pack(
@@ -1778,7 +1872,7 @@ class Overlay(ScaledWindow):
         popup = tkinter.Toplevel()
         popup.wm_title("Suggested Decks")
         popup.attributes("-topmost", True)
-        popup.resizable(width=False, height=True)
+        popup.resizable(width=False, height=False)
 
         location_x, location_y = identify_safe_coordinates(self.root,
                                                            self._scale_value(
@@ -2276,6 +2370,14 @@ class Overlay(ScaledWindow):
                     "w", self._update_settings_callback)),
                 (self.color_identity_checkbox_value, lambda: self.color_identity_checkbox_value.trace(
                     "w", self._update_settings_callback)),
+                (self.taken_type_creature_checkbox_value, lambda: self.taken_type_creature_checkbox_value.trace(
+                    "w", self._update_taken_table)),
+                (self.taken_type_land_checkbox_value, lambda: self.taken_type_land_checkbox_value.trace(
+                    "w", self._update_taken_table)),
+                (self.taken_type_instant_sorcery_checkbox_value, lambda: self.taken_type_instant_sorcery_checkbox_value.trace(
+                    "w", self._update_taken_table)),
+                (self.taken_type_other_checkbox_value, lambda: self.taken_type_other_checkbox_value.trace(
+                    "w", self._update_taken_table)),
             ]
 
             if enabled:

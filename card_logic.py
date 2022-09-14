@@ -322,17 +322,17 @@ def deck_card_search(deck, search_colors, card_types, include_types, include_col
     combined_cards = []
     for card in deck:
         try:
-            colors = card_colors(card[constants.DATA_FIELD_MANA_COST])
-            colors = list(colors.keys())
+            colors = list(card_colors(
+                card[constants.DATA_FIELD_MANA_COST]).keys())
 
-            if not colors:
+            if constants.CARD_TYPE_LAND in card[constants.DATA_FIELD_TYPES]:
                 colors = card[constants.DATA_FIELD_COLORS]
 
             if colors and (set(colors) <= set(search_colors)):
                 main_color = colors[0]
 
-                if ((include_types and any(x in card[constants.DATA_FIELD_TYPES][0] for x in card_types)) or
-                   (not include_types and not any(x in card[constants.DATA_FIELD_TYPES][0] for x in card_types))):
+                if ((include_types and any(x in card[constants.DATA_FIELD_TYPES] for x in card_types)) or
+                   (not include_types and not any(x in card[constants.DATA_FIELD_TYPES] for x in card_types))):
 
                     if main_color not in card_color_sorted:
                         card_color_sorted[main_color] = []
@@ -341,18 +341,18 @@ def deck_card_search(deck, search_colors, card_types, include_types, include_col
 
             elif set(search_colors).intersection(colors) and include_partial:
                 for color in colors:
-                    if ((include_types and any(x in card[constants.DATA_FIELD_TYPES][0] for x in card_types)) or
-                       (not include_types and not any(x in card[constants.DATA_FIELD_TYPES][0] for x in card_types))):
+                    if ((include_types and any(x in card[constants.DATA_FIELD_TYPES] for x in card_types)) or
+                       (not include_types and not any(x in card[constants.DATA_FIELD_TYPES] for x in card_types))):
 
                         if color not in card_color_sorted:
                             card_color_sorted[color] = []
 
                         card_color_sorted[color].append(card)
 
-            if not card_colors and include_colorless:
+            if not colors and include_colorless:
 
-                if ((include_types and any(x in card[constants.DATA_FIELD_TYPES][0] for x in card_types)) or
-                   (not include_types and not any(x in card[constants.DATA_FIELD_TYPES][0] for x in card_types))):
+                if ((include_types and any(x in card[constants.DATA_FIELD_TYPES] for x in card_types)) or
+                   (not include_types and not any(x in card[constants.DATA_FIELD_TYPES] for x in card_types))):
 
                     combined_cards.append(card)
         except Exception as error:
@@ -374,7 +374,7 @@ def deck_metrics(deck):
         metrics.total_cards = len(deck)
 
         for card in deck:
-            if any(x in constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_CREATURES]
+            if any(x in [constants.CARD_TYPE_CREATURE]
                    for x in card[constants.DATA_FIELD_TYPES]):
                 metrics.creature_count += 1
                 metrics.total_non_land_cards += 1
@@ -481,6 +481,7 @@ def deck_colors(deck, colors_max, metrics, configuration):
                                                   color,
                                                   configuration)
             colors_result[color] = curve_rating + base_rating
+
         # Add All Decks as a baseline
         colors_result[constants.FILTER_OPTION_ALL_DECKS] = calculate_color_rating(deck,
                                                                                   constants.FILTER_OPTION_ALL_DECKS,
@@ -552,7 +553,7 @@ def calculate_curve_rating(deck, color_filter, configuration):
         filtered_cards = deck_card_search(
             deck,
             color_filter,
-            constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_NON_LANDS],
+            constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_NON_LANDS][0],
             True,
             True,
             False)
@@ -724,9 +725,16 @@ def deck_color_stats(deck, color):
 
     try:
         creature_cards = deck_card_search(
-            deck, color, constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_CREATURES], True, True, False)
+            deck, color, [constants.CARD_TYPE_CREATURE], True, True, False)
         noncreature_cards = deck_card_search(
-            deck, color, constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_CREATURES], False, True, False)
+            deck, color, [constants.CARD_TYPE_CREATURE], False, True, False)
+        noncreature_cards = deck_card_search(
+            noncreature_cards, color,
+            [constants.CARD_TYPE_INSTANT,
+             constants.CARD_TYPE_SORCERY,
+             constants.CARD_TYPE_ARTIFACT,
+             constants.CARD_TYPE_ENCHANTMENT,
+             constants.CARD_TYPE_PLANESWALKER], True, True, False)
 
         creature_count = len(creature_cards)
         noncreature_count = len(noncreature_cards)
@@ -791,7 +799,7 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
         # Deck contains the recommended number of creatures
         recommended_creature_count = deck_type.recommended_creature_count
         filtered_cards = deck_card_search(
-            deck, color, constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_CREATURES], True, True, False)
+            deck, color, [constants.CARD_TYPE_CREATURE], True, True, False)
 
         if len(filtered_cards) < recommended_creature_count:
             rating -= (recommended_creature_count - len(filtered_cards)) * 100
@@ -877,7 +885,7 @@ def card_colors(mana_cost):
     """The function parses a mana cost string and returns a list of mana symbols"""
     colors = {}
     try:
-        for color in constants.CARD_COLORS_DICT.values():
+        for color in constants.CARD_COLORS:
             if color in mana_cost:
                 if color not in colors:
                     colors[color] = 1
@@ -941,9 +949,9 @@ def mana_base(deck):
             else:
                 # Increase count for abilities that are not part of the mana cost
                 mana_count = card_colors(card[constants.DATA_FIELD_MANA_COST])
-                for color in card[constants.DATA_FIELD_COLORS]:
-                    mana_count[color] = (
-                        mana_count[color] + 1) if color in mana_count else 1
+                # for color in card[constants.DATA_FIELD_COLORS]:
+                #    mana_count[color] = (
+                #        mana_count[color] + 1) if color in mana_count else 1
 
                 for mana_type in mana_types.values():
                     color = mana_type["color"]
@@ -986,7 +994,7 @@ def mana_base(deck):
 def suggest_deck(taken_cards, metrics, configuration):
     """The function will analyze the list of taken cards and produce several viable decks based on specific criteria"""
     colors_max = 3
-    maximum_card_count = 23
+    maximum_card_count = 22
     sorted_decks = {}
     try:
         deck_types = {"Mid": configuration.deck_mid,
@@ -995,6 +1003,8 @@ def suggest_deck(taken_cards, metrics, configuration):
         # Identify the top color combinations
         colors = deck_colors(taken_cards, colors_max, metrics, configuration)
         filtered_colors = []
+
+        colors.pop(constants.FILTER_OPTION_ALL_DECKS, None)
 
         # Collect color stats and remove colors that don't meet the minimum requirements
         for color in colors:
@@ -1042,7 +1052,8 @@ def build_deck(deck_type, cards, color, metrics, configuration):
     maximum_deck_size = 40
     cmc_average = deck_type.cmc_average
     recommended_creature_count = deck_type.recommended_creature_count
-    used_list = []
+    deck_list = []
+    unused_creature_list = []
     sideboard_list = cards[:]  # Copy by value
     try:
         for card in cards:
@@ -1056,73 +1067,85 @@ def build_deck(deck_type, cards, color, metrics, configuration):
         color += (color_splash(cards, color, splash_threshold, configuration))
 
         card_colors_sorted = deck_card_search(
-            cards, color, constants.CARD_TYPE_DICT[constants.CARD_TYPE_SELECTION_CREATURES], True, True, False)
+            cards, color, [constants.CARD_TYPE_CREATURE], True, True, False)
         card_colors_sorted = sorted(
             card_colors_sorted, key=lambda k: k["results"][0], reverse=True)
 
         # Identify creatures that fit distribution
         distribution = [0, 0, 0, 0, 0, 0, 0]
-        unused_list = []
-        used_list = []
         used_count = 0
         used_cmc_combined = 0
         for card in card_colors_sorted:
             index = int(min(card[constants.DATA_FIELD_CMC],
                         len(minimum_distribution) - 1))
             if distribution[index] < minimum_distribution[index]:
-                used_list.append(card)
+                deck_list.append(card)
+                sideboard_list.remove(card)
                 distribution[index] += 1
                 used_count += 1
                 used_cmc_combined += card[constants.DATA_FIELD_CMC]
             else:
-                unused_list.append(card)
+                unused_creature_list.append(card)
 
         # Go back and identify remaining creatures that have the highest base rating but don't push average above the threshold
         unused_cmc_combined = cmc_average * recommended_creature_count - used_cmc_combined
 
-        unused_list.sort(key=lambda x: x["results"][0], reverse=True)
+        unused_creature_list.sort(key=lambda x: x["results"][0], reverse=True)
 
         # Identify remaining cards that won't exceed recommeneded CMC average
-        cmc_cards, unused_list = card_cmc_search(
-            unused_list, 0, 0, unused_cmc_combined, recommended_creature_count - used_count)
-        used_list.extend(cmc_cards)
+        cmc_cards, unused_creature_list = card_cmc_search(
+            unused_creature_list, 0, 0, unused_cmc_combined, recommended_creature_count - used_count)
 
-        total_card_count = len(used_list)
+        for card in cmc_cards:
+            deck_list.append(card)
+            sideboard_list.remove(card)
 
-        temp_unused_list = unused_list[:]
+        total_card_count = len(deck_list)
+
         if len(cmc_cards) == 0:
-            for card in unused_list:
+            for card in unused_creature_list:
                 if total_card_count >= recommended_creature_count:
                     break
 
-                used_list.append(card)
-                temp_unused_list.remove(card)
+                deck_list.append(card)
+                sideboard_list.remove(card)
                 total_card_count += 1
-        unused_list = temp_unused_list[:]
 
-        card_colors_sorted = deck_card_search(cards, color, [
-            constants.CARD_TYPE_INSTANT, constants.CARD_TYPE_SORCERY, constants.CARD_TYPE_ENCHANTMENT, constants.CARD_TYPE_ARTIFACT], True, True, False)
+        card_colors_sorted = deck_card_search(sideboard_list, color, [
+            constants.CARD_TYPE_INSTANT,
+            constants.CARD_TYPE_SORCERY,
+            constants.CARD_TYPE_ENCHANTMENT,
+            constants.CARD_TYPE_ARTIFACT,
+            constants.CARD_TYPE_PLANESWALKER], True, True, False)
         card_colors_sorted = sorted(
             card_colors_sorted, key=lambda k: k["results"][0], reverse=True)
-        # Add non-creature cards
+
+        # Add instant, sorcery, enchantment, etc
         for card in card_colors_sorted:
             if total_card_count >= maximum_card_count:
                 break
 
-            used_list.append(card)
+            deck_list.append(card)
+            sideboard_list.remove(card)
             total_card_count += 1
 
-        # Fill the deck with remaining creatures
-        for card in unused_list:
+        card_colors_sorted = deck_card_search(sideboard_list, color, [
+            constants.CARD_TYPE_CREATURE], True, True, False)
+        card_colors_sorted = sorted(
+            card_colors_sorted, key=lambda k: k["results"][0], reverse=True)
+
+        # Fill the deck with the remaining creature cards
+        for card in card_colors_sorted:
             if total_card_count >= maximum_card_count:
                 break
 
-            used_list.append(card)
+            deck_list.append(card)
+            sideboard_list.remove(card)
             total_card_count += 1
 
-        # Add in special lands if they are on-color, off-color, and they have a card rating above 2.0
+        # Add in special lands if they have a win rate that is at least 0.33 standard deviations from the mean (C-)
         land_cards = deck_card_search(
-            cards, color, [constants.CARD_TYPE_LAND], True, True, False)
+            sideboard_list, color, [constants.CARD_TYPE_LAND], True, True, False)
         land_cards = [
             x for x in land_cards if x[constants.DATA_FIELD_NAME] not in constants.BASIC_LANDS]
         land_cards = sorted(
@@ -1131,22 +1154,14 @@ def build_deck(deck_type, cards, color, metrics, configuration):
             if total_card_count >= maximum_deck_size:
                 break
 
-            if card["results"][0] >= metrics.mean:
-                used_list.append(card)
+            if card["results"][0] >= metrics.mean - 0.33 * metrics.standard_deviation:
+                deck_list.append(card)
+                sideboard_list.remove(card)
                 total_card_count += 1
 
-        # Identify sideboard cards:
-        for card in used_list:
-            try:
-                sideboard_list.remove(card)
-            except Exception as error:
-                logic_logger.info("%s error: %s",
-                                  card[constants.DATA_FIELD_NAME], error)
-                logic_logger.info("Sideboard %s error: %s",
-                                  {card['name']}, error)
     except Exception as error:
         logic_logger.info("build_deck error: %s", error)
-    return used_list, sideboard_list
+    return deck_list, sideboard_list
 
 
 def read_config():
