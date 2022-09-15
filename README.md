@@ -134,7 +134,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Deck Filter Format:** Used to switch the Deck Filter to either the color permutations (i.e., UB, BG, WUG, etc.) or the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
 
-- **Win Rate Format:** Used to switch the results for the win rate fields (i.e., GIHWR, OHWR, GPWR, etc.) to either percentage (17Lands values) or ratings (5-point rating scale). See the Win Rate Ratings section for more details.
+- **Win Rate Format:** Used to switch the results for the win rate fields (i.e., GIHWR, OHWR, GPWR, etc.) to percentage (17Lands values), ratings (5-point rating scale) or grades (A+ to F). See the Win Rate Ratings section for more details.
 
 - **Enable Card Colors:** Sets the row color to the card color.
 
