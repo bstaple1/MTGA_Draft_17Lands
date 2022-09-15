@@ -18,9 +18,9 @@
 - Step 8: Click on the Download Tier List button near the top of the window
     - It might take a few seconds for the button to appear
 
-- Step 9: Move the downloaded tier list to Tier folder
+- Step 9: Move the downloaded tier list to the Tier folder
 
 - Step 10: Start the draft in Arena
 
-- Step 11: Select the tier list option from the bottom of the Deck Filters drop-down list
+- Step 11: Select the tier list option from the bottom of any of the column drop-downs in the settings window
     - The tier list will appear as `Tier# (<Label>)`
