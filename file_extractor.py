@@ -1010,12 +1010,11 @@ class FileExtractor:
                     self.card_dict[arena_id][constants.DATA_SECTION_IMAGES] = [
                         card_data["image_uris"]["normal"]]
 
-                result = True
-
             except Exception as error:
                 file_logger.info("_process_scryfall_data Error: %s", error)
                 result_string = error
 
+            result = True
         return result, result_string
 
     def _process_card_data(self, card):
