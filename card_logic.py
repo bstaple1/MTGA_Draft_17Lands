@@ -53,6 +53,7 @@ class Config:
     deck_filter: str = constants.DECK_FILTER_DEFAULT
     filter_format: str = constants.DECK_FILTER_FORMAT_COLORS
     result_format: str = constants.RESULT_FORMAT_WIN_RATE
+    ui_size: str = constants.UI_SIZE_DEFAULT
     card_colors_enabled: bool = False
     missing_enabled: bool = True
     stats_enabled: bool = False
@@ -71,16 +72,16 @@ class Config:
     taken_gdwr_enabled: bool = False
     taken_gndwr_enabled: bool = False
     taken_iwd_enabled: bool = False
-    minimum_creatures: int = 13
+    minimum_creatures: int = 9
     minimum_noncreatures: int = 6
     ratings_threshold: int = 500
     alsa_weight: float = 0.0
     iwd_weight: float = 0.0
-    scale_factor: float = 1.0
+    override_scale_factor: float = 0.0
 
-    deck_mid: DeckType = DeckType([0, 0, 4, 3, 2, 1, 0], 23, 15, 3.04)
-    deck_aggro: DeckType = DeckType([0, 2, 5, 3, 0, 0, 0], 24, 17, 2.40)
-    deck_control: DeckType = DeckType([0, 0, 3, 3, 3, 1, 1], 22, 14, 3.68)
+    deck_mid: DeckType = DeckType([0, 0, 0, 0, 0, 0, 0], 23, 15, 3.04)
+    deck_aggro: DeckType = DeckType([0, 0, 0, 0, 0, 0, 0], 24, 17, 2.40)
+    deck_control: DeckType = DeckType([0, 0, 0, 0, 0, 0, 0], 22, 10, 3.68)
 
     database_size: int = 0
 
@@ -413,7 +414,7 @@ def option_filter(deck, option_selection, metrics, configuration):
     filtered_color_list = [option_selection]
     try:
         if constants.FILTER_OPTION_AUTO in option_selection:
-            filtered_color_list = auto_colors(deck, 3, metrics, configuration)
+            filtered_color_list = auto_colors(deck, 5, metrics, configuration)
         else:
             filtered_color_list = [option_selection]
     except Exception as error:
@@ -438,7 +439,7 @@ def deck_colors(deck, colors_max, metrics, configuration):
             color_list, key=lambda k: k["rating"], reverse=True)
 
         # Remove extra colors beyond limit
-        color_list = color_list[0:4]
+        color_list = color_list[0:colors_max]
 
         # Return colors
         sorted_colors = list(map((lambda x: x["color"]), color_list))
@@ -591,7 +592,8 @@ def calculate_color_affinity(deck_cards, color_filter, threshold, configuration)
                                        card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
                                        configuration.bayesian_average_enabled)
             if gihwr > threshold:
-                for color in card[constants.DATA_FIELD_COLORS]:
+                mana_colors = card_colors(card[constants.DATA_FIELD_MANA_COST])
+                for color in mana_colors:
                     if color not in colors:
                         colors[color] = 0
                     colors[color] += (gihwr - threshold)
@@ -801,7 +803,7 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
             deck, color, [constants.CARD_TYPE_CREATURE], True, True, False)
 
         if len(filtered_cards) < recommended_creature_count:
-            rating -= (recommended_creature_count - len(filtered_cards)) * 100
+            rating -= (recommended_creature_count - len(filtered_cards)) * 50
 
         # Average CMC of the creatures is below the ideal cmc average
         cmc_average = deck_type.cmc_average
@@ -992,7 +994,7 @@ def mana_base(deck):
 
 def suggest_deck(taken_cards, metrics, configuration):
     """The function will analyze the list of taken cards and produce several viable decks based on specific criteria"""
-    colors_max = 3
+    colors_max = 5
     maximum_card_count = 22
     sorted_decks = {}
     try:
@@ -1172,7 +1174,7 @@ def read_config():
             config_data = json.loads(config_json)
         config.hotkey_enabled = config_data["features"]["hotkey_enabled"]
         config.images_enabled = config_data["features"]["images_enabled"]
-        config.scale_factor = config_data["features"]["scale_factor"]
+        config.override_scale_factor = config_data["features"]["override_scale_factor"]
         config.database_size = config_data["card_data"]["database_size"]
         config.table_width = int(config_data["settings"]["table_width"])
         config.deck_filter = config_data["settings"]["deck_filter"]
@@ -1184,6 +1186,7 @@ def read_config():
         config.column_7 = config_data["settings"]["column_7"]
         config.filter_format = config_data["settings"]["filter_format"]
         config.result_format = config_data["settings"]["result_format"]
+        config.ui_size = config_data["settings"]["ui_size"]
         config.missing_enabled = config_data["settings"]["missing_enabled"]
         config.stats_enabled = config_data["settings"]["stats_enabled"]
         config.auto_highest_enabled = config_data["settings"]["auto_highest_enabled"]
@@ -1223,6 +1226,7 @@ def write_config(config):
         config_data["settings"]["deck_filter"] = config.deck_filter
         config_data["settings"]["filter_format"] = config.filter_format
         config_data["settings"]["result_format"] = config.result_format
+        config_data["settings"]["ui_size"] = config.ui_size
         config_data["settings"]["missing_enabled"] = config.missing_enabled
         config_data["settings"]["stats_enabled"] = config.stats_enabled
         config_data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled
@@ -1257,7 +1261,7 @@ def reset_config():
         data["features"] = {}
         data["features"]["hotkey_enabled"] = config.hotkey_enabled
         data["features"]["images_enabled"] = config.images_enabled
-        data["features"]["scale_factor"] = config.scale_factor
+        data["features"]["override_scale_factor"] = config.override_scale_factor
 
         data["card_data"] = {}
         data["card_data"]["database_size"] = config.database_size
@@ -1273,6 +1277,7 @@ def reset_config():
         data["settings"]["deck_filter"] = config.deck_filter
         data["settings"]["filter_format"] = config.filter_format
         data["settings"]["result_format"] = config.result_format
+        data["settings"]["ui_size"] = config.ui_size
         data["settings"]["missing_enabled"] = config.missing_enabled
         data["settings"]["stats_enabled"] = config.stats_enabled
         data["settings"]["auto_highest_enabled"] = config.auto_highest_enabled

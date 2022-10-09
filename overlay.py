@@ -10,6 +10,7 @@ import io
 import logging
 import logging.handlers
 import math
+import argparse
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk
@@ -17,6 +18,8 @@ import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
 import constants
+
+__version__ = 3.04
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
     os.makedirs(constants.DEBUG_LOG_FOLDER)
@@ -34,6 +37,24 @@ for handler in handlers:
     handler.setFormatter(formatter)
     overlay_logger.addHandler(handler)
 
+def start_overlay():
+    """Retrieve arguments, create overlay object, and run overlay"""
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-f', '--file')
+    parser.add_argument('-d', '--data')
+    parser.add_argument('--step', action='store_true')
+
+    args = parser.parse_args()
+
+    overlay = Overlay(__version__, args)
+
+    overlay.main_loop()
+    
+def restart_overlay(root):
+    """Close/destroy the current overlay object and create a new instance"""
+    root.close_overlay()
+    start_overlay()
 
 def check_version(platform, version):
     """Compare the application version and the latest version in the repository"""
@@ -368,6 +389,8 @@ class Overlay(ScaledWindow):
         self.deck_filter_list = self.deck_colors.keys()
         self.taken_filter_selection = tkinter.StringVar(self.root)
         self.taken_type_selection = tkinter.StringVar(self.root)
+        self.ui_size_selection=tkinter.StringVar(self.root)
+        self.ui_size_list = constants.UI_SIZE_DICT.keys()
 
         data_source_option_frame = tkinter.Frame(self.root)
         self.data_source_options = OptionMenu(data_source_option_frame, self.data_source_selection,
@@ -484,6 +507,7 @@ class Overlay(ScaledWindow):
         self.deck_colors_options.pack(expand=False, fill=None, anchor="w")
         self.current_timestamp = 0
         self.previous_timestamp = 0
+        self.log_check_id = None
 
         self._update_settings_data()
 
@@ -493,6 +517,12 @@ class Overlay(ScaledWindow):
 
         if self.configuration.hotkey_enabled:
             self._start_hotkey_listener()
+            
+    def close_overlay(self):
+        if self.log_check_id is not None:
+            self.root.after_cancel(self.log_check_id)
+            self.log_check_id = None
+        self.root.destroy()
 
     def _set_os_configuration(self):
         '''Configure the overlay based on the operating system'''
@@ -511,10 +541,12 @@ class Overlay(ScaledWindow):
         '''Adjust widget and font scale based on the scale_factor value in config.json'''
         self.scale_factor = 1
         try:
-            if self.configuration.scale_factor > 0.0:
-                self.scale_factor = self.configuration.scale_factor
-
-            overlay_logger.info("Scale Factor %.2f",
+            self.scale_factor = constants.UI_SIZE_DICT[self.configuration.ui_size]
+            
+            if self.configuration.override_scale_factor > 0.0:
+                self.scale_factor = self.configuration.override_scale_factor
+                
+            overlay_logger.info("Scale Factor %.1f",
                                 self.scale_factor)
         except Exception as error:
             overlay_logger.info("_adjust_overlay_scale Error: %s", error)
@@ -1026,6 +1058,9 @@ class Overlay(ScaledWindow):
             if self.result_format_selection.get() not in self.result_format_list:
                 self.result_format_selection.set(
                     constants.RESULT_FORMAT_WIN_RATE)
+            if self.ui_size_selection.get() not in self.ui_size_list:
+                self.ui_size_selection.set(
+                    constants.UI_SIZE_DEFAULT)
             if self.column_2_selection.get() not in self.main_options_dict:
                 self.column_2_selection.set(constants.COLUMN_2_DEFAULT)
             if self.column_3_selection.get() not in self.main_options_dict:
@@ -1148,7 +1183,17 @@ class Overlay(ScaledWindow):
         self._update_settings_storage()
         self._update_settings_data()
         self._update_overlay_callback(False)
-
+        
+    def _ui_size_callback(self, *args):
+        '''Callback function updates the settings and opens a restart prompt'''
+        self._update_settings_storage()
+        self._update_settings_data()
+        message_box = tkinter.messagebox.askyesno(
+            title="Restart", message="A restart is required for this setting to take effect. Restart the application?")
+            
+        if message_box:
+            restart_overlay(self)
+            
     def _update_draft_data(self):
         '''Function that collects pertinent draft data from the LogScanner class'''
         self.draft.retrieve_set_data(
@@ -1208,6 +1253,7 @@ class Overlay(ScaledWindow):
                 selection] if selection in self.deck_colors else self.deck_colors[constants.DECK_FILTER_DEFAULT]
             self.configuration.filter_format = self.filter_format_selection.get()
             self.configuration.result_format = self.result_format_selection.get()
+            self.configuration.ui_size = self.ui_size_selection.get()
 
             self.configuration.missing_enabled = bool(
                 self.missing_cards_checkbox_value.get())
@@ -1279,6 +1325,7 @@ class Overlay(ScaledWindow):
                 selection) else constants.DECK_FILTER_DEFAULT)
             self.filter_format_selection.set(self.configuration.filter_format)
             self.result_format_selection.set(self.configuration.result_format)
+            self.ui_size_selection.set(self.configuration.ui_size)
             self.deck_stats_checkbox_value.set(
                 self.configuration.stats_enabled)
             self.missing_cards_checkbox_value.set(
@@ -1338,7 +1385,8 @@ class Overlay(ScaledWindow):
             overlay_logger.info("__update_settings_data Error: %s", error)
         self._control_trace(True)
 
-        self.draft.log_enable(self.configuration.draft_log_enabled)
+        if not self.step_through:
+            self.draft.log_enable(self.configuration.draft_log_enabled)
 
     def _initialize_overlay_widgets(self):
         '''Set the overlay widgets in the main window to a known state at startup'''
@@ -1443,10 +1491,10 @@ class Overlay(ScaledWindow):
                     else:
                         break
         except Exception as error:
-            overlay_logger.info("__arena_log_check Error: %s", error)
+            overlay_logger.info("_arena_log_check Error: %s", error)
             self._reset_draft(True)
 
-        self.root.after(1000, self._arena_log_check)
+        self.log_check_id = self.root.after(1000, self._arena_log_check)
 
     def lift_window(self):
         '''Function that's used to minimize a window or set it as the top most window'''
@@ -2005,6 +2053,8 @@ class Overlay(ScaledWindow):
                 popup, text="Deck Filter Format:", style="MainSections.TLabel", anchor="w")
             result_format_label = Label(
                 popup, text="Win Rate Format:", style="MainSections.TLabel", anchor="w")
+            scale_label = Label(
+                popup, text="UI Size:", style="MainSections.TLabel", anchor="w")
             deck_stats_label = Label(popup, text="Enable Draft Stats:",
                                      style="MainSections.TLabel", anchor="w")
             deck_stats_checkbox = Checkbutton(popup,
@@ -2101,8 +2151,15 @@ class Overlay(ScaledWindow):
             menu = self.root.nametowidget(result_format_options['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
+            ui_size_options = OptionMenu(popup, self.ui_size_selection, self.ui_size_selection.get(
+            ), *self.ui_size_list, style="All.TMenubutton", command=self._ui_size_callback)
+            ui_size_options.config(width=15)
+            menu = self.root.nametowidget(ui_size_options['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
+
             default_button = Button(
                 popup, command=self._default_settings_callback, text="Default Settings")
+            
 
             column_2_label.grid(row=0, column=0, columnspan=1,
                                 sticky="nsew", padx=(10,))
@@ -2120,6 +2177,8 @@ class Overlay(ScaledWindow):
                 row=6, column=0, columnspan=1, sticky="nsew", padx=(10,))
             result_format_label.grid(
                 row=7, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            scale_label.grid(
+                row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
             self.column_2_options.grid(
                 row=0, column=1, columnspan=1, sticky="nsew")
             self.column_3_options.grid(
@@ -2136,35 +2195,37 @@ class Overlay(ScaledWindow):
                 row=6, column=1, columnspan=1, sticky="nsew")
             result_format_options.grid(
                 row=7, column=1, columnspan=1, sticky="nsew")
+            ui_size_options.grid(
+                row=8, column=1, columnspan=1, sticky="nsew")
             card_colors_label.grid(
-                row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            card_colors_checkbox.grid(
-                row=8, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            color_identity_label.grid(
                 row=9, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            color_identity_checkbox.grid(
+            card_colors_checkbox.grid(
                 row=9, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            deck_stats_label.grid(
+            color_identity_label.grid(
                 row=10, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            deck_stats_checkbox.grid(
+            color_identity_checkbox.grid(
                 row=10, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            missing_cards_label.grid(
+            deck_stats_label.grid(
                 row=11, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            missing_cards_checkbox.grid(
+            deck_stats_checkbox.grid(
                 row=11, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            auto_highest_label.grid(
+            missing_cards_label.grid(
                 row=12, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            auto_highest_checkbox.grid(
+            missing_cards_checkbox.grid(
                 row=12, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            bayesian_average_label.grid(
+            auto_highest_label.grid(
                 row=13, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            bayesian_average_checkbox.grid(
+            auto_highest_checkbox.grid(
                 row=13, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            draft_log_label.grid(
+            bayesian_average_label.grid(
                 row=14, column=0, columnspan=1, sticky="nsew", padx=(10,))
-            draft_log_checkbox.grid(
+            bayesian_average_checkbox.grid(
                 row=14, column=1, columnspan=1, sticky="nsew", padx=(5,))
-            default_button.grid(row=15, column=0, columnspan=2, sticky="nsew")
+            draft_log_label.grid(
+                row=15, column=0, columnspan=1, sticky="nsew", padx=(10,))
+            draft_log_checkbox.grid(
+                row=15, column=1, columnspan=1, sticky="nsew", padx=(5,))
+            default_button.grid(row=16, column=0, columnspan=2, sticky="nsew")
 
             self._control_trace(True)
 
@@ -2249,9 +2310,12 @@ class Overlay(ScaledWindow):
         file_list = FE.retrieve_local_set_list(sets)
 
         if file_list:
-            list_box.config(height=len(file_list))
+            list_box.config(height=min(len(file_list), 10))
         else:
             list_box.config(height=0)
+
+        #Sort list by end date
+        file_list.sort(key=lambda x: x[3], reverse=True)
 
         for count, file in enumerate(file_list):
             row_tag = identify_table_row_tag(False, "", count)
@@ -2616,10 +2680,12 @@ class CreateCardToolTip(ScaledWindow):
                 image_size_y = len(main_field_list) * row_height
                 size = self._scale_value(280), image_size_y
                 self.images = []
-                for count, picture in enumerate(self.image):
+                request_header = {'User-Agent': 'Mozilla/5.0'}
+                for count, picture_url in enumerate(self.image):
                     try:
-                        if picture:
-                            raw_data = urllib.request.urlopen(picture).read()
+                        if picture_url:
+                            image_request = urllib.request.Request(url=picture_url, headers=request_header)
+                            raw_data = urllib.request.urlopen(image_request).read()
                             im = Image.open(io.BytesIO(raw_data))
                             im.thumbnail(size, Image.ANTIALIAS)
                             image = ImageTk.PhotoImage(im)
@@ -2631,7 +2697,7 @@ class CreateCardToolTip(ScaledWindow):
                             tt_width += self._scale_value(200)
                     except Exception as error:
                         overlay_logger.info(
-                            "__display_tooltip Image Error: %s", error)
+                            "_display_tooltip Image Error: %s", error)
 
             card_label.grid(column=0, row=0,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)

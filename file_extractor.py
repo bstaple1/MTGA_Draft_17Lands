@@ -58,7 +58,7 @@ def decode_mana_cost(encoded_cost):
 def retrieve_local_set_list(sets):
     '''Scans the Sets folder and returns a list of valid set files'''
     file_list = []
-    main_sets = [v[constants.SET_LIST_17LANDS][0] for k, v in sets.items()]
+    main_sets = [v[constants.SET_LIST_17LANDS][0] for k, v in sets.items() if constants.SET_LIST_17LANDS in v]
     for file in os.listdir(constants.SETS_FOLDER):
         try:
             name_segments = file.split("_")
@@ -191,12 +191,17 @@ def check_date(date):
     return result
 
 
-def shift_date(start_date, shifted_days, string_format):
+def shift_date(start_date, shifted_days, string_format, next_dow):
     '''Shifts a date by a certain number of days'''
     shifted_date_string = ""
     shifted_date = datetime.date.min
     try:
         shifted_date = start_date + datetime.timedelta(days=shifted_days)
+
+        if (next_dow is not None) and (0 <= next_dow <= 6):
+            #Shift the date to the next specified day of the week (0 = Monday, 6 = Sunday)
+            shifted_date = shifted_date + datetime.timedelta( (next_dow - shifted_date.weekday()) % 7)
+
         if string_format is not None:
             shifted_date_string = shifted_date.strftime(string_format)
     except Exception as error:
@@ -204,14 +209,14 @@ def shift_date(start_date, shifted_days, string_format):
 
     return shifted_date, shifted_date_string
 
-
-def check_release_date(release_string, shifted_days):
+def check_release_date(release_string, shifted_days, next_dow):
     '''Checks a shifted release data and returns false if the data is in the future'''
     result = True
     try:
         release_date = datetime.datetime.strptime(
             release_string, "%Y-%m-%d").date()
-        shifted_release_date = shift_date(release_date, shifted_days, None)[0]
+        shifted_release_date = shift_date(release_date, shifted_days, None, next_dow)[0]
+
         today = datetime.date.today()
 
         if shifted_release_date > today:
@@ -429,18 +434,17 @@ class FileExtractor:
                 paths = [os.path.join(
                     self.directory, constants.LOCAL_DOWNLOADS_DATA)]
 
-        arena_cards_locations = search_local_files(
-            paths, [constants.LOCAL_DATA_FILE_PREFIX_CARDS])
         arena_database_locations = search_local_files(
             paths, [constants.LOCAL_DATA_FILE_PREFIX_DATABASE])
 
         while True:
             try:
-                if (not arena_cards_locations) or (not arena_database_locations):
+                if not arena_database_locations:
+                    file_logger.info("Can't Locate Local Files")
                     break
 
                 current_database_size = os.path.getsize(
-                    arena_cards_locations[0])
+                    arena_database_locations[0])
 
                 if current_database_size != previous_database_size:
                     file_logger.info(
@@ -451,22 +455,12 @@ class FileExtractor:
                         arena_database_locations[0])
                     status.set("Retrieving Localization Data")
                     root.update()
-                    result, card_text, card_enumerators = self._retrieve_local_database(
+                    result, card_text, card_enumerators, raw_card_data = self._retrieve_local_database(
                         arena_database_locations[0])
 
                     if not result:
                         break
 
-                    file_logger.info(
-                        "Local Card Data: Searching file path %s",
-                        arena_cards_locations[0])
-                    status.set("Retrieving Raw Card Data")
-                    root.update()
-                    result, raw_card_data = self._retrieve_local_cards(
-                        arena_cards_locations[0])
-
-                    if not result:
-                        break
 
                     status.set("Building Temporary Card Data File")
                     root.update()
@@ -493,63 +487,57 @@ class FileExtractor:
 
         return result, result_string, database_size
 
-    def _retrieve_local_cards(self, file_location):
+    def _retrieve_local_cards(self, data):
         '''Function that retrieves pertinent card data from raw Arena files'''
         result = False
         card_data = {}
         try:
-            with open(file_location, 'r', encoding="utf-8", errors="replace") as json_file:
-                json_data = json.loads(json_file.read())
-
-                for card in json_data:
-                    # Making all of the keys lowercase
-                    card = {k.lower(): v for k, v in card.items()}
-                    try:
-                        card_set = card[constants.LOCAL_CARDS_KEY_SET]
-
-                        if ((constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET in card) and
-                           (re.findall("^[yY]\d{2}$", card_set, re.DOTALL))):
-                            card_set = card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]
-
-                        if card_set not in card_data:
-                            card_data[card_set] = {}
-
-                        if constants.LOCAL_CARDS_KEY_TOKEN in card:
+            for card in data:
+                # Making all of the keys lowercase
+                card = {k.lower(): v for k, v in card.items()}
+                try:
+                    card_set = card[constants.LOCAL_CARDS_KEY_SET]
+                    if ((card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET] is not None) and
+                       (re.findall("^[yY]\d{2}$", card_set, re.DOTALL))):
+                        card_set = card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]
+                    if card_set not in card_data:
+                        card_data[card_set] = {}
+                    if card[constants.LOCAL_CARDS_KEY_TOKEN]:
+                        #Skip tokens
+                        continue
+                    if not card[constants.LOCAL_CARDS_KEY_TITLE_ID]:
+                        #Skip cards that don't have titles
+                        continue
+                    group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
+                    if card[constants.LOCAL_CARDS_KEY_LINKED_FACES] is not None:
+                        linked_id = int(
+                            card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
+                        if linked_id < group_id:
+                            # The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
+                            # self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
+                            types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
+                                ',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
+                            card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
+                                types)
                             continue
-
-                        group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
-
-                        if constants.LOCAL_CARDS_KEY_LINKED_FACES in card:
-                            linked_id = int(
-                                card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
-                            if linked_id < group_id:
-                                # The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
-                                # self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
-                                types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
-                                    ',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
-                                    types)
-                                continue
-
-                        card_data[card_set][group_id] = {constants.DATA_FIELD_NAME: [
-                            card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES: []}
-                        card_data[card_set][group_id][constants.DATA_FIELD_TYPES] = [int(
-                            x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if constants.LOCAL_CARDS_KEY_TYPES in card else []
-                        card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = [int(
-                            x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if constants.LOCAL_CARDS_KEY_COLOR_ID in card else []
-                        mana_cost, cmc = decode_mana_cost(
-                            card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if constants.LOCAL_CARDS_KEY_CASTING_COST in card else ("", 0)
-                        card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
-                        card_data[card_set][group_id]["mana_cost"] = mana_cost
-                        card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]
-                                                                                                                ] if constants.LOCAL_CARDS_KEY_RARITY in card else constants.CARD_RARITY_COMMON
-
-                        result = True
-                    except Exception as error:
-                        file_logger.info(
-                            "Card Read Error: %s, %s", error, card)
-                        break
-                        # pass
+                    card_data[card_set][group_id] = {constants.DATA_FIELD_NAME: [
+                        card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES: []}
+                    card_data[card_set][group_id][constants.DATA_FIELD_TYPES] = [int(
+                        x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
+                    card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = [int(
+                        x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if card[constants.LOCAL_CARDS_KEY_COLOR_ID] is not None else []
+                    mana_cost, cmc = decode_mana_cost(
+                        card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if card[constants.LOCAL_CARDS_KEY_CASTING_COST] is not None else ("", 0)
+                    card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
+                    card_data[card_set][group_id]["mana_cost"] = mana_cost
+                    card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]
+                                                                                                            ] if card[constants.LOCAL_CARDS_KEY_RARITY] in constants.CARD_RARITY_DICT else constants.CARD_RARITY_COMMON
+                    result = True
+                except Exception as error:
+                    file_logger.info(
+                        "Card Read Error: %s, %s", error, card)
+                    break
+                    # pass
         except Exception as error:
             file_logger.info("_retrieve_local_cards Error: %s", error)
 
@@ -560,6 +548,7 @@ class FileExtractor:
         result = False
         card_text = {}
         card_enumerators = {}
+        card_data = {}
         try:
             # Open Sqlite3 database
             while True:
@@ -590,13 +579,17 @@ class FileExtractor:
                 if not result:
                     break
 
+                rows = [dict(row) for row in cursor.execute(
+                    constants.LOCAL_DATABASE_CARDS_QUERY)]
+
+                result, card_data = self._retrieve_local_cards(rows)
                 break
 
         except Exception as error:
             result = False
             file_logger.info("_retrieve_local_database Error: %s", error)
 
-        return result, card_text, card_enumerators
+        return result, card_text, card_enumerators, card_data
 
     def _retrieve_local_card_text(self, data):
         '''Returns a dict containing localization data'''
@@ -714,7 +707,7 @@ class FileExtractor:
             url = f"https://raw.github.com/bstaple1/MTGA_Draft_17Lands/master/{filename}"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
-            with open(filename, 'wb', encoding="utf-8", errors="replace") as file:
+            with open(filename, 'wb') as file:
                 file.write(url_data)
         except Exception as error:
             file_logger.info("retrieve_repository_file Error: %s", error)
@@ -730,8 +723,6 @@ class FileExtractor:
         result_string = "Couldn't Retrieve Card Data"
         url = ""
         for card_set in self.selected_sets[constants.SET_LIST_SCRYFALL]:
-            if set == "dbl":
-                continue
             retry = constants.SCRYFALL_REQUEST_ATTEMPT_MAX
             while retry:
                 try:
@@ -748,7 +739,7 @@ class FileExtractor:
                     result, result_string = self._process_scryfall_data(
                         set_json_data["data"])
 
-                    while set_json_data["has_more"] and result:
+                    while set_json_data["has_more"]:
                         url = set_json_data["next_page"]
                         url_data = urllib.request.urlopen(
                             url, context=self.context).read()
@@ -756,7 +747,8 @@ class FileExtractor:
                         result, result_string = self._process_scryfall_data(
                             set_json_data["data"])
 
-                    if result:
+                    if self.card_dict:
+                        result = 0
                         break
 
                 except Exception as error:
@@ -1051,21 +1043,26 @@ class FileExtractor:
            - Scryfall lists all Magic sets (paper and digital), so the application needs to filter out non-Arena sets
            - The application will only display sets that have been released
         '''
-        counter = 0
+        counter = len(sets)
+        side_sets = {}
         for card_set in data:
             try:
                 # Check if the set has been released
                 if "released_at" in card_set:
-                    # Sets that are not digitial only are release in Arena 1 week before paper
+                    # Sets that are not digitial only are released in Arena 1 week before paper
                     start_offset = constants.SET_RELEASE_OFFSET_DAYS if not card_set[
                         "digital"] else 0
-                    if not check_release_date(card_set["released_at"], start_offset):
+                    # Shifting release date to the next saturday
+                    if not check_release_date(card_set["released_at"], start_offset, 5):
                         continue
 
                 set_name = card_set[constants.DATA_FIELD_NAME]
                 set_code = card_set["code"]
 
                 if set_code == "dbl":
+                    # Only retrieve the last X sets + CUBE
+                    if counter >= constants.SET_LIST_COUNT_MAX:
+                        break
                     sets[set_name] = {}
                     sets[set_name][constants.SET_LIST_ARENA] = ["VOW", "MID"]
                     sets[set_name][constants.SET_LIST_17LANDS] = [
@@ -1073,6 +1070,9 @@ class FileExtractor:
                     sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW", "MID"]
                     counter += 1
                 elif card_set["set_type"] in constants.SUPPORTED_SET_TYPES:
+                    # Only retrieve the last X sets + CUBE
+                    if counter >= constants.SET_LIST_COUNT_MAX:
+                        break
                     if card_set["set_type"] == constants.SET_TYPE_ALCHEMY:
                         sets[set_name] = {}
                         if ("parent_set_code" in card_set) and ("block_code" in card_set):
@@ -1082,6 +1082,19 @@ class FileExtractor:
                                 f"{card_set['block_code'].upper()}{card_set['parent_set_code'].upper()}"]
                             sets[set_name][constants.SET_LIST_SCRYFALL] = [
                                 set_code.upper(), card_set["parent_set_code"].upper()]
+                        elif ("block_code" in card_set) and (re.findall("^[yY]\d{2}$", card_set["block_code"], re.DOTALL)):
+                            parent_code = re.findall("^[yY](\w{3})$", set_code, re.DOTALL)
+                            
+                            if parent_code:
+                                sets[set_name][constants.SET_LIST_ARENA] = [
+                                    parent_code[0].upper()]
+                                sets[set_name][constants.SET_LIST_17LANDS] = [
+                                    f"{card_set['block_code'].upper()}{parent_code[0].upper()}"]
+                                sets[set_name][constants.SET_LIST_SCRYFALL] = [
+                                    set_code.upper(), parent_code[0].upper()]
+                            else:
+                                sets[set_name] = {key: [set_code.upper()] for key in [
+                                    constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
                         else:
                             sets[set_name] = {key: [set_code.upper()] for key in [
                                 constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
@@ -1090,25 +1103,34 @@ class FileExtractor:
                     else:
                         sets[set_name] = {key: [set_code.upper()] for key in [
                             constants.SET_LIST_ARENA, constants.SET_LIST_SCRYFALL, constants.SET_LIST_17LANDS]}
-                        # Add mystic archives to strixhaven
-                        if set_code == "stx":
-                            sets[set_name][constants.SET_LIST_ARENA].append(
-                                "STA")
-                            sets[set_name][constants.SET_LIST_SCRYFALL].append(
-                                "STA")
-                    counter += 1
 
-                # Only retrieve the last X sets + CUBE
-                if counter >= constants.SET_LIST_COUNT_MAX:
-                    break
+                    counter += 1
+                elif (card_set["set_type"] == constants.SET_TYPE_MASTERPIECE and
+                     "parent_set_code" in card_set):
+                    #Add the supplementary sets (i.e., mystic archives, retro artifacts)
+                    parent_code = card_set["parent_set_code"].upper()
+                    if parent_code in side_sets:
+                        side_sets[parent_code].append(set_code.upper())
+                    else:
+                        side_sets[parent_code] = [set_code.upper()]  
+
             except Exception as error:
                 file_logger.info("_process_set_data Error: %s", error)
+        # Add side sets
+        for card_sets in sets.values():
+            try:
+                card_set = card_sets[constants.SET_LIST_ARENA][0]
+                if card_set in side_sets:
+                    card_sets[constants.SET_LIST_ARENA].extend(side_sets[card_set])
+                    card_sets[constants.SET_LIST_SCRYFALL].extend(side_sets[card_set])
+            except Exception:
+                pass
 
         # Insert the cube sets
         sets["Arena Cube"] = {constants.SET_LIST_ARENA: [constants.SET_SELECTION_ALL], constants.SET_LIST_SCRYFALL: [
         ], constants.SET_LIST_17LANDS: [constants.SET_SELECTION_CUBE]}
         sets["Arena Cube"][constants.SET_START_DATE] = shift_date(
-            datetime.date.today(), constants.SET_ARENA_CUBE_START_OFFSET_DAYS, "%Y-%m-%d")[1]
+            datetime.date.today(), constants.SET_ARENA_CUBE_START_OFFSET_DAYS, "%Y-%m-%d", None)[1]
 
         return sets
 

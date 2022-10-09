@@ -1,3 +1,12 @@
+===================== RELEASE NOTES 3.04 =====================
+* Bug Fixes:
+** Fixing the application auto-update feature - users will need to re-download the executable
+** Fixing the DMU/Y23DMU set download issues by adding support for the local Arena files that were modified in a recent Arena update
+** Modifying the Scryfall API processing logic (backup)
+** Fixing an image display issue with the card tooltips
+
+* New Feature: Added a UI Size setting in the settings menu
+
 ===================== RELEASE NOTES 3.03 =====================
 * Bug Fix: The application will use the UTF-8 codec when reading the Arena player.log file (Issue #17)
 

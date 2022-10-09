@@ -168,6 +168,9 @@ COLUMN_7_DEFAULT = FIELD_LABEL_DISABLED
 
 DECK_FILTER_DEFAULT = FILTER_OPTION_AUTO
 
+UI_SIZE_DEFAULT = "100%"
+
+DRAFT_LOG_PREFIX = "DraftLog_"
 DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
 
 TIER_FOLDER = os.path.join(os.getcwd(), FILTER_OPTION_TIER)
@@ -208,6 +211,7 @@ LOCAL_DATA_FILE_PREFIX_DATABASE = "Raw_CardDatabase_"
 
 LOCAL_DATABASE_TABLE_LOCALIZATION = "Localizations"
 LOCAL_DATABASE_TABLE_ENUMERATOR = "Enums"
+LOCAL_DATABASE_TABLE_CARDS = "Cards"
 
 LOCAL_DATABASE_LOCALIZATION_COLUMN_ID = "LocId"
 LOCAL_DATABASE_LOCALIZATION_COLUMN_FORMAT = "Formatted"
@@ -242,16 +246,18 @@ LOCAL_DATABASE_ENUMERATOR_QUERY = f"""SELECT
                                       IN ('{LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR}', 
                                           '{LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES}')"""
 
-LOCAL_CARDS_KEY_SET = "set"
+LOCAL_DATABASE_CARDS_QUERY = f"SELECT * FROM {LOCAL_DATABASE_TABLE_CARDS}"
+
+LOCAL_CARDS_KEY_SET = "expansioncode"
 LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET = "digitalreleaseset"
 LOCAL_CARDS_KEY_GROUP_ID = "grpid"
 LOCAL_CARDS_KEY_TOKEN = "istoken"
-LOCAL_CARDS_KEY_LINKED_FACES = "linkedfaces"
+LOCAL_CARDS_KEY_LINKED_FACES = "linkedfacegrpids"
 LOCAL_CARDS_KEY_TYPES = "types"
 LOCAL_CARDS_KEY_TITLE_ID = "titleid"
 LOCAL_CARDS_KEY_CMC = "cmc"
 LOCAL_CARDS_KEY_COLOR_ID = "coloridentity"
-LOCAL_CARDS_KEY_CASTING_COST = "castingcost"
+LOCAL_CARDS_KEY_CASTING_COST = "oldschoolmanatext"
 LOCAL_CARDS_KEY_RARITY = "rarity"
 
 SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
@@ -294,6 +300,7 @@ LIMITED_TYPE_LIST = [
 SET_TYPE_EXPANSION = "expansion"
 SET_TYPE_ALCHEMY = "alchemy"
 SET_TYPE_MASTERS = "masters"
+SET_TYPE_MASTERPIECE = "masterpiece"
 
 SET_LIST_ARENA = "arena"
 SET_LIST_SCRYFALL = "scryfall"
@@ -576,4 +583,25 @@ CARD_RARITY_DICT = {
     3: CARD_RARITY_UNCOMMON,
     4: CARD_RARITY_RARE,
     5: CARD_RARITY_MYTHIC,
+}
+
+UI_SIZE_DICT = {
+    "80%": 0.8,
+    "90%": 0.9,
+    "100%": 1.0,
+    "110%": 1.1,
+    "120%": 1.2,
+    "130%": 1.3,
+    "140%": 1.4,
+    "150%": 1.5,
+    "160%": 1.6,
+    "170%": 1.7,
+    "180%": 1.8,
+    "190%": 1.9,
+    "200%": 2.0,
+    "210%": 2.1,
+    "220%": 2.2,
+    "230%": 2.3,
+    "240%": 2.4,
+    "250%": 2.5
 }
