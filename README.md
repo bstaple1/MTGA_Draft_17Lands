@@ -22,7 +22,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
 
 - **Step 5:** Double-click the `MTGA_Draft_Tool.exe` to start the program.
-    - If you're running a higher resolution than 1920x1080, then you might want to consider modifying the scale_factor field in the config.json file
 
 - **Step 6:** Download the sets that you plan on using (`Data->View Sets`).
 
@@ -47,7 +46,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.10/` and double-clicking the file `Install Certificates.command`.
 
 - **Step 7:** Start the application by opening the terminal and entering ```python3.10 main.py```.
-    - If you're running a higher resolution than 1920x1080, then you might want to consider modifying the scale_factor field in the config.json file
 
 - **Step 8:** (Mac Only) Set Arena to window mode.
 
