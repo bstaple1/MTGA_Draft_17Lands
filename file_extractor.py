@@ -748,7 +748,7 @@ class FileExtractor:
                             set_json_data["data"])
 
                     if self.card_dict:
-                        result = 0
+                        result = True
                         break
 
                 except Exception as error:

@@ -22,7 +22,7 @@ class ArenaScanner:
         self.logger = logging.getLogger(constants.LOG_TYPE_DRAFT)
         self.logger.setLevel(logging.INFO)
 
-        self.logging_enabled = True
+        self.logging_enabled = False
 
         self.step_through = step_through
         self.set_data = None

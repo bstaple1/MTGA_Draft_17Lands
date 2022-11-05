@@ -11,6 +11,7 @@ import logging
 import logging.handlers
 import math
 import argparse
+from dataclasses import dataclass
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk
@@ -19,7 +20,13 @@ import card_logic as CL
 import log_scanner as LS
 import constants
 
+@dataclass
+class TableInfo:
+    reverse: bool = True
+    column: str = ""
+
 __version__ = 3.04
+
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
     os.makedirs(constants.DEBUG_LOG_FOLDER)
@@ -80,16 +87,17 @@ def fixed_map(style, option):
 
 def control_table_column(table, column_fields):
     """Hide disabled table columns"""
-    visible_columns = []
+    visible_columns = {}
     last_field_index = 0
     for count, (key, value) in enumerate(column_fields.items()):
         if value != constants.DATA_FIELD_DISABLED:
             table.heading(key, text=value.upper())
-            visible_columns.append(key)
+            #visible_columns.append(key)
+            visible_columns[key] = count
             last_field_index = count
 
-    table["displaycolumns"] = visible_columns
-    return last_field_index
+    table["displaycolumns"] = list(visible_columns.keys())
+    return last_field_index, visible_columns
 
 
 def copy_suggested(deck_colors, deck, color_options):
@@ -134,41 +142,6 @@ def copy_clipboard(copy):
     return
 
 
-def create_header(frame, height, font, headers, total_width, include_header, fixed_width, table_style, stretch_enabled):
-    """Configure the tkinter Treeview widget tables that are used to list draft data"""
-    header_labels = tuple(headers.keys())
-    show_header = "headings" if include_header else ""
-    column_stretch = tkinter.YES if stretch_enabled else tkinter.NO
-    list_box = Treeview(frame, columns=header_labels,
-                        show=show_header, style=table_style, height=height)
-
-    try:
-        for key, value in constants.ROW_TAGS_BW_DICT.items():
-            list_box.tag_configure(
-                key, font=(value[0], font, "bold"), background=value[1], foreground=value[2])
-
-        for key, value in constants.ROW_TAGS_COLORS_DICT.items():
-            list_box.tag_configure(
-                key, font=(value[0], font, "bold"), background=value[1], foreground=value[2])
-
-        for column in header_labels:
-            if fixed_width:
-                column_width = int(
-                    math.ceil(headers[column]["width"] * total_width))
-                list_box.column(column,
-                                stretch=column_stretch,
-                                anchor=headers[column]["anchor"],
-                                width=column_width)
-            else:
-                list_box.column(column, stretch=column_stretch,
-                                anchor=headers[column]["anchor"])
-            list_box.heading(column, text=column, anchor=tkinter.CENTER,
-                             command=lambda _col=column: sort_table_column(list_box, _col, True))
-        list_box["show"] = show_header  # use after setting column's size
-    except Exception as error:
-        overlay_logger.info("create_header Error: %s", error)
-    return list_box
-
 
 def identify_table_row_tag(colors_enabled, colors, index):
     """Return the row color (black/white or card color) depending on the application settings"""
@@ -180,36 +153,6 @@ def identify_table_row_tag(colors_enabled, colors, index):
         tag = constants.BW_ROW_COLOR_ODD_TAG if index % 2 else constants.BW_ROW_COLOR_EVEN_TAG
 
     return tag
-
-
-def sort_table_column(table, column, reverse):
-    """Sort the table columns when clicked"""
-    row_colors = False
-
-    try:
-        # Sort column that contains numeric values
-        row_list = [(float(table.set(k, column)), k)
-                    for k in table.get_children('')]
-    except ValueError:
-        # Sort column that contains string values
-        row_list = [(table.set(k, column), k) for k in table.get_children('')]
-
-    row_list.sort(key=lambda x: CL.field_process_sort(x[0]), reverse=reverse)
-
-    if row_list:
-        tags = table.item(row_list[0][1])["tags"][0]
-        row_colors = True if tags in constants.ROW_TAGS_COLORS_DICT else False
-
-    for index, value in enumerate(row_list):
-        table.move(value[1], "", index)
-
-        # Reset the black/white shades for sorted rows
-        if not row_colors:
-            row_tag = identify_table_row_tag(False, "", index)
-            table.item(value[1], tags=row_tag)
-
-    table.heading(column, command=lambda: sort_table_column(
-        table, column, not reverse))
 
 
 def identify_safe_coordinates(root, window_width, window_height, offset_x, offset_y):
@@ -243,12 +186,81 @@ class ScaledWindow:
     def __init__(self):
         self.scale_factor = 1
         self.fonts_dict = {}
+        self.table_info = {}
 
     def _scale_value(self, value):
         scaled_value = int(value * self.scale_factor)
 
         return scaled_value
 
+    def _create_header(self, table_label, frame, height, font, headers, total_width, include_header, fixed_width, table_style, stretch_enabled):
+        """Configure the tkinter Treeview widget tables that are used to list draft data"""
+        header_labels = tuple(headers.keys())
+        show_header = "headings" if include_header else ""
+        column_stretch = tkinter.YES if stretch_enabled else tkinter.NO
+        list_box = Treeview(frame, columns=header_labels,
+                            show=show_header, style=table_style, height=height)
+
+        try:
+            for key, value in constants.ROW_TAGS_BW_DICT.items():
+                list_box.tag_configure(
+                    key, font=(value[0], font, "bold"), background=value[1], foreground=value[2])
+
+            for key, value in constants.ROW_TAGS_COLORS_DICT.items():
+                list_box.tag_configure(
+                    key, font=(value[0], font, "bold"), background=value[1], foreground=value[2])
+
+            for column in header_labels:
+                if fixed_width:
+                    column_width = int(
+                        math.ceil(headers[column]["width"] * total_width))
+                    list_box.column(column,
+                                    stretch=column_stretch,
+                                    anchor=headers[column]["anchor"],
+                                    width=column_width)
+                else:
+                    list_box.column(column, stretch=column_stretch,
+                                    anchor=headers[column]["anchor"])
+                list_box.heading(column, text=column, anchor=tkinter.CENTER,
+                                 command=lambda _col=column: self._sort_table_column(table_label, list_box, _col, True))
+            list_box["show"] = show_header  # use after setting column's 
+            self.table_info[table_label] = TableInfo()
+        except Exception as error:
+            overlay_logger.info("create_header Error: %s", error)
+        return list_box
+
+    def _sort_table_column(self, table_label, table, column, reverse):
+        """Sort the table columns when clicked"""
+        row_colors = False
+
+        try:
+            # Sort column that contains numeric values
+            row_list = [(float(table.set(k, column)), k)
+                        for k in table.get_children('')]
+        except ValueError:
+            # Sort column that contains string values
+            row_list = [(table.set(k, column), k) for k in table.get_children('')]
+
+        row_list.sort(key=lambda x: CL.field_process_sort(x[0]), reverse=reverse)
+
+        if row_list:
+            tags = table.item(row_list[0][1])["tags"][0]
+            row_colors = True if tags in constants.ROW_TAGS_COLORS_DICT else False
+
+        for index, value in enumerate(row_list):
+            table.move(value[1], "", index)
+
+            # Reset the black/white shades for sorted rows
+            if not row_colors:
+                row_tag = identify_table_row_tag(False, "", index)
+                table.item(value[1], tags=row_tag)
+
+        if table_label in self.table_info:       
+            self.table_info[table_label].reverse = reverse
+            self.table_info[table_label].column = column
+
+        table.heading(column, command=lambda: self._sort_table_column(
+            table_label, table, column, not reverse))
 
 class Overlay(ScaledWindow):
     '''Class that handles all of the UI widgets'''
@@ -287,8 +299,8 @@ class Overlay(ScaledWindow):
             self.arena_file, self.step_through, self.extractor.return_set_list())
 
         self.trace_ids = []
-
         self.tier_data = {}
+
         self.main_options_dict = constants.COLUMNS_OPTIONS_MAIN_DICT.copy()
         self.extra_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         self.deck_colors = self.draft.retrieve_color_win_rate(
@@ -416,7 +428,7 @@ class Overlay(ScaledWindow):
         self.refresh_button = Button(
             self.refresh_button_frame, command=lambda: self._update_overlay_callback(True), text="Refresh")
 
-        self.status_frame = tkinter.Frame(self.root)
+        self.status_frame = tkinter.Frame(self.root, highlightbackground="white", highlightthickness=1)
         self.pack_pick_label = Label(
             self.status_frame, text="Pack: 0, Pick: 0", style="MainSections.TLabel")
 
@@ -430,21 +442,21 @@ class Overlay(ScaledWindow):
                    "Column6": {"width": .18, "anchor": tkinter.CENTER},
                    "Column7": {"width": .18, "anchor": tkinter.CENTER}}
 
-        self.pack_table = create_header(self.pack_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
+        self.pack_table = self._create_header("pack_table", self.pack_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                         self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
-        self.missing_frame = tkinter.Frame(self.root)
+        self.missing_frame = tkinter.Frame(self.root, highlightbackground="white", highlightthickness=1)
         self.missing_cards_label = Label(
-            self.missing_frame, text="Missing Cards", style="MainSections.TLabel")
+            self.missing_frame, text="MISSING CARDS", style="MainSections.TLabel")
 
         self.missing_table_frame = tkinter.Frame(self.root, width=10)
 
-        self.missing_table = create_header(self.missing_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
+        self.missing_table = self._create_header("missing_table", self.missing_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                            self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.stat_frame = tkinter.Frame(self.root)
 
-        self.stat_table = create_header(self.root, 0, self.fonts_dict["All.TableRow"], constants.STATS_HEADER_CONFIG,
+        self.stat_table = self._create_header("stat_table", self.root, 0, self.fonts_dict["All.TableRow"], constants.STATS_HEADER_CONFIG,
                                         self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text="Draft Stats:",
                                 style="MainSections.TLabel", anchor="e", width=15)
@@ -469,16 +481,17 @@ class Overlay(ScaledWindow):
                                style="Notes.TLabel", anchor="e")
 
         citation_label.grid(row=0, column=0, columnspan=2)
+        row_padding = (self._scale_value(3), self._scale_value(3))
         current_draft_label_frame.grid(
-            row=1, column=0, columnspan=1, sticky='nsew')
+            row=1, column=0, columnspan=1, sticky='nsew', pady=row_padding)
         current_draft_value_frame.grid(
             row=1, column=1, columnspan=1, sticky='nsew')
         data_source_label_frame.grid(
-            row=2, column=0, columnspan=1, sticky='nsew')
+            row=2, column=0, columnspan=1, sticky='nsew', pady=row_padding)
         data_source_option_frame.grid(
             row=2, column=1, columnspan=1, sticky='nsew')
         deck_colors_label_frame.grid(
-            row=3, column=0, columnspan=1, sticky='nsew')
+            row=3, column=0, columnspan=1, sticky='nsew', pady=row_padding)
         deck_colors_option_frame.grid(
             row=3, column=1, columnspan=1, sticky='nsw')
         hotkey_label.grid(row=4, column=0, columnspan=2)
@@ -695,10 +708,16 @@ class Overlay(ScaledWindow):
                 self.pack_table.config(height=0)
 
             # Update the filtered column header with the filtered colors
-            last_field_index = control_table_column(self.pack_table, fields)
+            last_field_index, visible_columns = control_table_column(self.pack_table, fields)
 
-            result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
-                d["results"][last_field_index]), reverse=True)
+            if self.table_info["pack_table"].column in visible_columns:
+                column_index = visible_columns[self.table_info["pack_table"].column]
+                direction = self.table_info["pack_table"].reverse
+                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    d["results"][column_index]), reverse=direction)
+            else:
+                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    d["results"][last_field_index]), reverse=True)
 
             for count, card in enumerate(result_list):
                 row_tag = identify_table_row_tag(
@@ -720,7 +739,7 @@ class Overlay(ScaledWindow):
                 self.missing_table.delete(row)
 
             # Update the filtered column header with the filtered colors
-            last_field_index = control_table_column(self.missing_table, fields)
+            last_field_index, visible_columns = control_table_column(self.missing_table, fields)
             if not previous_pack:
                 self.missing_table.config(height=0)
             else:
@@ -740,8 +759,14 @@ class Overlay(ScaledWindow):
                     result_list = result_class.return_results(
                         missing_cards, filtered_colors, fields)
 
-                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
-                        d["results"][last_field_index]), reverse=True)
+                    if self.table_info["missing_table"].column in visible_columns:
+                        column_index = visible_columns[self.table_info["missing_table"].column]
+                        direction = self.table_info["missing_table"].reverse
+                        result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                            d["results"][column_index]), reverse=direction)
+                    else:
+                        result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                            d["results"][last_field_index]), reverse=True)
 
                     for count, card in enumerate(result_list):
                         row_tag = identify_table_row_tag(
@@ -785,10 +810,16 @@ class Overlay(ScaledWindow):
             compare_table.delete(*compare_table.get_children())
 
             # Update the filtered column header with the filtered colors
-            last_field_index = control_table_column(compare_table, fields)
+            last_field_index, visible_columns = control_table_column(compare_table, fields)
 
-            result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
-                d["results"][last_field_index]), reverse=True)
+            if self.table_info["compare_table"].column in visible_columns:
+                column_index = visible_columns[self.table_info["compare_table"].column]
+                direction = self.table_info["compare_table"].reverse
+                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    d["results"][column_index]), reverse=direction)
+            else:
+                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    d["results"][last_field_index]), reverse=True)
 
             list_length = len(result_list)
 
@@ -873,13 +904,19 @@ class Overlay(ScaledWindow):
                 result_list = result_class.return_results(
                     stacked_cards, filtered_colors, fields)
 
-                last_field_index = control_table_column(
+                last_field_index, visible_columns = control_table_column(
                     self.taken_table, fields)
 
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
-                    d["results"][last_field_index]), reverse=True)
+                if self.table_info["taken_table"].column in visible_columns:
+                    column_index = visible_columns[self.table_info["taken_table"].column]
+                    direction = self.table_info["taken_table"].reverse
+                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                        d["results"][column_index]), reverse=direction)
+                else:
+                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                        d["results"][last_field_index]), reverse=True)
 
-                if len(result_list):
+                if result_list:
                     self.taken_table.config(height=min(len(result_list), 20))
                 else:
                     self.taken_table.config(height=1)
@@ -1001,7 +1038,7 @@ class Overlay(ScaledWindow):
     def _update_pack_pick_label(self, pack, pick):
         '''Update the label that lists the pack and pick numbers'''
         try:
-            new_label = f"Pack: {pack}, Pick: {pick}"
+            new_label = f"PACK: {pack} / PICK: {pick}"
             self.pack_pick_label.config(text=new_label)
 
         except Exception as error:
@@ -1556,7 +1593,7 @@ class Overlay(ScaledWindow):
                 list_box_frame, orient=tkinter.VERTICAL)
             list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
-            list_box = create_header(
+            list_box = self._create_header("set_table",
                 list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
 
             list_box.config(yscrollcommand=list_box_scrollbar.set)
@@ -1693,7 +1730,7 @@ class Overlay(ScaledWindow):
             compare_scrollbar = tkinter.Scrollbar(
                 compare_table_frame, orient=tkinter.VERTICAL)
             compare_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-            compare_table = create_header(compare_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
+            compare_table = self._create_header("compare_table", compare_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                           self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
@@ -1775,7 +1812,7 @@ class Overlay(ScaledWindow):
             taken_scrollbar = tkinter.Scrollbar(
                 taken_table_frame, orient=tkinter.VERTICAL)
             taken_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-            self.taken_table = create_header(
+            self.taken_table = self._create_header("taken_table",
                 taken_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(440), True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
@@ -1981,7 +2018,7 @@ class Overlay(ScaledWindow):
             suggest_scrollbar = tkinter.Scrollbar(
                 suggest_table_frame, orient=tkinter.VERTICAL)
             suggest_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-            suggest_table = create_header(
+            suggest_table = self._create_header("suggest_table",
                 suggest_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
@@ -2160,71 +2197,89 @@ class Overlay(ScaledWindow):
             default_button = Button(
                 popup, command=self._default_settings_callback, text="Default Settings")
             
-
+            row_padding_y = (self._scale_value(3), self._scale_value(3))
+            row_padding_x = (self._scale_value(10), )
             column_2_label.grid(row=0, column=0, columnspan=1,
-                                sticky="nsew", padx=(10,))
+                                sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             column_3_label.grid(row=1, column=0, columnspan=1,
-                                sticky="nsew", padx=(10,))
+                                sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             column_4_label.grid(row=2, column=0, columnspan=1,
-                                sticky="nsew", padx=(10,))
+                                sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             column_5_label.grid(row=3, column=0, columnspan=1,
-                                sticky="nsew", padx=(10,))
+                                sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             column_6_label.grid(row=4, column=0, columnspan=1,
-                                sticky="nsew", padx=(10,))
+                                sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             column_7_label.grid(row=5, column=0, columnspan=1,
-                                sticky="nsew", padx=(10,))
+                                sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             filter_format_label.grid(
-                row=6, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=6, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             result_format_label.grid(
-                row=7, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=7, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             scale_label.grid(
-                row=8, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=8, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             self.column_2_options.grid(
-                row=0, column=1, columnspan=1, sticky="nsew")
+                row=0, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             self.column_3_options.grid(
-                row=1, column=1, columnspan=1, sticky="nsew")
+                row=1, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             self.column_4_options.grid(
-                row=2, column=1, columnspan=1, sticky="nsew")
+                row=2, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             self.column_5_options.grid(
-                row=3, column=1, columnspan=1, sticky="nsew")
+                row=3, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             self.column_6_options.grid(
-                row=4, column=1, columnspan=1, sticky="nsew")
+                row=4, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             self.column_7_options.grid(
-                row=5, column=1, columnspan=1, sticky="nsew")
+                row=5, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             filter_format_options.grid(
-                row=6, column=1, columnspan=1, sticky="nsew")
+                row=6, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             result_format_options.grid(
-                row=7, column=1, columnspan=1, sticky="nsew")
+                row=7, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             ui_size_options.grid(
-                row=8, column=1, columnspan=1, sticky="nsew")
+                row=8, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
             card_colors_label.grid(
-                row=9, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=9, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             card_colors_checkbox.grid(
-                row=9, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=9, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             color_identity_label.grid(
-                row=10, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=10, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             color_identity_checkbox.grid(
-                row=10, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=10, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             deck_stats_label.grid(
-                row=11, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=11, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             deck_stats_checkbox.grid(
-                row=11, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=11, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             missing_cards_label.grid(
-                row=12, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=12, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             missing_cards_checkbox.grid(
-                row=12, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=12, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             auto_highest_label.grid(
-                row=13, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=13, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             auto_highest_checkbox.grid(
-                row=13, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=13, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             bayesian_average_label.grid(
-                row=14, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=14, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             bayesian_average_checkbox.grid(
-                row=14, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=14, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             draft_log_label.grid(
-                row=15, column=0, columnspan=1, sticky="nsew", padx=(10,))
+                row=15, column=0, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             draft_log_checkbox.grid(
-                row=15, column=1, columnspan=1, sticky="nsew", padx=(5,))
+                row=15, column=1, columnspan=1, sticky="nsew", 
+                padx=row_padding_x, pady=row_padding_y)
             default_button.grid(row=16, column=0, columnspan=2, sticky="nsew")
 
             self._control_trace(True)
@@ -2608,7 +2663,7 @@ class CreateCardToolTip(ScaledWindow):
             style = Style()
             style.configure("Tooltip.Treeview", rowheight=row_height)
 
-            stats_main_table = create_header(
+            stats_main_table = self._create_header("tooltip_table",
                 tt_frame, 0, self.fonts_dict["All.TableRow"], headers, width, False, True, "Tooltip.Treeview", False)
             main_field_list = []
 
