@@ -447,7 +447,7 @@ class Overlay(ScaledWindow):
 
         self.missing_frame = tkinter.Frame(self.root, highlightbackground="white", highlightthickness=1)
         self.missing_cards_label = Label(
-            self.missing_frame, text="MISSING CARDS", style="MainSections.TLabel")
+            self.missing_frame, text="Missing Cards", style="MainSections.TLabel")
 
         self.missing_table_frame = tkinter.Frame(self.root, width=10)
 
@@ -1038,7 +1038,7 @@ class Overlay(ScaledWindow):
     def _update_pack_pick_label(self, pack, pick):
         '''Update the label that lists the pack and pick numbers'''
         try:
-            new_label = f"PACK: {pack} / PICK: {pick}"
+            new_label = f"Pack: {pack} / Pick: {pick}"
             self.pack_pick_label.config(text=new_label)
 
         except Exception as error:
@@ -2221,23 +2221,23 @@ class Overlay(ScaledWindow):
                 row=8, column=0, columnspan=1, sticky="nsew", 
                 padx=row_padding_x, pady=row_padding_y)
             self.column_2_options.grid(
-                row=0, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=0, column=1, columnspan=1, sticky="nsew")
             self.column_3_options.grid(
-                row=1, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=1, column=1, columnspan=1, sticky="nsew")
             self.column_4_options.grid(
-                row=2, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=2, column=1, columnspan=1, sticky="nsew")
             self.column_5_options.grid(
-                row=3, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=3, column=1, columnspan=1, sticky="nsew")
             self.column_6_options.grid(
-                row=4, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=4, column=1, columnspan=1, sticky="nsew")
             self.column_7_options.grid(
-                row=5, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=5, column=1, columnspan=1, sticky="nsew")
             filter_format_options.grid(
-                row=6, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=6, column=1, columnspan=1, sticky="nsew")
             result_format_options.grid(
-                row=7, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=7, column=1, columnspan=1, sticky="nsew")
             ui_size_options.grid(
-                row=8, column=1, columnspan=1, sticky="nsew", pady=row_padding_y)
+                row=8, column=1, columnspan=1, sticky="nsew")
             card_colors_label.grid(
                 row=9, column=0, columnspan=1, sticky="nsew", 
                 padx=row_padding_x, pady=row_padding_y)

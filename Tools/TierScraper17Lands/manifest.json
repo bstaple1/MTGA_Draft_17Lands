@@ -5,13 +5,9 @@
   "description": "Retrieve pick ratings from websites",
   "version": "2.0",
 
-  "action": {
-   "default_icon": "get_started16.png",
-   "default_popup": "popup.html"
-  },
- "permissions": ["activeTab", "declarativeContent", "storage","scripting","tabs"],
- "host_permissions": ["*://*/*"],
- "content_scripts": [
+  "permissions": ["activeTab", "declarativeContent", "storage","scripting","tabs"],
+  "host_permissions": ["*://*/*"],
+  "content_scripts": [
    {
      "matches": ["https://www.17lands.com/tier_list/*"],
      "css": ["17LandsTier.css"],

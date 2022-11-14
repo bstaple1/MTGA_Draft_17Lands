@@ -28,7 +28,6 @@ window.addEventListener('load', function () {
         
         tier_label_box.setAttribute("id", "tier_label_box")
         tier_label_box.setAttribute("rows", 1)
-        tier_label_box.setAttribute("maxlength", 11)
         tier_label_box.setAttribute("spellcheck", false)
         tier_label_box.setAttribute("placeholder", "Enter Label Here!")
         
@@ -38,11 +37,11 @@ window.addEventListener('load', function () {
         grid_zone.insertBefore(button_div, grid_zone.firstElementChild);
         grid_zone.insertBefore(label_div, grid_zone.firstElementChild);
         
-        document.getElementById("tier_button").addEventListener("click", CollectPickRatings);
+        document.getElementById("tier_button").addEventListener("click", collect_pick_ratings);
 
 })
 
-function CollectPickRatings (){
+function collect_pick_ratings (){
     var current_date = new Date(); 
     var datetime = (current_date.getMonth()+1)  + "/"
                  + current_date.getDate() + "/" 
@@ -52,21 +51,21 @@ function CollectPickRatings (){
                  + current_date.getSeconds();
     
     var ratings_obj = new Object;
-    var tier_label = CollectLabel();
-    var set_name = Collectset_name();
+    var tier_label = collect_label();
+    var set_name = collect_set_name();
 
     ratings_obj.meta = {"collection_date": datetime, "label": tier_label, "set": set_name, "version": 2.0};
     ratings_obj.ratings = {}
     
     for (var i = 0; i < color_ids.length; i++)
     {
-        ratings_obj = CollectColumnRatings(color_ids[i], ratings_obj);
+        ratings_obj = collect_column_ratings(color_ids[i], ratings_obj);
     }
         
     RatingsExport (ratings_obj);
 }
 
-function CollectColumnRatings (columnId, ratings_obj){
+function collect_column_ratings (columnId, ratings_obj){
 
     var column_string = column_prefix + columnId;
 	var table_rows = document.getElementsByClassName(column_string);
@@ -90,7 +89,7 @@ function CollectColumnRatings (columnId, ratings_obj){
     return ratings_obj;
 }
 
-function Collectset_name (){
+function collect_set_name (){
     var set_name = "";
     
     try{
@@ -105,7 +104,7 @@ function Collectset_name (){
     return set_name;
 }
 
-function CollectLabel (){
+function collect_label (){
     var tier_label = "";
     
     try{

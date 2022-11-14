@@ -1,6 +1,7 @@
 """This module contains the functions and classes that are used for building the set files and communicating with platforms"""
 from enum import Enum
 from urllib.parse import quote as urlencode
+from dataclasses import dataclass, asdict, field
 import sys
 import os
 import time
@@ -25,7 +26,6 @@ if not os.path.exists(constants.TEMP_FOLDER):
     os.makedirs(constants.TEMP_FOLDER)
 
 file_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
-
 
 class Result(Enum):
     '''Enumeration class for file integrity results'''
@@ -295,6 +295,7 @@ class FileExtractor:
             "meta": {"collection_date": str(datetime.datetime.now())}}
         self.card_dict = {}
         self.deck_colors = constants.DECK_COLORS
+        self.sets_17lands = []
 
     def clear_data(self):
         '''Clear stored set information'''
@@ -376,7 +377,7 @@ class FileExtractor:
 
                 if not result:
 
-                    result, result_string = self.retrieve_scryfall_data(
+                    result, result_string = self._retrieve_scryfall_data(
                         ui_root, status)
                     if not result:
                         break
@@ -713,8 +714,23 @@ class FileExtractor:
             file_logger.info("retrieve_repository_file Error: %s", error)
             result = False
         return result
+        
+    def _retrieve_17lands_sets(self):
+        '''Retrieve the list of sets that are supported by 17Lands'''
+        sets = {}
+        try:
+            url = "https://www.17lands.com/data/filters"
+            url_data = urllib.request.urlopen(url, context=self.context).read()
 
-    def retrieve_scryfall_data(self, root, status):
+            set_json_data = json.loads(url_data)
+
+            self._process_17lands_sets(sets, set_json_data)
+            
+        except Exception as error:
+            file_logger.info("_retrieve_17lands_sets Error: %s", error)
+        return sets
+
+    def _retrieve_scryfall_data(self, root, status):
         '''Use the Scryfall API to retrieve the set data needed for building a card set file*
            - This is a fallback feature feature that's used in case there's an issue with the local Arena files
         '''
@@ -840,26 +856,58 @@ class FileExtractor:
                 self.combined_data["card_ratings"][card] = card_data
 
     def retrieve_set_list(self):
-        '''Use the Scryfall set API to collect a list of Magic sets
-           - The application only recognizes sets that it can collect using this API
-           - The application will automatically support any new set that can be retrieved using this API
-        '''
+        '''Retrieve a list of sets from 17Lands and Scryfall'''
+        sets = {}
+        try:
+        
+            sets_17lands = self._retrieve_17lands_sets()
+            
+            sets_scryfall = self._retrieve_scryfall_sets()
+            
+            sets = self._assemble_set_list(sets_17lands, sets_scryfall)
+            
+        except Exception as error:
+            file_logger.info("retrieve_set_list Error: %s", error)
+        return sets
+        
+    def _assemble_set_list(self, sets_17lands, sets_scryfall):
+        '''Retrieve a list of sets from 17Lands and Scryfall'''
+        sets = {}
+        
+        if sets_scryfall:
+            #The application was able to retrieve the set list from Scryfall
+            if sets_17lands:
+                #If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
+                for set_name, set_fields in sets_scryfall.items():
+                    set_code = set_fields[constants.SET_LIST_17LANDS][0]
+                    if set_code in sets_17lands:
+                        sets[set_name] = set_fields
+                        sets_17lands.pop(set_code)
+            else:
+                sets = sets_scryfall
+                
+        #Insert any 17Lands sets that were not collected from Scryfall    
+        sets.update(sets_17lands)
+        return sets        
+        
+    def _retrieve_scryfall_sets(self):
+        '''Retrieve a list of Magic sets using the Scryfall API'''
         sets = {}
         try:
             url = "https://api.scryfall.com/sets"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             set_json_data = json.loads(url_data)
-            sets = self._process_set_data(sets, set_json_data["data"])
+            self._process_scryfall_sets(sets, set_json_data["data"])
             while set_json_data["has_more"]:
                 url = set_json_data["next_page"]
                 url_data = urllib.request.urlopen(
                     url, context=self.context).read()
                 set_json_data = json.loads(url_data)
-                sets = self._process_set_data(sets, set_json_data["data"])
+                self._process_scryfall_sets(sets, set_json_data["data"])
 
         except Exception as error:
-            file_logger.info("retrieve_set_list Error: %s", error)
+            file_logger.info("_retrieve_scryfall_sets Error: %s", error)
         return sets
 
     def retrieve_17lands_color_ratings(self):
@@ -1009,6 +1057,23 @@ class FileExtractor:
                 result_string = error
 
         return result, result_string
+        
+    def _process_17lands_sets(self, sets, data):
+        '''Parse json data from the 17lands filters page'''
+        try:
+            for card_set in data["expansions"]:
+                sets[card_set.upper()] = {constants.SET_LIST_ARENA: [constants.SET_SELECTION_ALL], 
+                                          constants.SET_LIST_SCRYFALL: [], 
+                                          constants.SET_LIST_17LANDS: [card_set.upper()]}
+            for card_set, date_string in data["start_dates"].items():
+                if card_set.upper() in sets:
+                    start_date = date_string.split('T')[0]
+                    sets[card_set.upper()][constants.SET_START_DATE] = start_date
+        
+        except Exception as error:
+            file_logger.info("_process_17lands_sets Error: %s", error)
+
+        return
 
     def _process_card_data(self, card):
         '''Link the 17Lands card ratings with the card data'''
@@ -1038,7 +1103,7 @@ class FileExtractor:
 
         return result
 
-    def _process_set_data(self, sets, data):
+    def _process_scryfall_sets(self, sets, data):
         '''Parse the Scryfall set list data to extract information for sets that are supported by Arena
            - Scryfall lists all Magic sets (paper and digital), so the application needs to filter out non-Arena sets
            - The application will only display sets that have been released
@@ -1047,14 +1112,6 @@ class FileExtractor:
         side_sets = {}
         for card_set in data:
             try:
-                # Check if the set has been released
-                if "released_at" in card_set:
-                    # Sets that are not digitial only are released in Arena 1 week before paper
-                    start_offset = constants.SET_RELEASE_OFFSET_DAYS if not card_set[
-                        "digital"] else 0
-                    # Shifting release date to the next saturday
-                    if not check_release_date(card_set["released_at"], start_offset, 5):
-                        continue
 
                 set_name = card_set[constants.DATA_FIELD_NAME]
                 set_code = card_set["code"]
@@ -1115,7 +1172,7 @@ class FileExtractor:
                         side_sets[parent_code] = [set_code.upper()]  
 
             except Exception as error:
-                file_logger.info("_process_set_data Error: %s", error)
+                file_logger.info("_process_scryfall_sets Error: %s", error)
         # Add side sets
         for card_sets in sets.values():
             try:
@@ -1132,7 +1189,7 @@ class FileExtractor:
         sets["Arena Cube"][constants.SET_START_DATE] = shift_date(
             datetime.date.today(), constants.SET_ARENA_CUBE_START_OFFSET_DAYS, "%Y-%m-%d", None)[1]
 
-        return sets
+        return
 
     def _process_repository_version(self, data):
         '''Convert a version string to float'''
