@@ -63,7 +63,7 @@ class Config:
     curve_bonus_enabled: bool = False
     color_bonus_enabled: bool = False
     bayesian_average_enabled: bool = False
-    draft_log_enabled: bool = False
+    draft_log_enabled: bool = True
     color_identity_enabled: bool = False
     taken_alsa_enabled: bool = False
     taken_ata_enabled: bool = False

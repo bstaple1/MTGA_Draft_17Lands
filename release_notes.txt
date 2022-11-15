@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 3.05 =====================
+* Bug Fix: Removing problematic sections from the TierScraper17Lands manifest
+
+* Modified Feature: For all of the tables, the application will now retain the table sort order between picks and UI changes (enhancement #19)
+
+* Modified Feature: The application will now synchronize the Scryfall set list with the 17Lands set list
+
+* Modified Feature: Changed Games Not Drawn Win Rate to Games Not Seen Win Rate
 ===================== RELEASE NOTES 3.04 =====================
 * Bug Fixes:
 ** Fixing the application auto-update feature - users will need to re-download the executable

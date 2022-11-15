@@ -38,7 +38,7 @@ def decode_mana_cost(encoded_cost):
     '''Parse the raw card mana_cost field and return the cards cmc and color identity list'''
     decoded_cost = ""
     cmc = 0
-    if len(encoded_cost):
+    if encoded_cost:
         cost_string = re.sub('\(|\)', '', encoded_cost)
 
         sections = cost_string[1:].split("o")

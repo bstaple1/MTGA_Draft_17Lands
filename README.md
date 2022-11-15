@@ -1,7 +1,7 @@
 # MTGA_Draft_17Lands
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Latest Supported Set:** Dominaria United
+**Latest Supported Set:** The Brothers' War
 
 **Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
@@ -136,7 +136,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Win Rate Format:** Used to switch the results for the win rate fields (i.e., GIHWR, OHWR, GPWR, etc.) to percentage (17Lands values), ratings (5-point rating scale) or grades (A+ to F). See the Win Rate Ratings section for more details.
 
-- **Enable Card Colors:** Sets the row color to the card color.
+- **Enable Row Colors:** Sets the row color to the card color.
 
 - **Enable Color Identity:** When enabled, the Colors field will display the mana symbols for a card's mana cost AND abilities (i.e., kicker, activated abilities, etc.)
 

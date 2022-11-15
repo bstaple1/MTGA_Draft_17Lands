@@ -25,7 +25,7 @@
         "curve_bonus_enabled": false,
         "color_bonus_enabled": false,
         "bayesian_average_enabled": false,
-        "draft_log_enabled": false,
+        "draft_log_enabled": true,
         "taken_alsa_enabled": false,
         "taken_ata_enabled": false,
         "taken_gpwr_enabled": false,

@@ -43,6 +43,7 @@ class ArenaScanner:
         self.current_picked_pick = 0
         self.file_size = 0
         self.data_source = "None"
+        self.event_string = ""
 
     def set_arena_file(self, filename):
         '''Public function that's used for storing the location of the Player.log file'''
@@ -185,6 +186,7 @@ class ArenaScanner:
                 self.clear_draft(False)
                 self.draft_type = draft_type
                 self.draft_sets = sets
+                self.event_string = event_name
                 update = True
 
         except Exception as error:
@@ -220,7 +222,8 @@ class ArenaScanner:
         elif ((self.draft_type == constants.LIMITED_TYPE_SEALED)
                 or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL)):
             update = self._sealed_pack_search()
-
+            if not update:
+                update = self._sealed_pack_search_v2()
         if not update:
             if ((previous_pack != self.current_pack) or
                 (previous_pick != self.current_pick) or
@@ -883,6 +886,43 @@ class ArenaScanner:
 
         except Exception as error:
             self.logger.info("__sealed_pack_search Error: %s", error)
+        return update
+        
+    def _sealed_pack_search_v2(self):
+        '''Parse sealed string that contains all of the card data'''
+        offset = self.pack_offset
+        draft_string = f'\"InternalEventName\":\"{self.event_string}\"'
+        update = False
+        # Identify and print out the log lines that contain the draft packs
+        try:
+            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
+                log.seek(offset)
+
+                while True:
+                    line = log.readline()
+                    if not line:
+                        break
+                    offset = log.tell()
+
+                    #string_offset = line.find(draft_string)
+                    if (draft_string in line) and ("CardPool" in line):   
+                        try:
+                            self.pack_offset = offset
+                            self.logger.info(line)
+                            start_offset = line.find("{\"Courses\"")
+                            course_data = json.loads(line[start_offset:])
+                            
+                            for course in course_data["Courses"]:
+                                if course["InternalEventName"] == self.event_string:
+                                    self.taken_cards.extend([str(x) for x in course["CardPool"]])
+                            
+                            update = True
+                        except Exception as error:
+                            self.logger.info(
+                                "__sealed_pack_search_v2 Error: %s", error)
+
+        except Exception as error:
+            self.logger.info("__sealed_pack_search_v2 Error: %s", error)
         return update
 
     def retrieve_data_sources(self):

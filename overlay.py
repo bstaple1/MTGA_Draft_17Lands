@@ -25,7 +25,7 @@ class TableInfo:
     reverse: bool = True
     column: str = ""
 
-__version__ = 3.04
+__version__ = 3.05
 
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
@@ -428,7 +428,7 @@ class Overlay(ScaledWindow):
         self.refresh_button = Button(
             self.refresh_button_frame, command=lambda: self._update_overlay_callback(True), text="Refresh")
 
-        self.status_frame = tkinter.Frame(self.root, highlightbackground="white", highlightthickness=1)
+        self.status_frame = tkinter.Frame(self.root)
         self.pack_pick_label = Label(
             self.status_frame, text="Pack: 0, Pick: 0", style="MainSections.TLabel")
 
@@ -445,7 +445,7 @@ class Overlay(ScaledWindow):
         self.pack_table = self._create_header("pack_table", self.pack_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                         self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
-        self.missing_frame = tkinter.Frame(self.root, highlightbackground="white", highlightthickness=1)
+        self.missing_frame = tkinter.Frame(self.root)
         self.missing_cards_label = Label(
             self.missing_frame, text="Missing Cards", style="MainSections.TLabel")
 
@@ -516,8 +516,8 @@ class Overlay(ScaledWindow):
         self.current_draft_value_label.pack(expand=True, fill=None, anchor="w")
         self.data_source_label.pack(expand=True, fill=None, anchor="e")
         self.data_source_options.pack(expand=True, fill=None, anchor="w")
-        self.deck_colors_label.pack(expand=False, fill=None, anchor="e")
-        self.deck_colors_options.pack(expand=False, fill=None, anchor="w")
+        self.deck_colors_label.pack(expand=True, fill=None, anchor="e")
+        self.deck_colors_options.pack(expand=True, fill=None, anchor="w")
         self.current_timestamp = 0
         self.previous_timestamp = 0
         self.log_check_id = None
@@ -857,7 +857,7 @@ class Overlay(ScaledWindow):
                           "Column7": (constants.DATA_FIELD_GPWR if self.taken_gpwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column8": (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column9": (constants.DATA_FIELD_GDWR if self.taken_gdwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column10": (constants.DATA_FIELD_GNDWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column10": (constants.DATA_FIELD_GNSWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column11": constants.DATA_FIELD_GIHWR}
 
                 taken_cards = self.draft.retrieve_taken_cards()
@@ -1894,7 +1894,7 @@ class Overlay(ScaledWindow):
                                               onvalue=1,
                                               offvalue=0)
             taken_gndwr_checkbox = Checkbutton(checkbox_frame,
-                                               text="GNDWR",
+                                               text="GNSWR",
                                                style="Taken.TCheckbutton",
                                                variable=self.taken_gndwr_checkbox_value,
                                                onvalue=1,
@@ -2069,7 +2069,6 @@ class Overlay(ScaledWindow):
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         try:
-            #tkinter.Grid.rowconfigure(popup, 1, weight=1)
             tkinter.Grid.columnconfigure(popup, 1, weight=1)
 
             self._control_trace(False)
@@ -2127,7 +2126,7 @@ class Overlay(ScaledWindow):
                                              offvalue=0)
 
             card_colors_label = Label(
-                popup, text="Enable Card Colors:", style="MainSections.TLabel", anchor="w")
+                popup, text="Enable Row Colors:", style="MainSections.TLabel", anchor="w")
             card_colors_checkbox = Checkbutton(popup,
                                                variable=self.card_colors_checkbox_value,
                                                onvalue=1,
@@ -2335,7 +2334,9 @@ class Overlay(ScaledWindow):
                 status.set("Updating Set List")
                 self._update_set_table(list_box, sets)
                 self._reset_draft(True)
+                self.draft.log_suspend(True)
                 self._update_overlay_callback(True)
+                self.draft.log_suspend(False)
                 status.set("Download Complete")
             except Exception as error:
                 result = False
@@ -2698,8 +2699,8 @@ class CreateCardToolTip(ScaledWindow):
                 [f"{x[constants.DATA_FIELD_GDWR]}%" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
 
-            values = ["Games Not Drawn Win Rate:"] + \
-                [f"{x[constants.DATA_FIELD_GNDWR]}%" for x in self.color_dict.values()]
+            values = ["Games Not Seen Win Rate:"] + \
+                [f"{x[constants.DATA_FIELD_GNSWR]}%" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
 
             main_field_list.append(tuple(["", ""]))
@@ -2720,7 +2721,7 @@ class CreateCardToolTip(ScaledWindow):
                 [f"{x[constants.DATA_FIELD_NGD]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
 
-            values = ["Number of Games Not Drawn:"] + \
+            values = ["Number of Games Not Seen:"] + \
                 [f"{x[constants.DATA_FIELD_NGND]}" for x in self.color_dict.values()]
             main_field_list.append(tuple(values))
 
