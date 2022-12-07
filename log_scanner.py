@@ -1122,3 +1122,43 @@ class ArenaScanner:
         except Exception as error:
             scanner_logger.info("retrieve_tier_data Error: %s", error)
         return tier_data, tier_options
+
+    def retrieve_test_file(self, test_file):
+        try:
+            filename = os.path.join(constants.DRAFT_LOG_FOLDER, test_file)
+            
+            with open(filename, 'r', encoding="utf-8", errors="replace") as log:
+                self.taken_cards = []
+                while True:
+    
+                    line = log.readline()
+                    if not line:
+                        break
+    
+                    if "DECK_TYPE" in line:
+                        continue
+                      
+                    sections = line.split(' ')
+    
+                    count = int(sections[0])
+                    name = " ".join(sections[1:])
+                    name = name.rstrip('\n')
+                    identifier = None
+    
+                    for card_id, card_data in self.set_data["card_ratings"].items():
+                        if card_data["name"] == name:
+                            identifier = card_id
+                            break
+                        
+                    for x in range(count):
+                        self.taken_cards.append(identifier)
+        
+        except Exception as error:
+            scanner_logger.info("retrieve_test_file Error: %s", error)                    
+                    
+                    
+                    
+                    
+                
+        
+        

@@ -1,7 +1,6 @@
 """This module contains the functions and classes that are used for building the set files and communicating with platforms"""
 from enum import Enum
 from urllib.parse import quote as urlencode
-from dataclasses import dataclass, asdict, field
 import sys
 import os
 import time
@@ -42,15 +41,10 @@ def decode_mana_cost(encoded_cost):
         cost_string = re.sub('\(|\)', '', encoded_cost)
 
         sections = cost_string[1:].split("o")
-        index = 0
-        for count, section in enumerate(sections):
-            if section.isnumeric() and count != 0:
-                break
-            else:
-                index += 1
-                cmc += int(section) if section.isnumeric() else 1
+        for section in sections:
+            cmc += int(section) if section.isnumeric() else 1
 
-        decoded_cost = "".join(f"{{{x}}}" for x in sections[0:index])
+        decoded_cost = "".join(f"{{{x}}}" for x in sections)
 
     return decoded_cost, cmc
 
@@ -510,39 +504,89 @@ class FileExtractor:
                         #Skip cards that don't have titles
                         continue
                     group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
-                    if card[constants.LOCAL_CARDS_KEY_LINKED_FACES] is not None:
-                        linked_id = int(
-                            card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')[0])
-                        if linked_id < group_id:
-                            # The application will no longer list the names of all the card faces. This will address an issue with excessively long tooltips for specialize cards
-                            # self.card_dict[card["linkedFaces"][0]][constants.DATA_FIELD_NAME].append(card["titleId"])
-                            types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
-                                ',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
-                            card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
-                                types)
-                            continue
-                    card_data[card_set][group_id] = {constants.DATA_FIELD_NAME: [
-                        card[constants.LOCAL_CARDS_KEY_TITLE_ID]], constants.DATA_SECTION_IMAGES: []}
-                    card_data[card_set][group_id][constants.DATA_FIELD_TYPES] = [int(
-                        x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
-                    card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = [int(
-                        x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if card[constants.LOCAL_CARDS_KEY_COLOR_ID] is not None else []
+
+                    card_data[card_set][group_id] = {
+                        constants.DATA_FIELD_NAME: [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], 
+                        constants.DATA_FIELD_CMC: 0,
+                        constants.DATA_FIELD_MANA_COST: "",
+                        constants.LOCAL_CARDS_KEY_PRIMARY: 1,
+                        constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE: 0,
+                        constants.DATA_FIELD_TYPES: [],
+                        constants.DATA_FIELD_RARITY: "",
+                        constants.DATA_SECTION_IMAGES: []}
+
                     mana_cost, cmc = decode_mana_cost(
                         card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if card[constants.LOCAL_CARDS_KEY_CASTING_COST] is not None else ("", 0)
                     card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
-                    card_data[card_set][group_id]["mana_cost"] = mana_cost
+                    card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST] = mana_cost
+                    card_data[card_set][group_id][constants.DATA_FIELD_TYPES].extend([int(
+                        x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else [])
+                    card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = [int(
+                        x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if card[constants.LOCAL_CARDS_KEY_COLOR_ID] is not None else []
+                    
                     card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]
                                                                                                             ] if card[constants.LOCAL_CARDS_KEY_RARITY] in constants.CARD_RARITY_DICT else constants.CARD_RARITY_COMMON
+                    card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_PRIMARY] = card[constants.LOCAL_CARDS_KEY_PRIMARY]
+                    card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] = card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE]
+                    
+                    self._process_linked_faces(card, card_data, card_set, group_id)
+                    
                     result = True
                 except Exception as error:
                     file_logger.info(
-                        "Card Read Error: %s, %s", error, card)
+                        "Card Read Error: %s, %s" % (error, card))
                     break
                     # pass
         except Exception as error:
             file_logger.info("_retrieve_local_cards Error: %s", error)
 
         return result, card_data
+
+    def _process_linked_faces(self, card, card_data, card_set, group_id):
+        ''''''
+        try:
+
+            if card[constants.LOCAL_CARDS_KEY_LINKED_FACES] is not None:
+                linked_ids = [int(x) for x in card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')]
+                for linked_id in linked_ids:
+                    if linked_id < group_id:
+                        if (not card[constants.LOCAL_CARDS_KEY_PRIMARY] and
+                            card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_PRIMARY]):
+                            #Add types to previously seen linked cards
+                            types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
+                                ',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
+                            card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
+                                types)
+    
+                            #Use the lowest mana cost/CMC for dual-faced cards (e.g., 4 for Dusk /// Dawn)
+                            if (card[constants.LOCAL_CARDS_KEY_CASTING_COST] is not None and
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and 
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
+                                
+                                mana_cost, cmc = decode_mana_cost(card[constants.LOCAL_CARDS_KEY_CASTING_COST])
+                                if cmc < card_data[card_set][linked_id][constants.DATA_FIELD_CMC]:
+                                    card_data[card_set][linked_id][constants.DATA_FIELD_CMC] = cmc
+                                    card_data[card_set][linked_id][constants.DATA_FIELD_MANA_COST] = mana_cost
+    
+                        elif card[constants.LOCAL_CARDS_KEY_PRIMARY]:
+                            #Retrieve types from previously seen linked cards
+                            card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES])
+    
+                            #Use the lowest cmc for dual-faced cards (e.g., 4 for Dusk /// Dawn)
+                            if (card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and 
+                                card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
+                                
+                                if card_data[card_set][linked_id][constants.DATA_FIELD_CMC] < card_data[card_set][group_id][constants.DATA_FIELD_CMC]:
+                                    card_data[card_set][group_id][constants.DATA_FIELD_CMC] = card_data[card_set][group_id][constants.DATA_FIELD_CMC]
+                                    card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST] = card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST]
+
+        
+        
+        except Exception as error:
+            file_logger.info("_process_linked_faces Error: %s", error)
+
+        
 
     def _retrieve_local_database(self, file_location):
         '''Retrieves localization and enumeration data from an Arena database'''

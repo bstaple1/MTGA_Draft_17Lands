@@ -79,9 +79,9 @@ class Config:
     iwd_weight: float = 0.0
     override_scale_factor: float = 0.0
 
-    deck_mid: DeckType = DeckType([0, 0, 0, 0, 0, 0, 0], 23, 15, 3.04)
-    deck_aggro: DeckType = DeckType([0, 0, 0, 0, 0, 0, 0], 24, 17, 2.40)
-    deck_control: DeckType = DeckType([0, 0, 0, 0, 0, 0, 0], 22, 10, 3.68)
+    deck_mid: DeckType = DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
+    deck_aggro: DeckType = DeckType([0,2,5,3,0,0,0], 24, 17, 2.40)
+    deck_control: DeckType = DeckType([0,0,3,2,2,1,0], 22, 10, 3.68)
 
     database_size: int = 0
 
@@ -535,6 +535,27 @@ def calculate_color_rating(cards, color_filter, threshold, configuration):
     return rating
 
 
+def sort_cards_win_rate(cards, filter_order, bayesian_enabled):
+    """This function will acquire a non-zero win rate for each card and sort the cards by the win rate (highest to lowest)"""
+    for card in cards:
+        card["results"] = [0]
+        try:
+            for color_filter in filter_order:
+                win_rate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
+                                            card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
+                                            bayesian_enabled)
+                if win_rate: 
+                    card["results"] = [win_rate]
+                    break
+                
+        except Exception as error:
+            logic_logger.info("sort_cards_win_rate error: %s", error)
+
+    sorted_cards = sorted(
+        cards, key=lambda k: k["results"][0], reverse=True)
+    
+    return sorted_cards
+
 def calculate_curve_rating(deck, color_filter, configuration):
     """This function will assign a rating to a collection of cards based on how well they meet the deck building requirements"""
     curve_rating_levels = [10, 10, 10, 10, 15,
@@ -561,20 +582,19 @@ def calculate_curve_rating(deck, color_filter, configuration):
         curve_rating = curve_rating_levels[int(
             min(index, len(curve_rating_levels) - 1))]
 
-        if deck_info.total_cards < configuration.deck_mid.maximum_card_count:
-            curve_rating_factor -= ((configuration.deck_mid.maximum_card_count - deck_info.creature_count)
-                                    / configuration.deck_mid.maximum_card_count) * 1
+        if deck_info.total_cards < configuration.deck_control.maximum_card_count:
+            curve_rating_factor -= ((configuration.deck_control.maximum_card_count - deck_info.creature_count)
+                                    / configuration.deck_control.maximum_card_count)
         elif deck_info.creature_count < minimum_creature_count:
             curve_rating_factor -= ((minimum_creature_count -
                                     deck_info.creature_count) / minimum_creature_count) * 0.5
-        elif deck_info.creature_count < configuration.deck_mid.recommended_creature_count:
+        elif deck_info.creature_count < minimum_creature_count:
             curve_rating_factor += (deck_info.creature_count
-                                    / configuration.deck_mid.recommended_creature_count) * 0.5
+                                    / minimum_creature_count)
         else:
-            curve_rating_factor += 0.5
+            curve_rating_factor += 1.0
 
-            if deck_info.cmc_average <= configuration.deck_mid.cmc_average:
-                curve_rating_factor += 0.5
+
 
     except Exception as error:
         logic_logger.info("calculate_curve_rating error: %s", error)
@@ -826,9 +846,6 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
                         len(minimum_distribution) - 1))
             distribution[index] += 1
 
-        for index, value in enumerate(distribution):
-            if value < minimum_distribution[index]:
-                rating -= 100
 
     except Exception as error:
         logic_logger.info("deck_rating error: %s", error)
@@ -1057,10 +1074,8 @@ def build_deck(deck_type, cards, color, metrics, configuration):
     unused_creature_list = []
     sideboard_list = cards[:]  # Copy by value
     try:
-        for card in cards:
-            card["results"] = [calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR],
-                                                  card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIH],
-                                                  configuration.bayesian_average_enabled)]
+
+        cards = sort_cards_win_rate(cards, [color, constants.FILTER_OPTION_ALL_DECKS], configuration.bayesian_average_enabled)
 
         # identify a splashable color
         splash_threshold = metrics.mean + \
@@ -1113,29 +1128,17 @@ def build_deck(deck_type, cards, color, metrics, configuration):
                 total_card_count += 1
 
         card_colors_sorted = deck_card_search(sideboard_list, color, [
+            constants.CARD_TYPE_CREATURE,
             constants.CARD_TYPE_INSTANT,
             constants.CARD_TYPE_SORCERY,
             constants.CARD_TYPE_ENCHANTMENT,
             constants.CARD_TYPE_ARTIFACT,
-            constants.CARD_TYPE_PLANESWALKER], True, True, False)
+            constants.CARD_TYPE_PLANESWALKER], True, True, False)     
+            
         card_colors_sorted = sorted(
             card_colors_sorted, key=lambda k: k["results"][0], reverse=True)
 
-        # Add instant, sorcery, enchantment, etc
-        for card in card_colors_sorted:
-            if total_card_count >= maximum_card_count:
-                break
-
-            deck_list.append(card)
-            sideboard_list.remove(card)
-            total_card_count += 1
-
-        card_colors_sorted = deck_card_search(sideboard_list, color, [
-            constants.CARD_TYPE_CREATURE], True, True, False)
-        card_colors_sorted = sorted(
-            card_colors_sorted, key=lambda k: k["results"][0], reverse=True)
-
-        # Fill the deck with the remaining creature cards
+        # Add remaining non-land cards
         for card in card_colors_sorted:
             if total_card_count >= maximum_card_count:
                 break

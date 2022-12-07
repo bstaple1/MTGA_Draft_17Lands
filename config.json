@@ -47,10 +47,10 @@
                 "distribution": [
                     0,
                     0,
-                    0,
-                    0,
-                    0,
-                    0,
+                    4,
+                    3,
+                    2,
+                    1,
                     0
                 ],
                 "maximum_card_count": 23,
@@ -60,9 +60,9 @@
             "Aggro": {
                 "distribution": [
                     0,
-                    0,
-                    0,
-                    0,
+                    2,
+                    5,
+                    3,
                     0,
                     0,
                     0
@@ -75,10 +75,10 @@
                 "distribution": [
                     0,
                     0,
-                    0,
-                    0,
-                    0,
-                    0,
+                    3,
+                    2,
+                    2,
+                    1,
                     0
                 ],
                 "maximum_card_count": 22,
