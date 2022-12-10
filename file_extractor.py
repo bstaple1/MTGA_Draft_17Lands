@@ -32,6 +32,22 @@ class Result(Enum):
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
 
+def check_set_data(set_data, ratings_data):
+    '''Run through 17Lands card list and determine if there are any cards missing from the assembled set file'''
+    for rated_card in ratings_data:
+        try:
+            card_found = False
+            for card_id in set_data:
+                card_name = set_data[card_id][constants.DATA_FIELD_NAME].replace("///", "//")
+                if rated_card == card_name:
+                    card_found = True
+                    break
+            if not card_found:
+                file_logger.info(f"Card {rated_card} Missing")
+
+        except Exception as error:
+            file_logger.info("check_set_data Error: %s", error)
+
 
 def decode_mana_cost(encoded_cost):
     '''Parse the raw card mana_cost field and return the cards cmc and color identity list'''
@@ -399,6 +415,7 @@ class FileExtractor:
                 status.set("Building Data Set File")
                 ui_root.update()
                 self._assemble_set(matching_only)
+                check_set_data(self.combined_data["card_ratings"], self.card_ratings)
                 break
 
         except Exception as error:
@@ -723,7 +740,7 @@ class FileExtractor:
                     for match in matching_sets:
                         self.card_dict.update(json_data[match].copy())
 
-            if len(self.card_dict):
+            if self.card_dict:
                 result = True
 
         except Exception as error:
@@ -1123,10 +1140,9 @@ class FileExtractor:
         '''Link the 17Lands card ratings with the card data'''
         result = False
         try:
-            card_sides = card[constants.DATA_FIELD_NAME].split(" // ")
-            card_sides = [x.replace("///", "//") for x in card_sides]
+            card_name = card[constants.DATA_FIELD_NAME].replace("///", "//")
             matching_cards = [
-                x for x in self.card_ratings if x in card_sides]
+                x for x in self.card_ratings if x in card_name]
             if matching_cards:
                 ratings_card_name = matching_cards[0]
                 deck_colors = self.card_ratings[ratings_card_name][constants.DATA_SECTION_RATINGS]

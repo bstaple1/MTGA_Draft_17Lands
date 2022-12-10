@@ -67,12 +67,13 @@ def check_version(platform, version):
     """Compare the application version and the latest version in the repository"""
     return_value = False
     repository_version = platform.retrieve_repository_version()
-    repository_version = int(repository_version)
-    client_version = round(float(version) * 100)
-    if repository_version > client_version:
-        return_value = True
+    if repository_version:
+        repository_version = int(repository_version)
+        client_version = round(float(version) * 100)
+        if repository_version > client_version:
+            return_value = True
 
-    repository_version = round(float(repository_version) / 100.0, 2)
+        repository_version = round(float(repository_version) / 100.0, 2)
     return return_value, repository_version
 
 
@@ -1249,6 +1250,7 @@ class Overlay(ScaledWindow):
     def _update_draft(self):
         '''Function that that triggers a search of the Arena log for draft data'''
         update = False
+        
         if self.draft.draft_start_search():
             update = True
             self.data_sources = self.draft.retrieve_data_sources()
@@ -1262,8 +1264,9 @@ class Overlay(ScaledWindow):
 
         if self.draft.draft_data_search():
             update = True
+            
         return update
-
+        
     def _update_settings_storage(self):
         '''Function that transfers settings data from the overlay widgets to a data class'''
         try:
@@ -1585,9 +1588,6 @@ class Overlay(ScaledWindow):
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
 
-            #style = Style()
-            #style.configure("Set.Treeview", rowheight=self._scale_value(25))
-
             list_box_frame = tkinter.Frame(popup)
             list_box_scrollbar = tkinter.Scrollbar(
                 list_box_frame, orient=tkinter.VERTICAL)
@@ -1600,7 +1600,7 @@ class Overlay(ScaledWindow):
             list_box_scrollbar.config(command=list_box.yview)
 
             notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.",
-                                 anchor="c")
+                                 style="Notes.TLabel", anchor="c")
             set_label = Label(popup, text="Set:",
                               style="SetOptions.TLabel")
             draft_label = Label(popup, text="Draft:",
@@ -2518,35 +2518,34 @@ class Overlay(ScaledWindow):
     def _update_overlay_build(self):
         '''Checks the version.txt file in Github to determine if a new version of the application is available'''
         # Version Check
-        update_flag = False
-        if sys.platform == constants.PLATFORM_ID_WINDOWS:
-            try:
-                import win32api
-
-                new_version_found, new_version = check_version(
+        update_flag = True
+        
+        new_version_found, new_version = check_version(
                     self.extractor, self.version)
-                if new_version_found:
-                    message_string = f"Update client {self.version} to version {new_version}"
+                    
+        try:
+            if new_version_found:
+                if sys.platform == constants.PLATFORM_ID_WINDOWS:
+                    import win32api
+                    message_string = f"Update client {self.version} to version {new_version}?"
                     message_box = tkinter.messagebox.askyesno(
                         title="Update", message=message_string)
                     if message_box:
                         if self.extractor.retrieve_repository_file("setup.exe"):
+                            update_flag = False
                             self.root.destroy()
                             win32api.ShellExecute(
                                 0, "open", "setup.exe", None, None, 10)
                         else:
-                            update_flag = True
-
-                    else:
-                        update_flag = True
+                            message_box = tkinter.messagebox.showerror(
+                                title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
+                
                 else:
-                    update_flag = True
-
-            except Exception as error:
-                overlay_logger.info("__update_overlay_build Error: %s", error)
-                update_flag = True
-        else:
-            update_flag = True
+                    message_string = f"Update {new_version} is now available.\n Check https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
+                    message_box = tkinter.messagebox.showinfo(
+                        title="Update", message=message_string)
+        except Exception as error:
+                overlay_logger.info("_update_overlay_build Error: %s", error)
 
         if update_flag:
             self._arena_log_check()
@@ -2649,6 +2648,13 @@ class CreateCardToolTip(ScaledWindow):
                                foreground="#e6ecec",
                                relief="groove",
                                anchor="c",)
+                               
+            note_label = Label(tt_frame,
+                               text="Win rate fields with fewer than 200 samples are listed as 0%.",
+                               style="Notes.TLabel",
+                               background="#3d3d3d",
+                               foreground="#e6ecec",
+                               anchor="c",)
 
             if len(self.color_dict) == 2:
                 headers = {"Label": {"width": .70, "anchor": tkinter.W},
@@ -2747,7 +2753,7 @@ class CreateCardToolTip(ScaledWindow):
                             image = ImageTk.PhotoImage(im)
                             image_label = Label(tt_frame, image=image)
                             image_label.grid(
-                                column=count, row=1, columnspan=1, rowspan=3)
+                                column=count, row=1, columnspan=1)
                             self.images.append(image)
                             column_offset += 1
                             tt_width += self._scale_value(200)
@@ -2756,6 +2762,9 @@ class CreateCardToolTip(ScaledWindow):
                             "_display_tooltip Image Error: %s", error)
 
             card_label.grid(column=0, row=0,
+                            columnspan=column_offset + 2, sticky=tkinter.NSEW)
+                            
+            note_label.grid(column=0, row=2,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)
 
             for count, row_values in enumerate(main_field_list):

@@ -477,10 +477,10 @@ def deck_colors(deck, colors_max, metrics, configuration):
                                                  color,
                                                  threshold,
                                                  configuration)
-            curve_rating = calculate_curve_rating(deck,
+            curve_factor = calculate_curve_factor(deck,
                                                   color,
                                                   configuration)
-            colors_result[color] = curve_rating + base_rating
+            colors_result[color] = base_rating * curve_factor
 
         # Add All Decks as a baseline
         colors_result[constants.FILTER_OPTION_ALL_DECKS] = calculate_color_rating(deck,
@@ -489,7 +489,6 @@ def deck_colors(deck, colors_max, metrics, configuration):
                                                                                   configuration)
         colors_result = dict(
             sorted(colors_result.items(), key=lambda item: item[1], reverse=True))
-
     except Exception as error:
         logic_logger.info("deck_colors error: %s", error)
 
@@ -505,13 +504,12 @@ def auto_colors(deck, colors_max, metrics, configuration):
         if deck_length > 15:
             colors_dict = deck_colors(deck, colors_max, metrics, configuration)
             colors = list(colors_dict.keys())
-            auto_select_threshold = 80 - deck_length
-            if (len(colors) > 1) and ((colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold):
-                deck_colors_list = colors[0:1]
-            elif len(colors) == 1:
-                deck_colors_list = colors[0:1]
-            elif configuration.auto_highest_enabled:
-                deck_colors_list = colors[0:2]
+            auto_select_threshold = max(55 - deck_length, 10)
+            if colors:
+                if (colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold:
+                    deck_colors_list = colors[0:1]
+                elif configuration.auto_highest_enabled:
+                    deck_colors_list = colors[0:2]
 
     except Exception as error:
         logic_logger.info("auto_colors error: %s", error)
@@ -556,18 +554,20 @@ def sort_cards_win_rate(cards, filter_order, bayesian_enabled):
     
     return sorted_cards
 
-def calculate_curve_rating(deck, color_filter, configuration):
+
+def calculate_curve_factor(deck, color_filter, configuration):
     """This function will assign a rating to a collection of cards based on how well they meet the deck building requirements"""
-    curve_rating_levels = [10, 10, 10, 10, 15,
-                           15, 15, 20, 20, 20,
-                           25, 25, 25, 30, 40,
-                           40, 40, 50, 50, 50]
+    curve_levels = [.10, .10, .10, .10, .15,
+                    .15, .15, .20, .20, .20,
+                    .25, .25, .25, .30, .30,
+                    .30, .30, .40, .40, .40]
 
     curve_start = 15
     pick_number = len(deck)
     index = max(pick_number - curve_start, 0)
-    curve_rating = 0.0
-    curve_rating_factor = 0.0
+    curve_level = 0.0
+    curve_factor = 0.0
+    base_curve_factor = 1.0
     minimum_creature_count = configuration.minimum_creatures
 
     try:
@@ -579,28 +579,24 @@ def calculate_curve_rating(deck, color_filter, configuration):
             True,
             False)
         deck_info = deck_metrics(filtered_cards)
-        curve_rating = curve_rating_levels[int(
-            min(index, len(curve_rating_levels) - 1))]
+        curve_level = curve_levels[int(
+            min(index, len(curve_levels) - 1))]
 
         if deck_info.total_cards < configuration.deck_control.maximum_card_count:
-            curve_rating_factor -= ((configuration.deck_control.maximum_card_count - deck_info.creature_count)
-                                    / configuration.deck_control.maximum_card_count)
+            curve_factor -= ((configuration.deck_control.maximum_card_count - deck_info.creature_count)
+                                    / configuration.deck_control.maximum_card_count) * curve_level
         elif deck_info.creature_count < minimum_creature_count:
-            curve_rating_factor -= ((minimum_creature_count -
-                                    deck_info.creature_count) / minimum_creature_count) * 0.5
-        elif deck_info.creature_count < minimum_creature_count:
-            curve_rating_factor += (deck_info.creature_count
-                                    / minimum_creature_count)
+            curve_factor = (deck_info.creature_count
+                                    / minimum_creature_count) * curve_level
         else:
-            curve_rating_factor += 1.0
+            curve_factor = curve_level
 
 
 
     except Exception as error:
-        logic_logger.info("calculate_curve_rating error: %s", error)
+        logic_logger.info("calculate_curve_factor error: %s", error)
 
-    return curve_rating * curve_rating_factor
-
+    return base_curve_factor + curve_factor
 
 def calculate_color_affinity(deck_cards, color_filter, threshold, configuration):
     """This function identifies the main deck colors based on the GIHWR of the collected cards"""
@@ -817,6 +813,7 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
                     rating += gihwr
             except Exception:
                 pass
+                
         # Deck contains the recommended number of creatures
         recommended_creature_count = deck_type.recommended_creature_count
         filtered_cards = deck_card_search(
@@ -1074,8 +1071,10 @@ def build_deck(deck_type, cards, color, metrics, configuration):
     unused_creature_list = []
     sideboard_list = cards[:]  # Copy by value
     try:
-
-        cards = sort_cards_win_rate(cards, [color, constants.FILTER_OPTION_ALL_DECKS], configuration.bayesian_average_enabled)
+        for card in cards:
+            card["results"] = [calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR],
+                                                  card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIH],
+                                                  configuration.bayesian_average_enabled)]
 
         # identify a splashable color
         splash_threshold = metrics.mean + \
