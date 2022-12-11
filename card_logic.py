@@ -79,9 +79,9 @@ class Config:
     iwd_weight: float = 0.0
     override_scale_factor: float = 0.0
 
-    deck_mid: DeckType = DeckType([0,0,4,3,2,1,0], 23, 15, 3.04)
-    deck_aggro: DeckType = DeckType([0,2,5,3,0,0,0], 24, 17, 2.40)
-    deck_control: DeckType = DeckType([0,0,3,2,2,1,0], 22, 10, 3.68)
+    deck_mid: DeckType = DeckType([0, 0, 4, 3, 2, 1, 0], 23, 15, 3.04)
+    deck_aggro: DeckType = DeckType([0, 2, 5, 3, 0, 0, 0], 24, 17, 2.40)
+    deck_control: DeckType = DeckType([0, 0, 3, 2, 2, 1, 0], 22, 10, 3.68)
 
     database_size: int = 0
 
@@ -170,7 +170,7 @@ class CardResult:
     def _process_wheel(self, card):
         """Calculate wheel percentage"""
         result = 0
-    
+
         try:
             if self.pick_number <= len(constants.WHEEL_COEFFICIENTS):
                 # 0 is treated as pick 1 for PremierDraft P1P1
@@ -183,20 +183,20 @@ class CardResult:
                 result = max(result, 0)
         except Exception as error:
             logic_logger.info("_process_wheel error: %s", error)
-    
+
         return result
 
     def _process_wheel_normalized(self, card, total_sum):
         """Calculate the normalized wheel percentage using the sum of all percentages within the card list"""
         result = 0
-    
+
         try:
             result = self._process_wheel(card)
-    
+
             result = round((result / total_sum)*100, 1) if total_sum > 0 else 0
         except Exception as error:
             logic_logger.info("_process_wheel_normalized error: %s", error)
-    
+
         return result
 
     def _process_filter_fields(self, card, option, colors):
@@ -504,7 +504,7 @@ def auto_colors(deck, colors_max, metrics, configuration):
         if deck_length > 15:
             colors_dict = deck_colors(deck, colors_max, metrics, configuration)
             colors = list(colors_dict.keys())
-            auto_select_threshold = max(55 - deck_length, 10)
+            auto_select_threshold = max(70 - deck_length, 25)
             if colors:
                 if (colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold:
                     deck_colors_list = colors[0:1]
@@ -540,18 +540,18 @@ def sort_cards_win_rate(cards, filter_order, bayesian_enabled):
         try:
             for color_filter in filter_order:
                 win_rate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
-                                            card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
-                                            bayesian_enabled)
-                if win_rate: 
+                                              card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
+                                              bayesian_enabled)
+                if win_rate:
                     card["results"] = [win_rate]
                     break
-                
+
         except Exception as error:
             logic_logger.info("sort_cards_win_rate error: %s", error)
 
     sorted_cards = sorted(
         cards, key=lambda k: k["results"][0], reverse=True)
-    
+
     return sorted_cards
 
 
@@ -584,19 +584,18 @@ def calculate_curve_factor(deck, color_filter, configuration):
 
         if deck_info.total_cards < configuration.deck_control.maximum_card_count:
             curve_factor -= ((configuration.deck_control.maximum_card_count - deck_info.creature_count)
-                                    / configuration.deck_control.maximum_card_count) * curve_level
+                             / configuration.deck_control.maximum_card_count) * curve_level
         elif deck_info.creature_count < minimum_creature_count:
             curve_factor = (deck_info.creature_count
-                                    / minimum_creature_count) * curve_level
+                            / minimum_creature_count) * curve_level
         else:
             curve_factor = curve_level
-
-
 
     except Exception as error:
         logic_logger.info("calculate_curve_factor error: %s", error)
 
     return base_curve_factor + curve_factor
+
 
 def calculate_color_affinity(deck_cards, color_filter, threshold, configuration):
     """This function identifies the main deck colors based on the GIHWR of the collected cards"""
@@ -813,7 +812,7 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
                     rating += gihwr
             except Exception:
                 pass
-                
+
         # Deck contains the recommended number of creatures
         recommended_creature_count = deck_type.recommended_creature_count
         filtered_cards = deck_card_search(
@@ -842,7 +841,6 @@ def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
             index = int(min(card[constants.DATA_FIELD_CMC],
                         len(minimum_distribution) - 1))
             distribution[index] += 1
-
 
     except Exception as error:
         logic_logger.info("deck_rating error: %s", error)
@@ -1132,8 +1130,8 @@ def build_deck(deck_type, cards, color, metrics, configuration):
             constants.CARD_TYPE_SORCERY,
             constants.CARD_TYPE_ENCHANTMENT,
             constants.CARD_TYPE_ARTIFACT,
-            constants.CARD_TYPE_PLANESWALKER], True, True, False)     
-            
+            constants.CARD_TYPE_PLANESWALKER], True, True, False)
+
         card_colors_sorted = sorted(
             card_colors_sorted, key=lambda k: k["results"][0], reverse=True)
 

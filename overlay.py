@@ -20,12 +20,14 @@ import card_logic as CL
 import log_scanner as LS
 import constants
 
+
 @dataclass
 class TableInfo:
     reverse: bool = True
     column: str = ""
 
-__version__ = 3.05
+
+__version__ = 3.06
 
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
@@ -44,6 +46,7 @@ for handler in handlers:
     handler.setFormatter(formatter)
     overlay_logger.addHandler(handler)
 
+
 def start_overlay():
     """Retrieve arguments, create overlay object, and run overlay"""
     parser = argparse.ArgumentParser()
@@ -57,11 +60,13 @@ def start_overlay():
     overlay = Overlay(__version__, args)
 
     overlay.main_loop()
-    
+
+
 def restart_overlay(root):
     """Close/destroy the current overlay object and create a new instance"""
     root.close_overlay()
     start_overlay()
+
 
 def check_version(platform, version):
     """Compare the application version and the latest version in the repository"""
@@ -93,7 +98,7 @@ def control_table_column(table, column_fields):
     for count, (key, value) in enumerate(column_fields.items()):
         if value != constants.DATA_FIELD_DISABLED:
             table.heading(key, text=value.upper())
-            #visible_columns.append(key)
+            # visible_columns.append(key)
             visible_columns[key] = count
             last_field_index = count
 
@@ -141,7 +146,6 @@ def copy_clipboard(copy):
     except Exception as error:
         overlay_logger.info("copy_clipboard Error: %s", error)
     return
-
 
 
 def identify_table_row_tag(colors_enabled, colors, index):
@@ -224,7 +228,7 @@ class ScaledWindow:
                                     anchor=headers[column]["anchor"])
                 list_box.heading(column, text=column, anchor=tkinter.CENTER,
                                  command=lambda _col=column: self._sort_table_column(table_label, list_box, _col, True))
-            list_box["show"] = show_header  # use after setting column's 
+            list_box["show"] = show_header  # use after setting column's
             self.table_info[table_label] = TableInfo()
         except Exception as error:
             overlay_logger.info("create_header Error: %s", error)
@@ -240,9 +244,11 @@ class ScaledWindow:
                         for k in table.get_children('')]
         except ValueError:
             # Sort column that contains string values
-            row_list = [(table.set(k, column), k) for k in table.get_children('')]
+            row_list = [(table.set(k, column), k)
+                        for k in table.get_children('')]
 
-        row_list.sort(key=lambda x: CL.field_process_sort(x[0]), reverse=reverse)
+        row_list.sort(key=lambda x: CL.field_process_sort(
+            x[0]), reverse=reverse)
 
         if row_list:
             tags = table.item(row_list[0][1])["tags"][0]
@@ -256,12 +262,13 @@ class ScaledWindow:
                 row_tag = identify_table_row_tag(False, "", index)
                 table.item(value[1], tags=row_tag)
 
-        if table_label in self.table_info:       
+        if table_label in self.table_info:
             self.table_info[table_label].reverse = reverse
             self.table_info[table_label].column = column
 
         table.heading(column, command=lambda: self._sort_table_column(
             table_label, table, column, not reverse))
+
 
 class Overlay(ScaledWindow):
     '''Class that handles all of the UI widgets'''
@@ -402,7 +409,7 @@ class Overlay(ScaledWindow):
         self.deck_filter_list = self.deck_colors.keys()
         self.taken_filter_selection = tkinter.StringVar(self.root)
         self.taken_type_selection = tkinter.StringVar(self.root)
-        self.ui_size_selection=tkinter.StringVar(self.root)
+        self.ui_size_selection = tkinter.StringVar(self.root)
         self.ui_size_list = constants.UI_SIZE_DICT.keys()
 
         data_source_option_frame = tkinter.Frame(self.root)
@@ -444,7 +451,7 @@ class Overlay(ScaledWindow):
                    "Column7": {"width": .18, "anchor": tkinter.CENTER}}
 
         self.pack_table = self._create_header("pack_table", self.pack_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
-                                        self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+                                              self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.missing_frame = tkinter.Frame(self.root)
         self.missing_cards_label = Label(
@@ -453,12 +460,12 @@ class Overlay(ScaledWindow):
         self.missing_table_frame = tkinter.Frame(self.root, width=10)
 
         self.missing_table = self._create_header("missing_table", self.missing_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
-                                           self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+                                                 self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
 
         self.stat_frame = tkinter.Frame(self.root)
 
         self.stat_table = self._create_header("stat_table", self.root, 0, self.fonts_dict["All.TableRow"], constants.STATS_HEADER_CONFIG,
-                                        self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+                                              self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text="Draft Stats:",
                                 style="MainSections.TLabel", anchor="e", width=15)
 
@@ -531,7 +538,7 @@ class Overlay(ScaledWindow):
 
         if self.configuration.hotkey_enabled:
             self._start_hotkey_listener()
-            
+
     def close_overlay(self):
         if self.log_check_id is not None:
             self.root.after_cancel(self.log_check_id)
@@ -556,10 +563,10 @@ class Overlay(ScaledWindow):
         self.scale_factor = 1
         try:
             self.scale_factor = constants.UI_SIZE_DICT[self.configuration.ui_size]
-            
+
             if self.configuration.override_scale_factor > 0.0:
                 self.scale_factor = self.configuration.override_scale_factor
-                
+
             overlay_logger.info("Scale Factor %.1f",
                                 self.scale_factor)
         except Exception as error:
@@ -709,7 +716,8 @@ class Overlay(ScaledWindow):
                 self.pack_table.config(height=0)
 
             # Update the filtered column header with the filtered colors
-            last_field_index, visible_columns = control_table_column(self.pack_table, fields)
+            last_field_index, visible_columns = control_table_column(
+                self.pack_table, fields)
 
             if self.table_info["pack_table"].column in visible_columns:
                 column_index = visible_columns[self.table_info["pack_table"].column]
@@ -740,7 +748,8 @@ class Overlay(ScaledWindow):
                 self.missing_table.delete(row)
 
             # Update the filtered column header with the filtered colors
-            last_field_index, visible_columns = control_table_column(self.missing_table, fields)
+            last_field_index, visible_columns = control_table_column(
+                self.missing_table, fields)
             if not previous_pack:
                 self.missing_table.config(height=0)
             else:
@@ -811,7 +820,8 @@ class Overlay(ScaledWindow):
             compare_table.delete(*compare_table.get_children())
 
             # Update the filtered column header with the filtered colors
-            last_field_index, visible_columns = control_table_column(compare_table, fields)
+            last_field_index, visible_columns = control_table_column(
+                compare_table, fields)
 
             if self.table_info["compare_table"].column in visible_columns:
                 column_index = visible_columns[self.table_info["compare_table"].column]
@@ -1221,17 +1231,17 @@ class Overlay(ScaledWindow):
         self._update_settings_storage()
         self._update_settings_data()
         self._update_overlay_callback(False)
-        
+
     def _ui_size_callback(self, *args):
         '''Callback function updates the settings and opens a restart prompt'''
         self._update_settings_storage()
         self._update_settings_data()
         message_box = tkinter.messagebox.askyesno(
             title="Restart", message="A restart is required for this setting to take effect. Restart the application?")
-            
+
         if message_box:
             restart_overlay(self)
-            
+
     def _update_draft_data(self):
         '''Function that collects pertinent draft data from the LogScanner class'''
         self.draft.retrieve_set_data(
@@ -1250,7 +1260,7 @@ class Overlay(ScaledWindow):
     def _update_draft(self):
         '''Function that that triggers a search of the Arena log for draft data'''
         update = False
-        
+
         if self.draft.draft_start_search():
             update = True
             self.data_sources = self.draft.retrieve_data_sources()
@@ -1264,9 +1274,9 @@ class Overlay(ScaledWindow):
 
         if self.draft.draft_data_search():
             update = True
-            
+
         return update
-        
+
     def _update_settings_storage(self):
         '''Function that transfers settings data from the overlay widgets to a data class'''
         try:
@@ -1594,7 +1604,7 @@ class Overlay(ScaledWindow):
             list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
             list_box = self._create_header("set_table",
-                list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
+                                           list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
 
             list_box.config(yscrollcommand=list_box_scrollbar.set)
             list_box_scrollbar.config(command=list_box.yview)
@@ -1731,7 +1741,7 @@ class Overlay(ScaledWindow):
                 compare_table_frame, orient=tkinter.VERTICAL)
             compare_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             compare_table = self._create_header("compare_table", compare_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
-                                          self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
+                                                self.configuration.table_width, True, True, constants.TABLE_STYLE, False)
             compare_table.config(yscrollcommand=compare_scrollbar.set)
             compare_scrollbar.config(command=compare_table.yview)
 
@@ -1813,7 +1823,7 @@ class Overlay(ScaledWindow):
                 taken_table_frame, orient=tkinter.VERTICAL)
             taken_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             self.taken_table = self._create_header("taken_table",
-                taken_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(440), True, True, "Taken.Treeview", False)
+                                                   taken_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(440), True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
 
@@ -2019,7 +2029,7 @@ class Overlay(ScaledWindow):
                 suggest_table_frame, orient=tkinter.VERTICAL)
             suggest_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
             suggest_table = self._create_header("suggest_table",
-                suggest_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
+                                                suggest_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
             suggest_table.config(yscrollcommand=suggest_scrollbar.set)
             suggest_scrollbar.config(command=suggest_table.yview)
 
@@ -2195,7 +2205,7 @@ class Overlay(ScaledWindow):
 
             default_button = Button(
                 popup, command=self._default_settings_callback, text="Default Settings")
-            
+
             row_padding_y = (self._scale_value(3), self._scale_value(3))
             row_padding_x = (self._scale_value(10), )
             column_2_label.grid(row=0, column=0, columnspan=1,
@@ -2211,13 +2221,13 @@ class Overlay(ScaledWindow):
             column_7_label.grid(row=5, column=0, columnspan=1,
                                 sticky="nsew", padx=row_padding_x, pady=row_padding_y)
             filter_format_label.grid(
-                row=6, column=0, columnspan=1, sticky="nsew", 
+                row=6, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             result_format_label.grid(
-                row=7, column=0, columnspan=1, sticky="nsew", 
+                row=7, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             scale_label.grid(
-                row=8, column=0, columnspan=1, sticky="nsew", 
+                row=8, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             self.column_2_options.grid(
                 row=0, column=1, columnspan=1, sticky="nsew")
@@ -2238,46 +2248,46 @@ class Overlay(ScaledWindow):
             ui_size_options.grid(
                 row=8, column=1, columnspan=1, sticky="nsew")
             card_colors_label.grid(
-                row=9, column=0, columnspan=1, sticky="nsew", 
+                row=9, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             card_colors_checkbox.grid(
-                row=9, column=1, columnspan=1, sticky="nsew", 
+                row=9, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             color_identity_label.grid(
-                row=10, column=0, columnspan=1, sticky="nsew", 
+                row=10, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             color_identity_checkbox.grid(
-                row=10, column=1, columnspan=1, sticky="nsew", 
+                row=10, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             deck_stats_label.grid(
-                row=11, column=0, columnspan=1, sticky="nsew", 
+                row=11, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             deck_stats_checkbox.grid(
-                row=11, column=1, columnspan=1, sticky="nsew", 
+                row=11, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             missing_cards_label.grid(
-                row=12, column=0, columnspan=1, sticky="nsew", 
+                row=12, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             missing_cards_checkbox.grid(
-                row=12, column=1, columnspan=1, sticky="nsew", 
+                row=12, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             auto_highest_label.grid(
-                row=13, column=0, columnspan=1, sticky="nsew", 
+                row=13, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             auto_highest_checkbox.grid(
-                row=13, column=1, columnspan=1, sticky="nsew", 
+                row=13, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             bayesian_average_label.grid(
-                row=14, column=0, columnspan=1, sticky="nsew", 
+                row=14, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             bayesian_average_checkbox.grid(
-                row=14, column=1, columnspan=1, sticky="nsew", 
+                row=14, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             draft_log_label.grid(
-                row=15, column=0, columnspan=1, sticky="nsew", 
+                row=15, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             draft_log_checkbox.grid(
-                row=15, column=1, columnspan=1, sticky="nsew", 
+                row=15, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             default_button.grid(row=16, column=0, columnspan=2, sticky="nsew")
 
@@ -2370,7 +2380,7 @@ class Overlay(ScaledWindow):
         else:
             list_box.config(height=0)
 
-        #Sort list by end date
+        # Sort list by end date
         file_list.sort(key=lambda x: x[3], reverse=True)
 
         for count, file in enumerate(file_list):
@@ -2519,10 +2529,10 @@ class Overlay(ScaledWindow):
         '''Checks the version.txt file in Github to determine if a new version of the application is available'''
         # Version Check
         update_flag = True
-        
+
         new_version_found, new_version = check_version(
-                    self.extractor, self.version)
-                    
+            self.extractor, self.version)
+
         try:
             if new_version_found:
                 if sys.platform == constants.PLATFORM_ID_WINDOWS:
@@ -2539,13 +2549,13 @@ class Overlay(ScaledWindow):
                         else:
                             message_box = tkinter.messagebox.showerror(
                                 title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
-                
+
                 else:
                     message_string = f"Update {new_version} is now available.\n Check https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
                     message_box = tkinter.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:
-                overlay_logger.info("_update_overlay_build Error: %s", error)
+            overlay_logger.info("_update_overlay_build Error: %s", error)
 
         if update_flag:
             self._arena_log_check()
@@ -2648,9 +2658,9 @@ class CreateCardToolTip(ScaledWindow):
                                foreground="#e6ecec",
                                relief="groove",
                                anchor="c",)
-                               
+
             note_label = Label(tt_frame,
-                               text="Win rate fields with fewer than 200 samples are listed as 0%.",
+                               text="Win rate fields with fewer than 200 samples are listed as 0% or NA.",
                                style="Notes.TLabel",
                                background="#3d3d3d",
                                foreground="#e6ecec",
@@ -2671,7 +2681,7 @@ class CreateCardToolTip(ScaledWindow):
             style.configure("Tooltip.Treeview", rowheight=row_height)
 
             stats_main_table = self._create_header("tooltip_table",
-                tt_frame, 0, self.fonts_dict["All.TableRow"], headers, width, False, True, "Tooltip.Treeview", False)
+                                                   tt_frame, 0, self.fonts_dict["All.TableRow"], headers, width, False, True, "Tooltip.Treeview", False)
             main_field_list = []
 
             values = ["Filter:"] + list(self.color_dict.keys())
@@ -2746,8 +2756,10 @@ class CreateCardToolTip(ScaledWindow):
                 for count, picture_url in enumerate(self.image):
                     try:
                         if picture_url:
-                            image_request = urllib.request.Request(url=picture_url, headers=request_header)
-                            raw_data = urllib.request.urlopen(image_request).read()
+                            image_request = urllib.request.Request(
+                                url=picture_url, headers=request_header)
+                            raw_data = urllib.request.urlopen(
+                                image_request).read()
                             im = Image.open(io.BytesIO(raw_data))
                             im.thumbnail(size, Image.ANTIALIAS)
                             image = ImageTk.PhotoImage(im)
@@ -2763,7 +2775,7 @@ class CreateCardToolTip(ScaledWindow):
 
             card_label.grid(column=0, row=0,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)
-                            
+
             note_label.grid(column=0, row=2,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)
 

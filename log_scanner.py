@@ -887,7 +887,7 @@ class ArenaScanner:
         except Exception as error:
             self.logger.info("__sealed_pack_search Error: %s", error)
         return update
-        
+
     def _sealed_pack_search_v2(self):
         '''Parse sealed string that contains all of the card data'''
         offset = self.pack_offset
@@ -905,17 +905,18 @@ class ArenaScanner:
                     offset = log.tell()
 
                     #string_offset = line.find(draft_string)
-                    if (draft_string in line) and ("CardPool" in line):   
+                    if (draft_string in line) and ("CardPool" in line):
                         try:
                             self.pack_offset = offset
                             self.logger.info(line)
                             start_offset = line.find("{\"Courses\"")
                             course_data = json.loads(line[start_offset:])
-                            
+
                             for course in course_data["Courses"]:
                                 if course["InternalEventName"] == self.event_string:
-                                    self.taken_cards.extend([str(x) for x in course["CardPool"]])
-                            
+                                    self.taken_cards.extend(
+                                        [str(x) for x in course["CardPool"]])
+
                             update = True
                         except Exception as error:
                             self.logger.info(
@@ -1122,26 +1123,26 @@ class ArenaScanner:
         except Exception as error:
             scanner_logger.info("retrieve_tier_data Error: %s", error)
         return tier_data, tier_options
-        
+
     def add_taken_cards(self, taken_cards):
         self.taken_cards = []
-        
+
         for card_name in taken_cards:
             identifier = None
             for card_id, card_data in self.set_data["card_ratings"].items():
                 if card_data["name"] == card_name:
                     identifier = card_id
                     break
-                    
+
             if identifier is None:
                 scanner_logger.info(f"Card {card_name} Missing")
                 continue
-                
+
             self.taken_cards.append(identifier)
 
     def retrieve_test_file(self, test_file):
         taken_cards = []
-        
+
         try:
             filename = os.path.join(constants.DRAFT_LOG_FOLDER, test_file)
             card_count = 0
@@ -1149,41 +1150,36 @@ class ArenaScanner:
             card_set = ""
             with open(filename, 'r', encoding="utf-8", errors="replace") as log:
                 while True:
-    
+
                     line = log.readline()
                     if not line:
                         break
-                    
+
                     if "DRAFT_SET" in line:
                         card_set = line.split(':')[1].rstrip('\n')
                         self.clear_draft(False)
                         self.draft_sets = [card_set]
                         self.draft_type = constants.LIMITED_TYPE_DRAFT_PREMIER_V1
                         continue
-                    
+
                     if "DECK_TYPE" in line:
                         deck_type = line.split(':')[1].rstrip('\n')
                         continue
-                      
+
                     sections = line.split(' ')
-    
+
                     count = int(sections[0])
                     name = " ".join(sections[1:])
                     name = name.rstrip('\n')
-                    
+
                     for x in range(count):
                         taken_cards.append(name)
                     card_count = len(taken_cards)
-                    
-        
+
         except Exception as error:
-            scanner_logger.info("retrieve_test_file Error: %s", error)       
-            
-        scanner_logger.info(f"{test_file}: Set: {card_set}, Deck: {deck_type}, Count {card_count}")      
-        
+            scanner_logger.info("retrieve_test_file Error: %s", error)
+
+        scanner_logger.info(
+            f"{test_file}: Set: {card_set}, Deck: {deck_type}, Count {card_count}")
+
         return taken_cards, deck_type
-                    
-                    
-                
-        
-        

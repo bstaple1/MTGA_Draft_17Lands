@@ -26,11 +26,13 @@ if not os.path.exists(constants.TEMP_FOLDER):
 
 file_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
+
 class Result(Enum):
     '''Enumeration class for file integrity results'''
     VALID = 0
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
+
 
 def check_set_data(set_data, ratings_data):
     '''Run through 17Lands card list and determine if there are any cards missing from the assembled set file'''
@@ -38,7 +40,8 @@ def check_set_data(set_data, ratings_data):
         try:
             card_found = False
             for card_id in set_data:
-                card_name = set_data[card_id][constants.DATA_FIELD_NAME].replace("///", "//")
+                card_name = set_data[card_id][constants.DATA_FIELD_NAME].replace(
+                    "///", "//")
                 if rated_card == card_name:
                     card_found = True
                     break
@@ -68,7 +71,8 @@ def decode_mana_cost(encoded_cost):
 def retrieve_local_set_list(sets):
     '''Scans the Sets folder and returns a list of valid set files'''
     file_list = []
-    main_sets = [v[constants.SET_LIST_17LANDS][0] for k, v in sets.items() if constants.SET_LIST_17LANDS in v]
+    main_sets = [v[constants.SET_LIST_17LANDS][0]
+                 for k, v in sets.items() if constants.SET_LIST_17LANDS in v]
     for file in os.listdir(constants.SETS_FOLDER):
         try:
             name_segments = file.split("_")
@@ -209,8 +213,9 @@ def shift_date(start_date, shifted_days, string_format, next_dow):
         shifted_date = start_date + datetime.timedelta(days=shifted_days)
 
         if (next_dow is not None) and (0 <= next_dow <= 6):
-            #Shift the date to the next specified day of the week (0 = Monday, 6 = Sunday)
-            shifted_date = shifted_date + datetime.timedelta( (next_dow - shifted_date.weekday()) % 7)
+            # Shift the date to the next specified day of the week (0 = Monday, 6 = Sunday)
+            shifted_date = shifted_date + \
+                datetime.timedelta((next_dow - shifted_date.weekday()) % 7)
 
         if string_format is not None:
             shifted_date_string = shifted_date.strftime(string_format)
@@ -219,13 +224,15 @@ def shift_date(start_date, shifted_days, string_format, next_dow):
 
     return shifted_date, shifted_date_string
 
+
 def check_release_date(release_string, shifted_days, next_dow):
     '''Checks a shifted release data and returns false if the data is in the future'''
     result = True
     try:
         release_date = datetime.datetime.strptime(
             release_string, "%Y-%m-%d").date()
-        shifted_release_date = shift_date(release_date, shifted_days, None, next_dow)[0]
+        shifted_release_date = shift_date(
+            release_date, shifted_days, None, next_dow)[0]
 
         today = datetime.date.today()
 
@@ -415,7 +422,8 @@ class FileExtractor:
                 status.set("Building Data Set File")
                 ui_root.update()
                 self._assemble_set(matching_only)
-                check_set_data(self.combined_data["card_ratings"], self.card_ratings)
+                check_set_data(
+                    self.combined_data["card_ratings"], self.card_ratings)
                 break
 
         except Exception as error:
@@ -473,7 +481,6 @@ class FileExtractor:
                     if not result:
                         break
 
-
                     status.set("Building Temporary Card Data File")
                     root.update()
                     result = self._assemble_stored_data(
@@ -515,15 +522,15 @@ class FileExtractor:
                     if card_set not in card_data:
                         card_data[card_set] = {}
                     if card[constants.LOCAL_CARDS_KEY_TOKEN]:
-                        #Skip tokens
+                        # Skip tokens
                         continue
                     if not card[constants.LOCAL_CARDS_KEY_TITLE_ID]:
-                        #Skip cards that don't have titles
+                        # Skip cards that don't have titles
                         continue
                     group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
 
                     card_data[card_set][group_id] = {
-                        constants.DATA_FIELD_NAME: [card[constants.LOCAL_CARDS_KEY_TITLE_ID]], 
+                        constants.DATA_FIELD_NAME: [card[constants.LOCAL_CARDS_KEY_TITLE_ID]],
                         constants.DATA_FIELD_CMC: 0,
                         constants.DATA_FIELD_MANA_COST: "",
                         constants.LOCAL_CARDS_KEY_PRIMARY: 1,
@@ -540,18 +547,19 @@ class FileExtractor:
                         x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else [])
                     card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = [int(
                         x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if card[constants.LOCAL_CARDS_KEY_COLOR_ID] is not None else []
-                    
+
                     card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]
                                                                                                             ] if card[constants.LOCAL_CARDS_KEY_RARITY] in constants.CARD_RARITY_DICT else constants.CARD_RARITY_COMMON
                     card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_PRIMARY] = card[constants.LOCAL_CARDS_KEY_PRIMARY]
                     card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] = card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE]
-                    
-                    self._process_linked_faces(card, card_data, card_set, group_id)
-                    
+
+                    self._process_linked_faces(
+                        card, card_data, card_set, group_id)
+
                     result = True
                 except Exception as error:
                     file_logger.info(
-                        "Card Read Error: %s, %s" % (error, card))
+                        f"Card Read Error: {error}, {card}")
                     break
                     # pass
         except Exception as error:
@@ -564,46 +572,46 @@ class FileExtractor:
         try:
 
             if card[constants.LOCAL_CARDS_KEY_LINKED_FACES] is not None:
-                linked_ids = [int(x) for x in card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')]
+                linked_ids = [
+                    int(x) for x in card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')]
                 for linked_id in linked_ids:
                     if linked_id < group_id:
                         if (not card[constants.LOCAL_CARDS_KEY_PRIMARY] and
-                            card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_PRIMARY]):
-                            #Add types to previously seen linked cards
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_PRIMARY]):
+                            # Add types to previously seen linked cards
                             types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
                                 ',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
                             card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
                                 types)
-    
-                            #Use the lowest mana cost/CMC for dual-faced cards (e.g., 4 for Dusk /// Dawn)
+
+                            # Use the lowest mana cost/CMC for dual-faced cards (e.g., 4 for Dusk /// Dawn)
                             if (card[constants.LOCAL_CARDS_KEY_CASTING_COST] is not None and
-                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and 
-                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
-                                
-                                mana_cost, cmc = decode_mana_cost(card[constants.LOCAL_CARDS_KEY_CASTING_COST])
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and
+                                    card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
+
+                                mana_cost, cmc = decode_mana_cost(
+                                    card[constants.LOCAL_CARDS_KEY_CASTING_COST])
                                 if cmc < card_data[card_set][linked_id][constants.DATA_FIELD_CMC]:
                                     card_data[card_set][linked_id][constants.DATA_FIELD_CMC] = cmc
                                     card_data[card_set][linked_id][constants.DATA_FIELD_MANA_COST] = mana_cost
-    
+
                         elif card[constants.LOCAL_CARDS_KEY_PRIMARY]:
-                            #Retrieve types from previously seen linked cards
+                            # Retrieve types from previously seen linked cards
                             card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
                                 card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES])
-    
-                            #Use the lowest cmc for dual-faced cards (e.g., 4 for Dusk /// Dawn)
-                            if (card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and 
-                                card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
-                                
-                                if card_data[card_set][linked_id][constants.DATA_FIELD_CMC] < card_data[card_set][group_id][constants.DATA_FIELD_CMC]:
-                                    card_data[card_set][group_id][constants.DATA_FIELD_CMC] = card_data[card_set][group_id][constants.DATA_FIELD_CMC]
-                                    card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST] = card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST]
 
-        
-        
+                            # Use the lowest cmc for dual-faced cards (e.g., 4 for Dusk /// Dawn)
+                            if (card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and
+                                    card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
+
+                                if card_data[card_set][linked_id][constants.DATA_FIELD_CMC] < card_data[card_set][group_id][constants.DATA_FIELD_CMC]:
+                                    card_data[card_set][group_id][constants.DATA_FIELD_CMC] = card_data[
+                                        card_set][group_id][constants.DATA_FIELD_CMC]
+                                    card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST] = card_data[
+                                        card_set][group_id][constants.DATA_FIELD_MANA_COST]
+
         except Exception as error:
             file_logger.info("_process_linked_faces Error: %s", error)
-
-        
 
     def _retrieve_local_database(self, file_location):
         '''Retrieves localization and enumeration data from an Arena database'''
@@ -659,7 +667,7 @@ class FileExtractor:
         card_text = {}
         try:
             # Retrieve the title (card name) for each of the collected arena IDs
-            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]: x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
+            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]                         : x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
 
         except Exception as error:
             result = False
@@ -775,7 +783,7 @@ class FileExtractor:
             file_logger.info("retrieve_repository_file Error: %s", error)
             result = False
         return result
-        
+
     def _retrieve_17lands_sets(self):
         '''Retrieve the list of sets that are supported by 17Lands'''
         sets = {}
@@ -786,7 +794,7 @@ class FileExtractor:
             set_json_data = json.loads(url_data)
 
             self._process_17lands_sets(sets, set_json_data)
-            
+
         except Exception as error:
             file_logger.info("_retrieve_17lands_sets Error: %s", error)
         return sets
@@ -920,25 +928,25 @@ class FileExtractor:
         '''Retrieve a list of sets from 17Lands and Scryfall'''
         sets = {}
         try:
-        
+
             sets_17lands = self._retrieve_17lands_sets()
-            
+
             sets_scryfall = self._retrieve_scryfall_sets()
-            
+
             sets = self._assemble_set_list(sets_17lands, sets_scryfall)
-            
+
         except Exception as error:
             file_logger.info("retrieve_set_list Error: %s", error)
         return sets
-        
+
     def _assemble_set_list(self, sets_17lands, sets_scryfall):
         '''Retrieve a list of sets from 17Lands and Scryfall'''
         sets = {}
-        
+
         if sets_scryfall:
-            #The application was able to retrieve the set list from Scryfall
+            # The application was able to retrieve the set list from Scryfall
             if sets_17lands:
-                #If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
+                # If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
                 for set_name, set_fields in sets_scryfall.items():
                     set_code = set_fields[constants.SET_LIST_17LANDS][0]
                     if set_code in sets_17lands:
@@ -946,11 +954,11 @@ class FileExtractor:
                         sets_17lands.pop(set_code)
             else:
                 sets = sets_scryfall
-                
-        #Insert any 17Lands sets that were not collected from Scryfall    
+
+        # Insert any 17Lands sets that were not collected from Scryfall
         sets.update(sets_17lands)
-        return sets        
-        
+        return sets
+
     def _retrieve_scryfall_sets(self):
         '''Retrieve a list of Magic sets using the Scryfall API'''
         sets = {}
@@ -1118,19 +1126,19 @@ class FileExtractor:
                 result_string = error
 
         return result, result_string
-        
+
     def _process_17lands_sets(self, sets, data):
         '''Parse json data from the 17lands filters page'''
         try:
             for card_set in data["expansions"]:
-                sets[card_set.upper()] = {constants.SET_LIST_ARENA: [constants.SET_SELECTION_ALL], 
-                                          constants.SET_LIST_SCRYFALL: [], 
+                sets[card_set.upper()] = {constants.SET_LIST_ARENA: [constants.SET_SELECTION_ALL],
+                                          constants.SET_LIST_SCRYFALL: [],
                                           constants.SET_LIST_17LANDS: [card_set.upper()]}
             for card_set, date_string in data["start_dates"].items():
                 if card_set.upper() in sets:
                     start_date = date_string.split('T')[0]
                     sets[card_set.upper()][constants.SET_START_DATE] = start_date
-        
+
         except Exception as error:
             file_logger.info("_process_17lands_sets Error: %s", error)
 
@@ -1200,8 +1208,9 @@ class FileExtractor:
                             sets[set_name][constants.SET_LIST_SCRYFALL] = [
                                 set_code.upper(), card_set["parent_set_code"].upper()]
                         elif ("block_code" in card_set) and (re.findall("^[yY]\d{2}$", card_set["block_code"], re.DOTALL)):
-                            parent_code = re.findall("^[yY](\w{3})$", set_code, re.DOTALL)
-                            
+                            parent_code = re.findall(
+                                "^[yY](\w{3})$", set_code, re.DOTALL)
+
                             if parent_code:
                                 sets[set_name][constants.SET_LIST_ARENA] = [
                                     parent_code[0].upper()]
@@ -1223,13 +1232,13 @@ class FileExtractor:
 
                     counter += 1
                 elif (card_set["set_type"] == constants.SET_TYPE_MASTERPIECE and
-                     "parent_set_code" in card_set):
-                    #Add the supplementary sets (i.e., mystic archives, retro artifacts)
+                      "parent_set_code" in card_set):
+                    # Add the supplementary sets (i.e., mystic archives, retro artifacts)
                     parent_code = card_set["parent_set_code"].upper()
                     if parent_code in side_sets:
                         side_sets[parent_code].append(set_code.upper())
                     else:
-                        side_sets[parent_code] = [set_code.upper()]  
+                        side_sets[parent_code] = [set_code.upper()]
 
             except Exception as error:
                 file_logger.info("_process_scryfall_sets Error: %s", error)
@@ -1238,8 +1247,10 @@ class FileExtractor:
             try:
                 card_set = card_sets[constants.SET_LIST_ARENA][0]
                 if card_set in side_sets:
-                    card_sets[constants.SET_LIST_ARENA].extend(side_sets[card_set])
-                    card_sets[constants.SET_LIST_SCRYFALL].extend(side_sets[card_set])
+                    card_sets[constants.SET_LIST_ARENA].extend(
+                        side_sets[card_set])
+                    card_sets[constants.SET_LIST_SCRYFALL].extend(
+                        side_sets[card_set])
             except Exception:
                 pass
 

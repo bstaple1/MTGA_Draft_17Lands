@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 3.06 =====================
+* Bug Fixes:
+** Some of the meld cards were missing from the BRO set
+** Opening the Deck Suggester would freeze the application if the user had a diverse card pool
+** The CMC was calculated incorrectly for some of the BRO artifact creatures
+
+* Modified Feature: Modified the auto filter logic
+
 ===================== RELEASE NOTES 3.05 =====================
 * Bug Fix: Removing problematic sections from the TierScraper17Lands manifest
 

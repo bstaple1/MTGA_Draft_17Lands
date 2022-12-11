@@ -1,7 +1,7 @@
 # MTGA_Draft_17Lands
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Latest Supported Set:** The Brothers' War
+**This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the https://www.17lands.com/card_ratings page.**
 
 **Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
@@ -148,6 +148,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
+- **UI Size:** Increase or decrease the size of the application text and images.
+
 ## Card Logic:
 
 - **Win Rate Grades:** The application will use the non-zero GIHWR values to calculate the mean and standard deviation and assign a letter grade based on the number of standard deviations from the mean.
@@ -182,18 +184,18 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Deck Suggester:** For each viable color combination, the deck suggester will construct multiple decks (Aggro, Mid, and Control decks), using some generic deck building requirements, from a card pool of the highest win rate cards. The suggester will rate each deck and choose the highest rated deck for each viable color combination. The deck suggester will NOT identify card synergies and build an intentionally synergistic deck. 
     - Deck Building Requirements:
         - Aggro Deck:
-            - The deck must have a minimum of 13 creatures and should have no less than 17 creatures.
+            - The deck must have a minimum of 9 creatures and should have no less than 17 creatures.
             - The deck should have at least 2 1-drops, 5 2-drops, and 3 3-drops.
             - The average CMC of all of the creatures must be 2.40 or less.
             - The deck has 16 lands.
         - Mid Deck:
-            - The deck must have a minimum of 13 creatures and should have no less than 15 creatures.
+            - The deck must have a minimum of 9 creatures and should have no less than 15 creatures.
             - The deck should have at least 4 2-drops, 3 3-drops, 2 4-drops, and 1 5-drop.
             - The average CMC of all of the creatures must be 3.04 or less.
             - The deck has 17 lands.
         - Control Deck:
-            - The deck must have a minimum of 13 creatures and should have no less than 14 creatures.
-            - The deck should have at least 3 2-drops, 3 3-drops, 3 4-drops, 1 5-drop, and 1 6-drop.
+            - The deck must have a minimum of 9 creatures and should have no less than 10 creatures.
+            - The deck should have at least 3 2-drops, 2 3-drops, 2 4-drops, and 1 5-drop.
             - The average CMC of all of the creatures must be 3.68 or less.      
             - The deck has 18 lands.
     - Notes:
