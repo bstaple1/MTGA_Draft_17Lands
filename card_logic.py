@@ -34,10 +34,11 @@ class SetMetrics:
 @dataclass
 class DeckType:
     """This class holds the data for the various deck types (Aggro, Mid, and Control)"""
-    distribution: list
-    maximum_card_count: int
-    recommended_creature_count: int
-    cmc_average: float
+    distribution: list = field(
+        default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
+    maximum_card_count: int = 0
+    recommended_creature_count: int = 0
+    cmc_average: float = 0.0
 
 
 @dataclass
@@ -79,9 +80,12 @@ class Config:
     iwd_weight: float = 0.0
     override_scale_factor: float = 0.0
 
-    deck_mid: DeckType = DeckType([0, 0, 4, 3, 2, 1, 0], 23, 15, 3.04)
-    deck_aggro: DeckType = DeckType([0, 2, 5, 3, 0, 0, 0], 24, 17, 2.40)
-    deck_control: DeckType = DeckType([0, 0, 3, 2, 2, 1, 0], 22, 10, 3.68)
+    deck_mid: DeckType = field(
+        default_factory=lambda: DeckType([0, 0, 4, 3, 2, 1, 0], 23, 15, 3.04))
+    deck_aggro: DeckType = field(
+        default_factory=lambda: DeckType([0, 2, 5, 3, 0, 0, 0], 24, 17, 2.40))
+    deck_control: DeckType =field(
+        default_factory=lambda: DeckType([0, 0, 3, 2, 2, 1, 0], 22, 10, 3.68))
 
     database_size: int = 0
 
