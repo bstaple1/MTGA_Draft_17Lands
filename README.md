@@ -1,7 +1,7 @@
 # MTGA_Draft_17Lands
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the https://www.17lands.com/card_ratings page.**
+**This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
 **Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
@@ -10,16 +10,14 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier_Draft.PNG?raw=true)
 
 ## Run Steps: Windows Executable (Windows Only)
-- **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file, clone the repository, or download the latest executable (e.g., `MTGA_Draft_Tool_V0285_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
+- **Step 1:** Download the latest executable (e.g., `MTGA_Draft_Tool_V####_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
 - **Step 3:** Double-click `setup.exe` to start the installation. 
     - The MTGA_Draft_Tool_V####_Setup.exe and setup.exe files are the same.
 
-- **Step 4:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
-    - This step is only required if the application is installed in a directory with write restrictions (i.e., `Program Files` and `Program Files (x86)`).
-    - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
+- **Step 4:** Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
 
 - **Step 5:** Double-click the `MTGA_Draft_Tool.exe` to start the program.
 
@@ -29,7 +27,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 
 ## Run Steps: Python (Windows/Mac)
-- **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
+- **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
@@ -37,15 +35,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [Windows](https://www.python.org/downloads/windows/).
     - [Mac](https://www.python.org/downloads/macos/).
 
-- **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python3.10 -m ensurepip --upgrade```.
+- **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
 - **Step 5:** Open the terminal and install the python libraries.
     - Windows: ```pip install -r requirements.txt```
     - Mac: ```pip install -r requirements_mac.txt```
 
-- **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.10/` and double-clicking the file `Install Certificates.command`.
+- **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.11/` and double-clicking the file `Install Certificates.command`.
 
-- **Step 7:** Start the application by opening the terminal and entering ```python3.10 main.py```.
+- **Step 7:** Start the application by opening the terminal and entering ```python main.py```.
 
 - **Step 8:** (Mac Only) Set Arena to window mode.
 
@@ -56,7 +54,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ## Build Steps: setup.exe (Windows Only)
 - **Step 1:** Download and install the latest version of python 3.
 
-- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python3.10 -m ensurepip --upgrade```.
+- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
 - **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
 
