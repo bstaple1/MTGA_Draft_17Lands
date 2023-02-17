@@ -42,12 +42,12 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     
 - **Step 7:** Configure the tool through the [Settings window](#settings).
     - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
-    - The [UI Size](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md#settings:~:text=./Logs%20folder.-,UI%20Size%3A,-Increase%20or%20decrease) setting can be used to adjust the image and text size.
+    - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
 - **Step 8:** Start the draft in Arena.
     - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
-    	- The [Card Compare](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md#settings:~:text=in%20the%20deck.-,Card%20Compare%3A,-Get%20to%20the) feature can be used as a substitute for P1P1.
-    - The sealed card pool can be found in the [Taken Cards window](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md#settings:~:text=period%20of%20time.-,List%20Taken%20Cards%3A,-Get%20to%20the).
+    	- The [Card Compare](#card-compare) feature can be used as a substitute for P1P1.
+    - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
 
 
 ## Run Steps: Python (Windows/Mac)
@@ -77,12 +77,12 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     
 - **Step 10:** Configure the tool through the [Settings window](#settings).
     - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
-    - The [UI Size](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md#settings:~:text=./Logs%20folder.-,UI%20Size%3A,-Increase%20or%20decrease) setting can be used to adjust the image and text size.
+    - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
 - **Step 11:** Start the draft in Arena.
     - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
-    	- The [Card Compare](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md#settings:~:text=in%20the%20deck.-,Card%20Compare%3A,-Get%20to%20the) feature can be used as a substitute for P1P1.
-    - The sealed card pool can be found in the [Taken Cards window](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md#settings:~:text=period%20of%20time.-,List%20Taken%20Cards%3A,-Get%20to%20the).
+    	- The [Card Compare](#card-compare) feature can be used as a substitute for P1P1.
+    - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
 
 
 ## Build Steps: setup.exe (Windows Only)
@@ -133,7 +133,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The download can take several minutes.
     - 17Lands will timeout the request if too many requests are made within a short period of time.
     
-- **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`. 
+- <a id="taken-cards">**List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`. </a>
     - This table lists the cards that were taken by the user throughout the draft.
 
 - **List Suggested Decks:** Get to the Suggested Decks window by selecting `Cards->Suggest Decks`. 
@@ -141,7 +141,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
         - The application builds the decks based on several requirements including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 
-- **Card Compare:** Get to the Card Compare window by selecting `Cards->Compare Cards`. This window will allow you to compare cards that you've entered in.
+- <a id="card-compare">**Card Compare:** Get to the Card Compare window by selecting `Cards->Compare Cards`. This window will allow you to compare cards that you've entered in. </a>
     - This feature can be used to quickly compare cards for P1P1 of the Premier and Traditional drafts.
 	
     
@@ -180,7 +180,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
-- **UI Size:** Increase or decrease the size of the application text and images.
+- <a id="ui-size">**UI Size:** Increase or decrease the size of the application text and images.</a>
 
 ## Card Logic:
 
@@ -206,7 +206,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.33 to 2.33 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
     - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2.33 * 4.68 = 67.7%`, the lower limit will be `56.8 - 1.33 * 4.68 = 50.57%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 50.57) / (67.7 - 50.57)) * 5.0 = 3.3)`
 
-- **Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). A comprehensive explanation can be found [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).
+- <a id="bayesian-average">**Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). A comprehensive explanation can be found [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).</a>
     - Enabled: The application will perform this calculation on all win rate data. The adjustment made by this calculation will disappear as the sample count (e.g, Number of Games In Hand for the Games in Hand Win Rate) reaches 200.
     - Disabled: The application will not perform this calculation. If the sample count is fewer than 200, then the application will set the win rate to 0 (same as the 17Lands Card Ratings table).
 
@@ -247,7 +247,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Opening a log file will prevent the application from reading the Arena player log, so a user will need to restart the application if they decide to start a new Arena event.
 
-- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 200 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 200). Users should consider using the premier draft dataset or enabling the Bayesian average feature for events that have a low player count.
+- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 200 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 200). Users should consider using the premier draft dataset or enabling the [Bayesian average](#bayesian-average) feature for events that have a low player count.
 
 - **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.
 
