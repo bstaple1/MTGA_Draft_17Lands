@@ -867,8 +867,6 @@ class FileExtractor:
         result = False
         url = ""
         for set_code in sets:
-            if set_code == "dbl":
-                continue
             for color in deck_colors:
                 retry = constants.CARD_RATINGS_ATTEMPT_MAX
                 result = False
@@ -910,8 +908,6 @@ class FileExtractor:
                 else:
                     break
                 time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
-            if set == "stx":
-                break
 
         return result
 
