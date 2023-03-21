@@ -212,12 +212,12 @@ def shift_date(start_date, shifted_days, string_format, next_dow):
     try:
         shifted_date = start_date + datetime.timedelta(days=shifted_days)
 
-        if (next_dow is not None) and (0 <= next_dow <= 6):
+        if (next_dow) and (0 <= next_dow <= 6):
             # Shift the date to the next specified day of the week (0 = Monday, 6 = Sunday)
             shifted_date = shifted_date + \
                 datetime.timedelta((next_dow - shifted_date.weekday()) % 7)
 
-        if string_format is not None:
+        if string_format:
             shifted_date_string = shifted_date.strftime(string_format)
     except Exception as error:
         file_logger.info("shift_date Error: %s", error)
@@ -516,7 +516,7 @@ class FileExtractor:
                 card = {k.lower(): v for k, v in card.items()}
                 try:
                     card_set = card[constants.LOCAL_CARDS_KEY_SET]
-                    if ((card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET] is not None) and
+                    if ((card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]) and
                        (re.findall("^[yY]\d{2}$", card_set, re.DOTALL))):
                         card_set = card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]
                     if card_set not in card_data:
@@ -540,13 +540,13 @@ class FileExtractor:
                         constants.DATA_SECTION_IMAGES: []}
 
                     mana_cost, cmc = decode_mana_cost(
-                        card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if card[constants.LOCAL_CARDS_KEY_CASTING_COST] is not None else ("", 0)
+                        card[constants.LOCAL_CARDS_KEY_CASTING_COST]) if card[constants.LOCAL_CARDS_KEY_CASTING_COST] else ("", 0)
                     card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
                     card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST] = mana_cost
                     card_data[card_set][group_id][constants.DATA_FIELD_TYPES].extend([int(
-                        x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else [])
+                        x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(',')] if card[constants.LOCAL_CARDS_KEY_TYPES] else [])
                     card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = [int(
-                        x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if card[constants.LOCAL_CARDS_KEY_COLOR_ID] is not None else []
+                        x) for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(',')] if card[constants.LOCAL_CARDS_KEY_COLOR_ID] else []
 
                     card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = constants.CARD_RARITY_DICT[card[constants.LOCAL_CARDS_KEY_RARITY]
                                                                                                             ] if card[constants.LOCAL_CARDS_KEY_RARITY] in constants.CARD_RARITY_DICT else constants.CARD_RARITY_COMMON
@@ -571,7 +571,7 @@ class FileExtractor:
         ''''''
         try:
 
-            if card[constants.LOCAL_CARDS_KEY_LINKED_FACES] is not None:
+            if card[constants.LOCAL_CARDS_KEY_LINKED_FACES]:
                 linked_ids = [
                     int(x) for x in card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(',')]
                 for linked_id in linked_ids:
@@ -580,13 +580,13 @@ class FileExtractor:
                                 card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_PRIMARY]):
                             # Add types to previously seen linked cards
                             types = [int(x) for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(
-                                ',')] if card[constants.LOCAL_CARDS_KEY_TYPES] is not None else []
+                                ',')] if card[constants.LOCAL_CARDS_KEY_TYPES] else []
                             card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES].extend(
                                 types)
 
                             # Use the lowest mana cost/CMC for dual-faced cards (e.g., 4 for Dusk /// Dawn)
-                            if (card[constants.LOCAL_CARDS_KEY_CASTING_COST] is not None and
-                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and
+                            if (card[constants.LOCAL_CARDS_KEY_CASTING_COST] and
+                                card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] and
                                     card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
 
                                 mana_cost, cmc = decode_mana_cost(
@@ -601,7 +601,7 @@ class FileExtractor:
                                 card_data[card_set][linked_id][constants.LOCAL_CARDS_KEY_TYPES])
 
                             # Use the lowest cmc for dual-faced cards (e.g., 4 for Dusk /// Dawn)
-                            if (card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] is not None and
+                            if (card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] and
                                     card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE] == 6):
 
                                 if card_data[card_set][linked_id][constants.DATA_FIELD_CMC] < card_data[card_set][group_id][constants.DATA_FIELD_CMC]:
@@ -1009,7 +1009,7 @@ class FileExtractor:
                     elif value in card:
                         if (key in constants.WIN_RATE_OPTIONS) or (key == constants.DATA_FIELD_IWD):
                             color_data[colors][key] = round(
-                                float(card[value]) * 100.0, 2) if card[value] is not None else 0.0
+                                float(card[value]) * 100.0, 2) if card[value] else 0.0
                         elif ((key == constants.DATA_FIELD_ATA) or
                               (key == constants.DATA_FIELD_ALSA)):
                             color_data[colors][key] = round(
@@ -1189,6 +1189,16 @@ class FileExtractor:
                     sets[set_name][constants.SET_LIST_17LANDS] = [
                         set_code.upper()]
                     sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW", "MID"]
+                    counter += 1
+                elif set_code == "sir":
+                    # Only retrieve the last X sets + CUBE
+                    if counter >= constants.SET_LIST_COUNT_MAX:
+                        break
+                    sets[set_name] = {}
+                    sets[set_name][constants.SET_LIST_ARENA] = ["SIR", "SIS"]
+                    sets[set_name][constants.SET_LIST_17LANDS] = [
+                        set_code.upper()]
+                    sets[set_name][constants.SET_LIST_SCRYFALL] = ["SIR", "SIS"]
                     counter += 1
                 elif card_set["set_type"] in constants.SUPPORTED_SET_TYPES:
                     # Only retrieve the last X sets + CUBE
