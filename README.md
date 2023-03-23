@@ -1,16 +1,29 @@
 # MTGA_Draft_17Lands
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the https://www.17lands.com/card_ratings page.**
+**This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
 **Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
-  * \* For some events, the Arena log doesn't list P1P1 until after P1P2. The _Card Compare_ feature can be used as a substitute for P1P1.
+  * \* For some events, the Arena log doesn't list P1P1 until after P1P2. 
   * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.), although not all events have been tested.
 
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier_Draft.PNG?raw=true)
 
+# Table of Contents
+
+- [Run Steps: Windows Executable](#run-steps-windows-executable-windows-only)
+- [Run Steps: Python (Windows/Mac)](#run-steps-python-windowsmac)
+- [Build Steps: setup.exe](#build-steps-setupexe-windows-only)
+- [UI Features](#ui-features)
+- [Menu Features](#menu-features)
+- [Additional Features](#additional-features)
+- [Settings](#settings)
+- [Card Logic](#card-logic)
+- [Troubleshooting](#troubleshooting)
+
+
 ## Run Steps: Windows Executable (Windows Only)
-- **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file, clone the repository, or download the latest executable (e.g., `MTGA_Draft_Tool_V0285_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
+- **Step 1:** Download the latest executable (e.g., `MTGA_Draft_Tool_V####_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
@@ -21,15 +34,24 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - This step is only required if the application is installed in a directory with write restrictions (i.e., `Program Files` and `Program Files (x86)`).
     - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
 
-- **Step 5:** Double-click the `MTGA_Draft_Tool.exe` to start the program.
+- **Step 5:** Double-click `MTGA_Draft_Tool.exe` to start the program.
 
 - **Step 6:** Download the sets that you plan on using (`Data->View Sets`).
+    - Event datasets can be used for different events (e.g., you can use the premier draft dataset for a sealed event).
+    - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
+    
+- **Step 7:** Configure the tool through the [Settings window](#settings).
+    - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
+    - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
-- **Step 7:** Start the draft in Arena.
+- **Step 8:** Start the draft in Arena.
+    - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
+    	- The [Card Compare](#card-compare) feature can be used as a substitute for P1P1.
+    - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
 
 
 ## Run Steps: Python (Windows/Mac)
-- **Step 1:** Download and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
+- **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
@@ -37,26 +59,36 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [Windows](https://www.python.org/downloads/windows/).
     - [Mac](https://www.python.org/downloads/macos/).
 
-- **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python3.10 -m ensurepip --upgrade```.
+- **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
 - **Step 5:** Open the terminal and install the python libraries.
     - Windows: ```pip install -r requirements.txt```
     - Mac: ```pip install -r requirements_mac.txt```
 
-- **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.10/` and double-clicking the file `Install Certificates.command`.
+- **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.11/` and double-clicking the file `Install Certificates.command`.
 
-- **Step 7:** Start the application by opening the terminal and entering ```python3.10 main.py```.
+- **Step 7:** Start the application by opening the terminal and entering ```python main.py```.
 
 - **Step 8:** (Mac Only) Set Arena to window mode.
 
 - **Step 9:** Download the sets that you plan on using (`Data->View Sets`).
+    - Event datasets can be used for different events (e.g., you can use the premier draft dataset for a sealed event).
+    - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
+    
+- **Step 10:** Configure the tool through the [Settings window](#settings).
+    - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
+    - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
-- **Step 10:** Start the draft in Arena.
+- **Step 11:** Start the draft in Arena.
+    - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
+    	- The [Card Compare](#card-compare) feature can be used as a substitute for P1P1.
+    - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
+
 
 ## Build Steps: setup.exe (Windows Only)
 - **Step 1:** Download and install the latest version of python 3.
 
-- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python3.10 -m ensurepip --upgrade```.
+- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
 - **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
 
@@ -101,7 +133,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The download can take several minutes.
     - 17Lands will timeout the request if too many requests are made within a short period of time.
     
-- **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`. 
+- <a id="taken-cards">**List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`. </a>
     - This table lists the cards that were taken by the user throughout the draft.
 
 - **List Suggested Decks:** Get to the Suggested Decks window by selecting `Cards->Suggest Decks`. 
@@ -109,7 +141,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The application might be unable to build any decks if this option is selected before the draft is over or if too few creatures were taken.
         - The application builds the decks based on several requirements including the Games in Hand Win Rate of the individual cards. The rating listed is the combined Games in Hand Win Rate of all the cards in the deck.
 
-- **Card Compare:** Get to the Card Compare window by selecting `Cards->Compare Cards`. This window will allow you to compare cards that you've entered in.
+- <a id="card-compare">**Card Compare:** Get to the Card Compare window by selecting `Cards->Compare Cards`. This window will allow you to compare cards that you've entered in. </a>
     - This feature can be used to quickly compare cards for P1P1 of the Premier and Traditional drafts.
 	
     
@@ -142,13 +174,13 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Missing Cards:** Displays the missing cards table in the main window.
 
-- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the card logic section.
+- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the [card logic](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md##Card-Logic) section.
 
-- **Enable Bayesian Average:** Enables the bayesian average logic for all win rate fields. See the Bayesian average note in the card logic section.
+- **Enable Bayesian Average:** Enables the bayesian average logic for all win rate fields. See the Bayesian average note in the [card logic](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md##Card-Logic) section.
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
-- **UI Size:** Increase or decrease the size of the application text and images.
+- <a id="ui-size">**UI Size:** Increase or decrease the size of the application text and images.</a>
 
 ## Card Logic:
 
@@ -174,7 +206,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.33 to 2.33 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
     - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2.33 * 4.68 = 67.7%`, the lower limit will be `56.8 - 1.33 * 4.68 = 50.57%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 50.57) / (67.7 - 50.57)) * 5.0 = 3.3)`
 
-- **Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). 
+- <a id="bayesian-average">**Bayesian Average:** A Bayesian average calculation applied to all win rate data based on some assumptions (expected range of 40-60% with a mean of 50%). A comprehensive explanation can be found [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).</a>
     - Enabled: The application will perform this calculation on all win rate data. The adjustment made by this calculation will disappear as the sample count (e.g, Number of Games In Hand for the Games in Hand Win Rate) reaches 200.
     - Disabled: The application will not perform this calculation. If the sample count is fewer than 200, then the application will set the win rate to 0 (same as the 17Lands Card Ratings table).
 
@@ -205,3 +237,18 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
         - The NEO creature sagas count as creatures.
 
+## Troubleshooting:
+
+- **The application can't detect the Arena event:** Open the debug.log file, using notepad or some other text editor, and look for an entry that reads `Player Log Location: C:/Users\<username>\AppData\LocalLow\Wizards Of The Coast\MTGA\Player.log`. If you don't see this entry, then follow the steps listed [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/18#issuecomment-1247933197).
+
+- **Some cards are missing from the Taken Cards window:** Arena creates a new player log after every restart, so the application can't track cards that were picked and seen before a restart. Players who draft across multiple days/sessions can still use this tool to see current pack data, but they might be missing information from previous packs and picks.
+
+- **The application can't generate set or debug files:** Windows users might need to run the application as an administrator if the application is installed in a write-restricted directory.
+
+- **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Opening a log file will prevent the application from reading the Arena player log, so a user will need to restart the application if they decide to start a new Arena event.
+
+- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 200 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 200). Users should consider using the premier draft dataset or enabling the [Bayesian average](#bayesian-average) feature for events that have a low player count.
+
+- **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.
+
+- **The set download process is taking 5+ minutes and I'm seeing _Collecting 17Lands Data - Request Failed_ multiple times:** 17Lands will rate-limit your connection if you try to download too many sets within a short period of time. When downloading multiple sets, try to wait 10+ minutes between sets.
