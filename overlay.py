@@ -27,7 +27,7 @@ class TableInfo:
     column: str = ""
 
 
-__version__ = 3.06
+__version__ = 3.07
 
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
@@ -2304,7 +2304,7 @@ class Overlay(ScaledWindow):
         while True:
             try:
                 message_box = tkinter.messagebox.askyesno(
-                    title="Download", message=f"17Lands updates their card data once a day at 03:00 UTC. Are you sure that you want to download {draft_set.get()} {draft.get()} data?")
+                    title="Download", message=f"17Lands updates their card data once a day at 03:00 UTC.\n\nAre you sure that you want to download the {draft_set.get()} {draft.get()} dataset?")
                 if not message_box:
                     break
 
@@ -2551,7 +2551,7 @@ class Overlay(ScaledWindow):
                                 title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
 
                 else:
-                    message_string = f"Update {new_version} is now available.\n Check https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
+                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
                     message_box = tkinter.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:
@@ -2667,14 +2667,14 @@ class CreateCardToolTip(ScaledWindow):
                                anchor="c",)
 
             if len(self.color_dict) == 2:
-                headers = {"Label": {"width": .70, "anchor": tkinter.W},
-                           "Value1": {"width": .15, "anchor": tkinter.CENTER},
-                           "Value2": {"width": .15, "anchor": tkinter.CENTER}}
-                width = self._scale_value(400)
+                headers = {"Label": {"width": .60, "anchor": tkinter.W},
+                           "Value1": {"width": .20, "anchor": tkinter.CENTER},
+                           "Value2": {"width": .20, "anchor": tkinter.CENTER}}
+                width = self._scale_value(350)
                 tt_width += self._scale_value(125)
             else:
-                headers = {"Label": {"width": .80, "anchor": tkinter.W},
-                           "Value1": {"width": .20, "anchor": tkinter.CENTER}}
+                headers = {"Label": {"width": .70, "anchor": tkinter.W},
+                           "Value1": {"width": .30, "anchor": tkinter.CENTER}}
                 width = self._scale_value(340)
 
             style = Style()

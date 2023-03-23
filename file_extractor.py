@@ -1146,7 +1146,7 @@ class FileExtractor:
         try:
             card_name = card[constants.DATA_FIELD_NAME].replace("///", "//")
             matching_cards = [
-                x for x in self.card_ratings if x in card_name]
+                x for x in self.card_ratings if x == card_name]
             if matching_cards:
                 ratings_card_name = matching_cards[0]
                 deck_colors = self.card_ratings[ratings_card_name][constants.DATA_SECTION_RATINGS]

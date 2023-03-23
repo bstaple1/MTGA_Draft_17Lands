@@ -1,3 +1,8 @@
+===================== RELEASE NOTES 3.07 =====================
+* Bug Fix: Fixing an Arena database parsing issue
+* Modified Feature: Linking the Shadows of the Past set to the Shadows over Innistrad Remastered set
+* Modified Feature: Making some adjustments to the UI elements
+
 ===================== RELEASE NOTES 3.06 =====================
 * Bug Fixes:
 ** Some of the meld cards were missing from the BRO set
