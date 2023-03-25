@@ -153,7 +153,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Top-Level Window:** The main application window, and subsequent windows, will act as an overlay and remain above all other windows, including the Arena screen.
 
-- **Tier List:** A tier list can be added to the drop-downs by following the instructions in `./Tools/TierScraper17Lands/README.txt`.
+- **Tier List:** A tier list can be added to the drop-downs by following the instructions in [tier list README](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension).
 
 - **Card Tooltips:** Clicking on any card row will display a tooltip that contains the card images (back and front) and the 17Lands data.
 	
@@ -182,7 +182,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - <a id="ui-size">**UI Size:** Increase or decrease the size of the application text and images.</a>
 
-## Card Logic:
+## Card Logic
 
 - **Win Rate Grades:** The application will use the non-zero GIHWR values to calculate the mean and standard deviation and assign a letter grade based on the number of standard deviations from the mean.
     - Example: If the mean win rate for the set is 56.8% and the standard deviation is 4.68, then a card with a win rate of 62% will have a letter grade of B since it's between 1 standard deviation (`56.8 + 1 * 4.68 = 61.48%`) and 1.33 standard deviations (`56.8 + 1.33 * 4.68 = 63.02%`) from the mean (see the table below).
@@ -237,7 +237,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The rating consists of the combined GIHWR of all of the cards minus penalties for not adhering to the deck requirements.
         - The NEO creature sagas count as creatures.
 
-## Troubleshooting:
+## Troubleshooting
 
 - **The application can't detect the Arena event:** Open the debug.log file, using notepad or some other text editor, and look for an entry that reads `Player Log Location: C:/Users\<username>\AppData\LocalLow\Wizards Of The Coast\MTGA\Player.log`. If you don't see this entry, then follow the steps listed [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/18#issuecomment-1247933197).
 
@@ -247,7 +247,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Opening a log file will prevent the application from reading the Arena player log, so a user will need to restart the application if they decide to start a new Arena event.
 
-- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 200 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 200). Users should consider using the premier draft dataset or enabling the [Bayesian average](#bayesian-average) feature for events that have a low player count.
+- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 200 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 200). Users should consider using the premier draft dataset, enabling the [Bayesian average](#bayesian-average) feature, or downloading a [tier list](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
 
 - **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.
 
