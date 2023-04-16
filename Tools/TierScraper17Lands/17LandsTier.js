@@ -1,5 +1,5 @@
 const ratings_dict = {"grid-row: 16 / auto;":"NA", //"TBD"
-                     "grid-row: 15 / auto;":"NA", //"SB"
+                     "grid-row: 15 / auto;":"SB", //"SB"
                      "grid-row: 14 / auto;":"F ", //"F"
                      "grid-row: 13 / auto;":"D-", //"D-" 
                      "grid-row: 12 / auto;":"D ", //"D"
@@ -13,7 +13,7 @@ const ratings_dict = {"grid-row: 16 / auto;":"NA", //"TBD"
                      "grid-row: 4 / auto;" :"A-",  //"A-"
                      "grid-row: 3 / auto;" :"A ",  //"A"
                      "grid-row: 2 / auto;" :"A+"}  //"A+"
-const column_prefix = "tier_text tier_bucket shared "
+const column_prefix = "tier_text tier_bucket "
 const color_ids = ["W","U","B","R","G","M","C","L"]
 
 window.addEventListener('load', function () {
@@ -54,7 +54,7 @@ function collect_pick_ratings (){
     var tier_label = collect_label();
     var set_name = collect_set_name();
 
-    ratings_obj.meta = {"collection_date": datetime, "label": tier_label, "set": set_name, "version": 2.0};
+    ratings_obj.meta = {"collection_date": datetime, "label": tier_label, "set": set_name, "version": 3.0};
     ratings_obj.ratings = {}
     
     for (var i = 0; i < color_ids.length; i++)
@@ -62,29 +62,38 @@ function collect_pick_ratings (){
         ratings_obj = collect_column_ratings(color_ids[i], ratings_obj);
     }
         
-    RatingsExport (ratings_obj);
+    tier_export (ratings_obj);
 }
 
-function collect_column_ratings (columnId, ratings_obj){
+function collect_column_ratings (color_id, ratings_obj){
 
-    var column_string = column_prefix + columnId;
-	var table_rows = document.getElementsByClassName(column_string);
-    
-    for(let i = 0; i < table_rows.length; i++)
-    {
-        let row_rating = ratings_dict[table_rows[i].getAttribute("style")];
+    try{
+        let table_rows = document.querySelectorAll(`[class^="${column_prefix}"][class*="${color_id}"]`)
         
-        //Iterate through the columns and check for an items
-        let table_items = table_rows[i].getElementsByClassName("tier_card_name");
-        
-        //Iterate through the items in this column
-        for(let j = 0; j < table_items.length; j++)
+        for(let i = 0; i < table_rows.length; i++)
         {
-            let card_name = table_items[j].innerHTML;
-            ratings_obj.ratings[card_name] = row_rating;
+            let row_rating = ratings_dict[table_rows[i].getAttribute("style")];
+            
+            //Iterate through each column in this row
+            let column_items = table_rows[i].children;
+            
+            //Iterate through the items in this column
+            for(let j = 0; j < column_items.length; j++)
+            {
+                let card_name = column_items[j].getElementsByClassName("tier_card_name");
+                let card_comment = column_items[j].getElementsByClassName("tier_card_comment");
+                
+                card_name = (card_name.length) ? card_name[0].innerHTML : "";
+                card_comment = (card_comment.length) ? card_comment[0].innerHTML : "";
+                
+                let card_dict = {"rating" : row_rating, "comment" : card_comment}
+                
+                ratings_obj.ratings[card_name] = card_dict;
+            }
         }
+    }catch(error){
+        console.log(error);
     }
-    
     
     return ratings_obj;
 }
@@ -124,16 +133,16 @@ function collect_label (){
     
     return tier_label;
 }
-function RatingsExport (ratings_obj){
+function tier_export (ratings_obj){
 
 	var url = document.URL.split("/");
 
     var filename = `Tier_${ratings_obj.meta.set}_${Date.now().toString()}.txt`
 	
-	var _ratingObj = JSON.stringify(ratings_obj , null, 4); //indentation in json format, human readable
+	var tier_obj = JSON.stringify(ratings_obj , null, 4); //indentation in json format, human readable
 	
 	var vLink = document.createElement('a'),
-	vBlob = new Blob([_ratingObj], {type: "octet/stream"}),
+	vBlob = new Blob([tier_obj], {type: "octet/stream"}),
 	vName = filename;
 	vUrl = window.URL.createObjectURL(vBlob);
 	vLink.setAttribute('href', vUrl);

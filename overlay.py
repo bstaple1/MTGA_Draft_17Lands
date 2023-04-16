@@ -14,7 +14,7 @@ import argparse
 from dataclasses import dataclass
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFont
 import file_extractor as FE
 import card_logic as CL
 import log_scanner as LS
@@ -737,7 +737,7 @@ class Overlay(ScaledWindow):
                 self.pack_table.insert(
                     "", index=count, iid=count, values=field_values, tag=(row_tag,))
             self.pack_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
-                event, table=self.pack_table, card_list=card_list, selected_color=filtered_colors))
+                event, table=self.pack_table, card_list=card_list, selected_color=filtered_colors, fields=fields))
         except Exception as error:
             overlay_logger.info("__update_pack_table Error: %s", error)
 
@@ -791,7 +791,7 @@ class Overlay(ScaledWindow):
                         self.missing_table.insert(
                             "", index=count, iid=count, values=field_values, tag=(row_tag,))
                     self.missing_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
-                        event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_colors))
+                        event, table=self.missing_table, card_list=missing_cards, selected_color=filtered_colors, fields=fields))
         except Exception as error:
             overlay_logger.info("__update_missing_table Error: %s", error)
 
@@ -848,7 +848,7 @@ class Overlay(ScaledWindow):
                 compare_table.insert(
                     "", index=count, iid=count, values=field_values, tag=(row_tag,))
             compare_table.bind("<<TreeviewSelect>>", lambda event: self._process_table_click(
-                event, table=compare_table, card_list=matching_cards, selected_color=filtered_colors))
+                event, table=compare_table, card_list=matching_cards, selected_color=filtered_colors, fields=fields))
         except Exception as error:
             overlay_logger.info("__update_compare_table Error: %s", error)
 
@@ -2388,7 +2388,7 @@ class Overlay(ScaledWindow):
             list_box.insert("", index=count, iid=count,
                             values=file, tag=(row_tag,))
 
-    def _process_table_click(self, event, table, card_list, selected_color):
+    def _process_table_click(self, event, table, card_list, selected_color, fields=None):
         '''Creates the card tooltip when a table row is clicked'''
         color_dict = {}
         for item in table.selection():
@@ -2409,6 +2409,11 @@ class Overlay(ScaledWindow):
                                                                                      self.configuration.bayesian_average_enabled)
                                     else:
                                         color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
+                        tier_info = {}
+                        if fields and self.tier_data:
+                            for name, tier_list in self.tier_data.items():
+                                if name in fields.values() and card_name in tier_list["ratings"]:
+                                    tier_info[name] = tier_list["ratings"][card_name]["comment"]
 
                         CreateCardToolTip(table,
                                           event,
@@ -2417,7 +2422,8 @@ class Overlay(ScaledWindow):
                                           card[constants.DATA_SECTION_IMAGES],
                                           self.configuration.images_enabled,
                                           self.scale_factor,
-                                          self.fonts_dict)
+                                          self.fonts_dict,
+                                          tier_info)
                     except Exception as error:
                         overlay_logger.info(
                             "__process_table_click Error: %s", error)
@@ -2595,7 +2601,7 @@ class Overlay(ScaledWindow):
 class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''
 
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict, tier_info):
         super().__init__()
         self.scale_factor = scale_factor
         self.fonts_dict = fonts_dict
@@ -2610,6 +2616,7 @@ class CreateCardToolTip(ScaledWindow):
         self.widget.bind("<ButtonPress>", self._leave)
         self.id = None
         self.tw = None
+        self.tier_info = tier_info
         self.event = event
         self.images = []
         self._enter()
@@ -2639,7 +2646,8 @@ class CreateCardToolTip(ScaledWindow):
         '''Function that builds and populates the tooltip window '''
         try:
             row_height = self._scale_value(23)
-            tt_width = self._scale_value(500)
+            tt_width = 0
+            tt_height = self._scale_value(450)
             # creates a toplevel window
             self.tw = tkinter.Toplevel(self.widget)
             # Leaves only the label and removes the app window
@@ -2670,12 +2678,13 @@ class CreateCardToolTip(ScaledWindow):
                 headers = {"Label": {"width": .60, "anchor": tkinter.W},
                            "Value1": {"width": .20, "anchor": tkinter.CENTER},
                            "Value2": {"width": .20, "anchor": tkinter.CENTER}}
-                width = self._scale_value(350)
-                tt_width += self._scale_value(125)
+                width = self._scale_value(340)
             else:
                 headers = {"Label": {"width": .70, "anchor": tkinter.W},
                            "Value1": {"width": .30, "anchor": tkinter.CENTER}}
-                width = self._scale_value(340)
+                width = self._scale_value(300)
+
+            tt_width += width
 
             style = Style()
             style.configure("Tooltip.Treeview", rowheight=row_height)
@@ -2750,7 +2759,8 @@ class CreateCardToolTip(ScaledWindow):
             # Add scryfall image
             if self.images_enabled:
                 image_size_y = len(main_field_list) * row_height
-                size = self._scale_value(280), image_size_y
+                width = self._scale_value(280)
+                size = width, image_size_y
                 self.images = []
                 request_header = {'User-Agent': 'Mozilla/5.0'}
                 for count, picture_url in enumerate(self.image):
@@ -2768,7 +2778,7 @@ class CreateCardToolTip(ScaledWindow):
                                 column=count, row=1, columnspan=1)
                             self.images.append(image)
                             column_offset += 1
-                            tt_width += self._scale_value(200)
+                            tt_width += width - self._scale_value(10)
                     except Exception as error:
                         overlay_logger.info(
                             "_display_tooltip Image Error: %s", error)
@@ -2776,7 +2786,30 @@ class CreateCardToolTip(ScaledWindow):
             card_label.grid(column=0, row=0,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)
 
-            note_label.grid(column=0, row=2,
+            row_count = 3
+            for name, comment in self.tier_info.items():
+                if not comment:
+                    continue
+                comment_frame = tkinter.LabelFrame(tt_frame, text=name)
+                comment_frame.grid(column=0, row=row_count,
+                                columnspan=column_offset + 2, sticky=tkinter.NSEW)
+
+                comment_label = Label(comment_frame,
+                                   text=f"\"{comment}\"",
+                                   background="#3d3d3d",
+                                   foreground="#e6ecec",
+                                   anchor="c",
+                                   wraplength= tt_width,)
+                comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)         
+
+                font = ImageFont.truetype('times.ttf', 12)
+                font_size = font.getsize(comment)    
+                font_rows = math.ceil(font_size[0] / tt_width) + 2
+                font_height = font_rows * font_size[1]
+                tt_height += self._scale_value(font_height)
+                row_count += 1
+
+            note_label.grid(column=0, row=row_count,
                             columnspan=column_offset + 2, sticky=tkinter.NSEW)
 
             for count, row_values in enumerate(main_field_list):
@@ -2785,13 +2818,12 @@ class CreateCardToolTip(ScaledWindow):
                     "", index=count, iid=count, values=row_values, tag=(row_tag,))
 
             stats_main_table.grid(
-                row=1, column=column_offset, sticky=tkinter.NSEW)
+                row=1, column=column_offset)
 
+            tt_width += self._scale_value(10) 
             location_x, location_y = identify_safe_coordinates(self.tw,
-                                                               self._scale_value(
-                                                                   tt_width),
-                                                               self._scale_value(
-                                                                   450),
+                                                               tt_width,
+                                                               tt_height,
                                                                self._scale_value(
                                                                    25),
                                                                self._scale_value(20))

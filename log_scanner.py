@@ -1108,15 +1108,20 @@ class ArenaScanner:
                     with open(file, 'r', encoding="utf-8", errors="replace") as json_file:
                         data = json.loads(json_file.read())
                         if [i for i in self.draft_sets if i in data["meta"]["set"]]:
-                            tier_id = f"Tier{count}"
+                            tier_id = f"TIER{count}"
                             tier_label = data["meta"]["label"]
-                            tier_key = f'{tier_id} ({tier_label})'
+                            tier_key = f'{tier_id}: {tier_label}'
                             tier_options[tier_key] = tier_id
                             if data["meta"]["version"] == 1:
                                 for card_name, card_rating in data["ratings"].items():
-                                    data["ratings"][card_name] = CL.format_tier_results(card_rating,
+                                    data["ratings"][card_name] = {"comment" : ""}
+                                    data["ratings"][card_name]["rating"] = CL.format_tier_results(card_rating,
                                                                                         constants.RESULT_FORMAT_RATING,
                                                                                         constants.RESULT_FORMAT_GRADE)
+                            elif data["meta"]["version"] == 2:
+                                for card_name, card_rating in data["ratings"].items():
+                                    data["ratings"][card_name] = {"comment" : ""}
+                                    data["ratings"][card_name]["rating"] = card_rating
                             tier_data[tier_id] = data
                             count += 1
 

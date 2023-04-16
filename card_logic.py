@@ -138,7 +138,9 @@ class CardResult:
         try:
             card_name = card[constants.DATA_FIELD_NAME].split(" // ")
             if card_name[0] in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
-                result = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name[0]]
+                tier_data = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name[0]]
+                result = tier_data["rating"]
+                result = "*" + result if tier_data["comment"] else result #Append an astrisk to denote a comment
         except Exception as error:
             logic_logger.info("_process_tier error: %s", error)
 
@@ -295,6 +297,9 @@ def field_process_sort(field_value):
     processed_value = field_value
 
     try:
+        #Remove the tier asterisks before sorting
+        if isinstance(field_value, str):
+            field_value = field_value.replace('*','')
         if field_value in constants.GRADE_ORDER_DICT:
             processed_value = constants.GRADE_ORDER_DICT[field_value]
     except ValueError:
