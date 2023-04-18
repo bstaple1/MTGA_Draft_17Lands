@@ -27,7 +27,7 @@ class TableInfo:
     column: str = ""
 
 
-__version__ = 3.07
+__version__ = 3.08
 
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):

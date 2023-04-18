@@ -1,3 +1,16 @@
+===================== RELEASE NOTES 3.08 =====================
+* Bug Fix: Fixed a Chrome extension issue that was preventing users from downloading their own tier lists while logged in to 17Lands (Issue #28)
+
+* Modifications:
+** Added retries to the set list download process
+** Users can now set the Arena log path through File->Open instead of using the -f CLI argument
+** The application will now store the Arena log path in the config.json file
+** Renamed the Chrome extension to "17Lands Tier Scraper"
+
+* New Feature: The Chrome extension will now download the tier list comments
+** The comments are listed at the bottom of the card tooltip
+** An asterisk next to the tier list grade will denote a card comment (*C+)
+
 ===================== RELEASE NOTES 3.07 =====================
 * Bug Fix: Fixing an Arena database parsing issue
 * Modified Feature: Linking the Shadows of the Past set to the Shadows over Innistrad Remastered set
