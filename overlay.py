@@ -186,7 +186,6 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
 
     return location_x, location_y
 
-
 class ScaledWindow:
     def __init__(self):
         self.scale_factor = 1
@@ -287,12 +286,13 @@ class Overlay(ScaledWindow):
             self.configuration.table_width)
 
         self.listener = None
+        
+        self.configuration.arena_log_location = FE.search_arena_log_locations([args.file, self.configuration.arena_log_location])
 
-        if args.file is None:
-            self.arena_file = FE.retrieve_arena_log_location()
-        else:
-            self.arena_file = args.file
-        overlay_logger.info("Player Log Location: %s", self.arena_file)
+        if self.configuration.arena_log_location:
+            CL.write_config(self.configuration)
+            
+        self.arena_file = self.configuration.arena_log_location
 
         if args.data is None:
             self.data_file = FE.retrieve_arena_directory(self.arena_file)
@@ -535,6 +535,17 @@ class Overlay(ScaledWindow):
         self.root.attributes("-topmost", True)
         self._initialize_overlay_widgets()
         self._update_overlay_build()
+        
+        if self.arena_file:
+            overlay_logger.info("Arena Player Log Location: %s", self.arena_file)
+        else:
+            overlay_logger.info("Arena Player Log Missing")
+            tkinter.messagebox.showinfo(
+                                title="Arena Player Log Missing", message="Unable to locate the Arena player log.\n\n"
+                                "Please set the log location by clicking File->Open and selecting the Arena log file (Player.log).\n\n"
+                                "This log is typically located at the following location:\n"
+                                " - PC: <Drive>/Users/<User>/AppData/LocalLow/Wizards Of The Coast/MTGA\n"
+                                " - MAC: <User>/Library/Logs/Wizards Of The Coast/MTGA")
 
         if self.configuration.hotkey_enabled:
             self._start_hotkey_listener()
@@ -2441,6 +2452,10 @@ class Overlay(ScaledWindow):
             self.draft.log_suspend(True)
             self._update_overlay_callback(True)
             self.draft.log_suspend(False)
+            
+            if constants.LOG_NAME in self.arena_file:
+                self.configuration.arena_log_location = self.arena_file
+                CL.write_config(self.configuration)
 
     def _control_trace(self, enabled):
         '''Enable/Disable all of the overlay widget traces. This function is used when the application needs

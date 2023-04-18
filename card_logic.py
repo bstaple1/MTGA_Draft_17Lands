@@ -88,7 +88,7 @@ class Config:
         default_factory=lambda: DeckType([0, 0, 3, 2, 2, 1, 0], 22, 10, 3.68))
 
     database_size: int = 0
-
+    arena_log_location: str = ""
 
 class CardResult:
     """This class processes a card list and produces results based on a list of fields (i.e., ALSA, GIHWR, COLORS, etc.)"""
@@ -140,7 +140,7 @@ class CardResult:
             if card_name[0] in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
                 tier_data = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name[0]]
                 result = tier_data["rating"]
-                result = "*" + result if tier_data["comment"] else result #Append an astrisk to denote a comment
+                result = "*" + result if tier_data["comment"] else result #Append an asterisk to denote a comment
         except Exception as error:
             logic_logger.info("_process_tier error: %s", error)
 
@@ -1212,6 +1212,7 @@ def read_config():
         config.bayesian_average_enabled = config_data["settings"]["bayesian_average_enabled"]
         config.draft_log_enabled = config_data["settings"]["draft_log_enabled"]
         config.color_identity_enabled = config_data["settings"]["color_identity_enabled"]
+        config.arena_log_location = config_data["settings"]["arena_log_location"]
     except Exception as error:
         logic_logger.info("read_config error: %s", error)
     return config
@@ -1252,6 +1253,7 @@ def write_config(config):
         config_data["settings"]["bayesian_average_enabled"] = config.bayesian_average_enabled
         config_data["settings"]["draft_log_enabled"] = config.draft_log_enabled
         config_data["settings"]["color_identity_enabled"] = config.color_identity_enabled
+        config_data["settings"]["arena_log_location"] = config.arena_log_location
 
         with open("config.json", 'w', encoding="utf-8", errors="replace") as file:
             json.dump(config_data, file, ensure_ascii=False, indent=4)
@@ -1303,6 +1305,7 @@ def reset_config():
         data["settings"]["taken_iwd_enabled"] = config.taken_iwd_enabled
         data["settings"]["card_colors_enabled"] = config.card_colors_enabled
         data["settings"]["color_identity_enabled"] = config.color_identity_enabled
+        data["settings"]["arena_log_location"] = config.arena_log_location
 
         data["card_logic"] = {}
         data["card_logic"]["alsa_weight"] = config.alsa_weight

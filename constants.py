@@ -275,10 +275,12 @@ SCRYFALL_REQUEST_ATTEMPT_MAX = 5
 PLATFORM_ID_OSX = "darwin"
 PLATFORM_ID_WINDOWS = "win32"
 
+LOG_NAME = "Player.log"
+
 LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(
-), "AppData", "LocalLow", "Wizards Of The Coast", "MTGA", "Player.log")
+), "AppData", "LocalLow", "Wizards Of The Coast", "MTGA", LOG_NAME)
 LOG_LOCATION_OSX = os.path.join(
-    "Library", "Logs", "Wizards of the Coast", "MTGA", "Player.log")
+    "Library", "Logs", "Wizards of the Coast", "MTGA", LOG_NAME)
 
 DEFAULT_GIHWR_AVERAGE = 0.0
 

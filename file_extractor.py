@@ -100,27 +100,32 @@ def retrieve_local_set_list(sets):
 
     return file_list
 
-
-def retrieve_arena_log_location():
+def search_arena_log_locations(input_location=None):
     '''Searches local directories for the location of the Arena Player.log file'''
     log_location = ""
     try:
+        paths = []
+        
+        if input_location:
+            paths.extend(input_location)
+            
         if sys.platform == constants.PLATFORM_ID_OSX:
-            paths = [os.path.join(os.path.expanduser(
-                '~'), constants.LOG_LOCATION_OSX)]
+            paths.extend([os.path.join(os.path.expanduser(
+                '~'), constants.LOG_LOCATION_OSX)])
         else:
             path_list = [constants.WINDOWS_DRIVES,
                          [constants.LOG_LOCATION_WINDOWS]]
-            paths = [os.path.join(*x) for x in itertools.product(*path_list)]
+            paths.extend([os.path.join(*x) for x in itertools.product(*path_list)])
 
         for file_path in paths:
-            file_logger.info("Arena Log: Searching file path %s", file_path)
-            if os.path.exists(file_path):
-                log_location = file_path
-                break
+            if file_path:
+                file_logger.info("Arena Log: Searching file path %s", file_path)
+                if os.path.exists(file_path):
+                    log_location = file_path
+                    break
 
     except Exception as error:
-        file_logger.info("retrieve_arena_log_location Error: %s", error)
+        file_logger.info("search_arena_log_locations Error: %s", error)
     return log_location
 
 
@@ -787,16 +792,25 @@ class FileExtractor:
     def _retrieve_17lands_sets(self):
         '''Retrieve the list of sets that are supported by 17Lands'''
         sets = {}
-        try:
-            url = "https://www.17lands.com/data/filters"
-            url_data = urllib.request.urlopen(url, context=self.context).read()
+        retry = 3
+        while retry:
+            try:
+                url = "https://www.17lands.com/data/filters"
+                url_data = urllib.request.urlopen(url, context=self.context).read()
 
-            set_json_data = json.loads(url_data)
+                set_json_data = json.loads(url_data)
 
-            self._process_17lands_sets(sets, set_json_data)
+                self._process_17lands_sets(sets, set_json_data)
+                break
 
-        except Exception as error:
-            file_logger.info("_retrieve_17lands_sets Error: %s", error)
+            except Exception as error:
+                file_logger.info("_retrieve_17lands_sets Error: %s", error)
+
+            retry -= 1
+
+            if retry:
+                time.sleep(5)
+
         return sets
 
     def _retrieve_scryfall_data(self, root, status):
@@ -958,21 +972,30 @@ class FileExtractor:
     def _retrieve_scryfall_sets(self):
         '''Retrieve a list of Magic sets using the Scryfall API'''
         sets = {}
-        try:
-            url = "https://api.scryfall.com/sets"
-            url_data = urllib.request.urlopen(url, context=self.context).read()
+        retry = 3
+        while retry:
+            try:
+                url = "https://api.scryfall.com/sets"
+                url_data = urllib.request.urlopen(url, context=self.context).read()
 
-            set_json_data = json.loads(url_data)
-            self._process_scryfall_sets(sets, set_json_data["data"])
-            while set_json_data["has_more"]:
-                url = set_json_data["next_page"]
-                url_data = urllib.request.urlopen(
-                    url, context=self.context).read()
                 set_json_data = json.loads(url_data)
                 self._process_scryfall_sets(sets, set_json_data["data"])
+                while set_json_data["has_more"]:
+                    url = set_json_data["next_page"]
+                    url_data = urllib.request.urlopen(
+                        url, context=self.context).read()
+                    set_json_data = json.loads(url_data)
+                    self._process_scryfall_sets(sets, set_json_data["data"])
 
-        except Exception as error:
-            file_logger.info("_retrieve_scryfall_sets Error: %s", error)
+                break
+            except Exception as error:
+                file_logger.info("_retrieve_scryfall_sets Error: %s", error)
+
+            retry -= 1
+
+            if retry:
+                time.sleep(2)
+
         return sets
 
     def retrieve_17lands_color_ratings(self):
