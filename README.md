@@ -27,8 +27,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
-- **Step 3:** Double-click `setup.exe` to start the installation. 
-    - The MTGA_Draft_Tool_V####_Setup.exe and setup.exe files are the same.
+- **Step 3:** Unzip and double-click `MTGA_Draft_Tool_V####_Setup.exe` to start the installation. 
 
 - **Step 4:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
     - This step is only required if the application is installed in a directory with write restrictions (i.e., `Program Files` and `Program Files (x86)`).
@@ -238,8 +237,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The NEO creature sagas count as creatures.
 
 ## Troubleshooting
-
-- **The application can't detect the Arena event:** Open the debug.log file, using notepad or some other text editor, and look for an entry that reads `Player Log Location: C:/Users\<username>\AppData\LocalLow\Wizards Of The Coast\MTGA\Player.log`. If you don't see this entry, then follow the steps listed [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/18#issuecomment-1247933197).
 
 - **Some cards are missing from the Taken Cards window:** Arena creates a new player log after every restart, so the application can't track cards that were picked and seen before a restart. Players who draft across multiple days/sessions can still use this tool to see current pack data, but they might be missing information from previous packs and picks.
 

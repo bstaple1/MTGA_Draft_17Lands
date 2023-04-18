@@ -21,7 +21,7 @@ Source: "dark_mode.tcl"; DestDir: "{app}"
 Source: "Tools\TierScraper17Lands\17LandsTier.css"; DestDir: "{app}\Tools\TierScraper17Lands"
 Source: "Tools\TierScraper17Lands\17LandsTier.js"; DestDir: "{app}\Tools\TierScraper17Lands"
 Source: "Tools\TierScraper17Lands\manifest.json"; DestDir: "{app}\Tools\TierScraper17Lands"
-Source: "Tools\TierScraper17Lands\README.txt"; DestDir: "{app}\Tools\TierScraper17Lands"
+Source: "Tools\TierScraper17Lands\README.md"; DestDir: "{app}\Tools\TierScraper17Lands"
 [Icons]
 Name: "{group}\MtgaDraftTool"; Filename: "{app}\MTGA_Draft_Tool.exe"
 
