@@ -13,6 +13,7 @@ import logging
 import re
 import sqlite3
 import constants
+import copy
 
 
 if not os.path.exists(constants.SETS_FOLDER):
@@ -33,6 +34,11 @@ class Result(Enum):
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
 
+def initialize_card_data(card_data):
+    card_data[constants.DATA_FIELD_DECK_COLORS] = {}
+    for color in constants.DECK_COLORS:
+        card_data[constants.DATA_FIELD_DECK_COLORS][color] = {
+            x: 0.0 for x in constants.DATA_FIELD_17LANDS_DICT if x != constants.DATA_SECTION_IMAGES}
 
 def check_set_data(set_data, ratings_data):
     '''Run through 17Lands card list and determine if there are any cards missing from the assembled set file'''
@@ -398,7 +404,6 @@ class FileExtractor:
                     ui_root, status, database_size)
 
                 if not result:
-
                     result, result_string = self._retrieve_scryfall_data(
                         ui_root, status)
                     if not result:
@@ -869,10 +874,7 @@ class FileExtractor:
     def _initialize_17lands_data(self):
         '''Initialize the 17Lands data by setting the fields to 0 in case there are gaps in the downloaded card data'''
         for data in self.card_dict.values():
-            data[constants.DATA_FIELD_DECK_COLORS] = {}
-            for color in self.deck_colors:
-                data[constants.DATA_FIELD_DECK_COLORS][color] = {
-                    x: 0.0 for x in constants.DATA_FIELD_17LANDS_DICT if x != constants.DATA_SECTION_IMAGES}
+            initialize_card_data(data)
 
     def retrieve_17lands_data(self, sets, deck_colors, root, progress, initial_progress, status):
         '''Use the 17Lands endpoint to download the card ratings data for all of the deck filter options'''
@@ -1117,24 +1119,29 @@ class FileExtractor:
 
                 arena_id = card_data["arena_id"]
 
+                card_name = card_data[constants.DATA_FIELD_NAME]
+
+                if card_data["layout"] == "transform":
+                    card_name = card_name.split(" // ")[0]
+
                 self.card_dict[arena_id] = {
-                    constants.DATA_FIELD_NAME: card_data[constants.DATA_FIELD_NAME],
+                    constants.DATA_FIELD_NAME: card_name,
                     constants.DATA_FIELD_CMC: card_data[constants.DATA_FIELD_CMC],
                     constants.DATA_FIELD_COLORS: card_data["color_identity"],
                     constants.DATA_FIELD_TYPES: extract_types(card_data["type_line"]),
-                    "mana_cost": 0,
+                    constants.DATA_FIELD_MANA_COST: 0,
                     constants.DATA_SECTION_IMAGES: [],
                 }
 
                 if "card_faces" in card_data:
-                    self.card_dict[arena_id]["mana_cost"] = card_data["card_faces"][0]["mana_cost"]
+                    self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data["card_faces"][0][constants.DATA_FIELD_MANA_COST]
                     self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
                         card_data["card_faces"][0]["image_uris"]["normal"])
                     self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
                         card_data["card_faces"][1]["image_uris"]["normal"])
 
                 else:
-                    self.card_dict[arena_id]["mana_cost"] = card_data["mana_cost"]
+                    self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data[constants.DATA_FIELD_MANA_COST]
                     self.card_dict[arena_id][constants.DATA_SECTION_IMAGES] = [
                         card_data["image_uris"]["normal"]]
 
@@ -1203,26 +1210,12 @@ class FileExtractor:
                 set_name = card_set[constants.DATA_FIELD_NAME]
                 set_code = card_set["code"]
 
-                if set_code == "dbl":
+                if set_code in constants.CUSTOM_SETS:
                     # Only retrieve the last X sets + CUBE
                     if counter >= constants.SET_LIST_COUNT_MAX:
                         break
-                    sets[set_name] = {}
-                    sets[set_name][constants.SET_LIST_ARENA] = ["VOW", "MID"]
-                    sets[set_name][constants.SET_LIST_17LANDS] = [
-                        set_code.upper()]
-                    sets[set_name][constants.SET_LIST_SCRYFALL] = ["VOW", "MID"]
                     counter += 1
-                elif set_code == "sir":
-                    # Only retrieve the last X sets + CUBE
-                    if counter >= constants.SET_LIST_COUNT_MAX:
-                        break
-                    sets[set_name] = {}
-                    sets[set_name][constants.SET_LIST_ARENA] = ["SIR", "SIS"]
-                    sets[set_name][constants.SET_LIST_17LANDS] = [
-                        set_code.upper()]
-                    sets[set_name][constants.SET_LIST_SCRYFALL] = ["SIR", "SIS"]
-                    counter += 1
+                    sets[set_name] = copy.deepcopy(constants.CUSTOM_SETS[set_code])
                 elif card_set["set_type"] in constants.SUPPORTED_SET_TYPES:
                     # Only retrieve the last X sets + CUBE
                     if counter >= constants.SET_LIST_COUNT_MAX:

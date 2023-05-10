@@ -613,3 +613,9 @@ UI_SIZE_DICT = {
     "240%": 2.4,
     "250%": 2.5
 }
+
+CUSTOM_SETS = {
+    "dbl" : {SET_LIST_ARENA : ["VOW", "MID"], SET_LIST_SCRYFALL : ["VOW", "MID"], SET_LIST_17LANDS : ["DBL"]},
+    "sir" : {SET_LIST_ARENA : ["SIR", "SIS"], SET_LIST_SCRYFALL : ["SIR", "SIS"], SET_LIST_17LANDS : ["SIR"]},
+    "mat" : {SET_LIST_ARENA : ["MUL", "MAT"], SET_LIST_SCRYFALL : ["MUL", "MAT"], SET_LIST_17LANDS : ["MAT"]},
+}

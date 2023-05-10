@@ -208,11 +208,13 @@ class CardResult:
     def _process_filter_fields(self, card, option, colors):
         """Retrieve win rate result based on the application settings"""
         result = "NA"
-
+        
         try:
             rated_colors = []
             for color in colors:
-                if option in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                if constants.DATA_FIELD_DECK_COLORS in card \
+                    and color in card[constants.DATA_FIELD_DECK_COLORS] \
+                    and option in card[constants.DATA_FIELD_DECK_COLORS][color]:
                     if option in constants.WIN_RATE_OPTIONS:
                         rating_data = self._format_win_rate(card,
                                                             option,
@@ -514,7 +516,7 @@ def auto_colors(deck, colors_max, metrics, configuration):
             colors_dict = deck_colors(deck, colors_max, metrics, configuration)
             colors = list(colors_dict.keys())
             auto_select_threshold = max(70 - deck_length, 25)
-            if colors:
+            if len(colors) >= 2:
                 if (colors_dict[colors[0]] - colors_dict[colors[1]]) > auto_select_threshold:
                     deck_colors_list = colors[0:1]
                 elif configuration.auto_highest_enabled:
@@ -532,13 +534,14 @@ def calculate_color_rating(cards, color_filter, threshold, configuration):
 
     for card in cards:
         try:
-            gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
-                                       card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
-                                       configuration.bayesian_average_enabled)
-            if gihwr > threshold:
-                rating += gihwr - threshold
+            if color_filter in card[constants.DATA_FIELD_DECK_COLORS]:
+                gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
+                                           card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
+                                           configuration.bayesian_average_enabled)
+                if gihwr > threshold:
+                    rating += gihwr - threshold
         except Exception as error:
-            logic_logger.info("calculate_color_affinity error: %s", error)
+            logic_logger.info("calculate_color_rating error: %s", error)
     return rating
 
 
@@ -612,15 +615,16 @@ def calculate_color_affinity(deck_cards, color_filter, threshold, configuration)
 
     for card in deck_cards:
         try:
-            gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
-                                       card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
-                                       configuration.bayesian_average_enabled)
-            if gihwr > threshold:
-                mana_colors = card_colors(card[constants.DATA_FIELD_MANA_COST])
-                for color in mana_colors:
-                    if color not in colors:
-                        colors[color] = 0
-                    colors[color] += (gihwr - threshold)
+            if color_filter in card[constants.DATA_FIELD_DECK_COLORS]:
+                gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
+                                           card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
+                                           configuration.bayesian_average_enabled)
+                if gihwr > threshold:
+                    mana_colors = card_colors(card[constants.DATA_FIELD_MANA_COST])
+                    for color in mana_colors:
+                        if color not in colors:
+                            colors[color] = 0
+                        colors[color] += (gihwr - threshold)
         except Exception as error:
             logic_logger.info("calculate_color_affinity error: %s", error)
     return colors

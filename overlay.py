@@ -1,7 +1,7 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from datetime import date
 import urllib
 import os
@@ -2412,7 +2412,8 @@ class Overlay(ScaledWindow):
                             color_dict[color] = {
                                 x: "NA" for x in constants.DATA_FIELDS_LIST}
                             for k in color_dict[color]:
-                                if k in card[constants.DATA_FIELD_DECK_COLORS][color]:
+                                if color in card[constants.DATA_FIELD_DECK_COLORS] \
+                                   and k in card[constants.DATA_FIELD_DECK_COLORS][color]:
                                     if k in constants.WIN_RATE_FIELDS_DICT:
                                         winrate_count = constants.WIN_RATE_FIELDS_DICT[k]
                                         color_dict[color][k] = CL.calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
@@ -2815,10 +2816,10 @@ class CreateCardToolTip(ScaledWindow):
                                    foreground="#e6ecec",
                                    anchor="c",
                                    wraplength= tt_width,)
-                comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)         
+                comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)
 
                 font = ImageFont.truetype('times.ttf', 12)
-                font_size = font.getsize(comment)    
+                font_size = font.getsize(comment)
                 font_rows = math.ceil(font_size[0] / tt_width) + 2
                 font_height = font_rows * font_size[1]
                 tt_height += self._scale_value(font_height)
@@ -2835,7 +2836,7 @@ class CreateCardToolTip(ScaledWindow):
             stats_main_table.grid(
                 row=1, column=column_offset)
 
-            tt_width += self._scale_value(10) 
+            tt_width += self._scale_value(10)
             location_x, location_y = identify_safe_coordinates(self.tw,
                                                                tt_width,
                                                                tt_height,

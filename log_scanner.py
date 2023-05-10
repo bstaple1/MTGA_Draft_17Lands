@@ -12,6 +12,17 @@ if not os.path.exists(constants.DRAFT_LOG_FOLDER):
 
 scanner_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
+def retrieve_card_data(set_data, card, card_list):
+    if (set_data is not None) and (card in set_data["card_ratings"]):
+        card_list.append(set_data["card_ratings"][card])
+    else:
+        empty_dict = {constants.DATA_FIELD_NAME : card,
+                           constants.DATA_FIELD_MANA_COST : "",
+                           constants.DATA_FIELD_TYPES : [],
+                           constants.DATA_SECTION_IMAGES : []}
+        FE.initialize_card_data(empty_dict)
+        card_list.append(empty_dict)
+    return card_list
 
 class ArenaScanner:
     '''Class that handles the processing of the information within Arena Player.log file'''
@@ -161,22 +172,22 @@ class ArenaScanner:
 
             event_sections = event_name.split('_')
 
-            # Find set name within the event string
-            sets = [i[constants.SET_LIST_17LANDS][0] for i in self.set_list.values(
-            ) for x in event_sections if i[constants.SET_LIST_17LANDS][0].lower() in x.lower()]
-            # Remove duplicates while retaining order
-            sets = list(dict.fromkeys(sets))
-            events = []
-            if sets:
-                # Find event type in event string
-                events = [i for i in constants.LIMITED_TYPES_DICT
-                          for x in event_sections if i in x]
+            # Find event type in event string
+            events = [i for i in constants.LIMITED_TYPES_DICT
+                      for x in event_sections if i in x]
+            if not events and [i for i in constants.DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
+                # Unknown draft events will be parsed as premier drafts
+                events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
 
-                if not events and [i for i in constants.DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
-                    # Unknown draft events will be parsed as premier drafts
-                    events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
+            if events:
+                # Find set name within the event string
+                sets = [i[constants.SET_LIST_17LANDS][0] for i in self.set_list.values(
+                ) for x in event_sections if i[constants.SET_LIST_17LANDS][0].lower() in x.lower()]
+                # Remove duplicates while retaining order
+                sets = list(dict.fromkeys(sets))
 
-            if sets and events:
+                sets = ["UNKN"] if not sets else sets
+
                 if events[0] == constants.LIMITED_TYPE_STRING_SEALED:
                     # Trad_Sealed_NEO_20220317
                     event_type = constants.LIMITED_TYPE_STRING_TRAD_SEALED if "Trad" in event_sections else constants.LIMITED_TYPE_STRING_SEALED
@@ -1040,61 +1051,45 @@ class ArenaScanner:
     def retrieve_picked_cards(self, pack_index):
         '''Return the card data for the card that was picked from a from a specific pack'''
         picked_cards = []
-
-        if self.set_data is not None:
-            if pack_index < len(self.picked_cards):
-                for card in self.picked_cards[pack_index]:
-                    try:
+                            
+        if pack_index < len(self.picked_cards):
+            for card in self.picked_cards[pack_index]:
+                try:
+                    if (self.set_data is not None) and (card in self.set_data["card_ratings"]):
                         picked_cards.append(
                             self.set_data["card_ratings"][card][constants.DATA_FIELD_NAME])
-                    except Exception as error:
-                        scanner_logger.info(
-                            "retrieve_picked_cards Error: %s", error)
+                    else:
+                        picked_cards.append({constants.DATA_FIELD_NAME : card})
+                except Exception as error:
+                    scanner_logger.info(
+                        "retrieve_picked_cards Error: %s", error) 
 
         return picked_cards
 
     def retrieve_initial_pack_cards(self, pack_index):
         '''Return the card data for a list of cards from a specific pack'''
         pack_cards = []
-
-        if self.set_data is not None:
-            if pack_index < len(self.initial_pack):
-                for card in self.initial_pack[pack_index]:
-                    try:
-                        pack_cards.append(self.set_data["card_ratings"][card])
-                    except Exception as error:
-                        scanner_logger.info(
-                            "retrieve_initial_pack_cards Error: %s", error)
-
+    
+        if pack_index < len(self.initial_pack):
+            for card in self.initial_pack[pack_index]:
+                retrieve_card_data(self.set_data, card, pack_cards)
         return pack_cards
 
     def retrieve_pack_cards(self, pack_index):
         '''Return the card data for a list of cards from a specific pack'''
         pack_cards = []
 
-        if self.set_data is not None:
-            if pack_index < len(self.pack_cards):
-                for card in self.pack_cards[pack_index]:
-                    try:
-                        pack_cards.append(self.set_data["card_ratings"][card])
-                    except Exception as error:
-                        scanner_logger.info(
-                            "retrieve_pack_cards Error: %s", error)
-
+        if pack_index < len(self.pack_cards):
+            for card in self.pack_cards[pack_index]:
+                retrieve_card_data(self.set_data, card, pack_cards)
         return pack_cards
 
     def retrieve_taken_cards(self):
         '''Return the card data for all of the cards that were picked during the draft'''
         taken_cards = []
 
-        if self.set_data is not None:
-            for card in self.taken_cards:
-                try:
-                    taken_cards.append(self.set_data["card_ratings"][card])
-                except Exception as error:
-                    scanner_logger.info(
-                        "retrieve_taken_cards Error: %s", error)
-
+        for card in self.taken_cards:
+            retrieve_card_data(self.set_data, card, taken_cards)
         return taken_cards
 
     def retrieve_tier_data(self, files):
