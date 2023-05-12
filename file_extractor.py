@@ -12,8 +12,8 @@ import itertools
 import logging
 import re
 import sqlite3
-import constants
 import copy
+import constants
 
 
 if not os.path.exists(constants.SETS_FOLDER):
@@ -111,10 +111,10 @@ def search_arena_log_locations(input_location=None):
     log_location = ""
     try:
         paths = []
-        
+
         if input_location:
             paths.extend(input_location)
-            
+
         if sys.platform == constants.PLATFORM_ID_OSX:
             paths.extend([os.path.join(os.path.expanduser(
                 '~'), constants.LOG_LOCATION_OSX)])
@@ -305,6 +305,61 @@ def check_file_integrity(filename):
         break
     return result, json_data
 
+def import_set_list(sets_17lands):
+    '''Build the file for the set list'''
+    sets_dict = {}
+    try:
+        #Retrieve the stored set list (JSON)
+        with open(constants.TEMP_SET_LIST_FILE, 'r', encoding="utf-8", errors="replace") as json_file:
+            json_data = json.loads(json_file.read())
+
+        #Check the list integrity
+        for set_name, set_fields in json_data.items():
+            #Exclude sets that are not formatted correctly
+            if all(key in set_fields for key in constants.SET_LIST_FIELDS):
+                if all(isinstance(x, list) and (all(isinstance(v, str) for v in x) or not x) for k, x in set_fields.items() if k in constants.SET_LIST_FIELDS):
+                    sets_dict[set_name] = set_fields
+                    set_code = set_fields[constants.SET_LIST_17LANDS][0]
+                    if set_code in sets_17lands:
+                        sets_17lands.pop(set_code)
+                else:
+                    file_logger.info("import_set_list Error: %s - \"arena\", \"scryfall\", and \"17lands\" fields need to be lists of strings (e.g., [\"ABCD\",\"1234\"])", set_fields)
+            else:
+                file_logger.info("import_set_list Error: %s - \"arena\", \"scryfall\", and \"17lands\" are required fields", set_fields)
+    except Exception as error:
+        file_logger.info("import_set_list Error: %s", error)
+
+    return sets_dict
+
+def create_set_list(set_dict, sets_17lands, sets_scryfall):
+    '''Create a list of sets using lists collected from 17Lands and Scryfall'''
+    temp_dict = {}
+    if sets_scryfall and sets_17lands:
+        # If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
+        for code in list(sets_17lands):
+            for set_name, set_fields in sets_scryfall.items():
+                set_code = set_fields[constants.SET_LIST_17LANDS][0]
+                if set_code == code:
+                    temp_dict[set_name] = set_fields
+                    sets_17lands.pop(set_code)
+                    break
+
+    # Insert any 17Lands sets that were not collected from Scryfall
+    temp_dict.update(sets_17lands)
+    temp_dict.update(set_dict)
+
+    return temp_dict
+
+def export_set_list(set_list):
+    '''Build the file for the set list'''
+    result = True
+    try:
+        with open(constants.TEMP_SET_LIST_FILE, 'w', encoding="utf-8", errors="replace") as file:
+            json.dump(set_list, file)
+    except Exception as error:
+        file_logger.info("export_set_list Error: %s", error)
+        result = False
+    return result
 
 class FileExtractor:
     '''Class that handles the creation of set files and the retrieval of platform information'''
@@ -937,40 +992,51 @@ class FileExtractor:
                 self.combined_data["card_ratings"][card] = card_data
 
     def retrieve_set_list(self):
-        '''Retrieve a list of sets from 17Lands and Scryfall'''
-        sets = {}
+        '''Retrieve a list of sets from 17Lands and Scryfall
+
+            Set list fields
+           . "arena" : The codes for the sets retrieved from the temp_card_data.json.
+               - This is the primary way that this application builds the card dataset
+               - Key word "ALL" can be used (e.g., "arena" : ["ALL"]) if all Arena cards are required (e.g., if you're builing a cube dataset)
+           . "scryfall" : The codes for the sets retrieved using the scryfall API
+               - Example: https://api.scryfall.com/cards/search?order=set&unique=prints&q=e%3AMID
+               - This is the secondary way that this application builds the card dataset, in the event that there's an issue temp_card_data.json
+               - It's not feasible to download data for every card listed on Scryfall so the all keyword can't be used with this field
+           . "17Lands" : The code for the data listed on the https://www.17lands.com/card_ratings page
+               - The dataset file name uses the set code from this field (e.g., MAT_PremierDraft_Data.json)
+               - When searching the Arena player log, the application uses this set code to link the event set to the card dataset
+                   - Examples:
+                        - CubeDraft_Arena_20220812 -> CUBE_PremierDraft_Data.json
+                        - PremierDraft_BRO_20221115 -> BRO_PremierDraft_Data.json
+        '''
+        set_list = {}
         try:
 
             sets_17lands = self._retrieve_17lands_sets()
 
             sets_scryfall = self._retrieve_scryfall_sets()
 
-            sets = self._assemble_set_list(sets_17lands, sets_scryfall)
+            set_list = self._assemble_set_list(sets_17lands, sets_scryfall)
 
         except Exception as error:
             file_logger.info("retrieve_set_list Error: %s", error)
-        return sets
+        return set_list
 
     def _assemble_set_list(self, sets_17lands, sets_scryfall):
-        '''Retrieve a list of sets from 17Lands and Scryfall'''
-        sets = {}
+        '''Retrieve a stored set list and append any missing set that are listed on 17Lands'''
+        sets_dict = {}
 
-        if sets_scryfall:
-            # The application was able to retrieve the set list from Scryfall
-            if sets_17lands:
-                # If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
-                for code in list(sets_17lands):
-                    for set_name, set_fields in sets_scryfall.items():
-                        set_code = set_fields[constants.SET_LIST_17LANDS][0]
-                        if set_code == code:
-                            sets[set_name] = set_fields
-                            sets_17lands.pop(set_code)
-            else:
-                sets = sets_scryfall
+        #Retrieve a stored set list from the Temp folder
+        sets_dict = import_set_list(sets_17lands)
 
-        # Insert any 17Lands sets that were not collected from Scryfall
-        sets.update(sets_17lands)
-        return sets
+        if sets_17lands:
+            #Create a set list if a valid list doesn't already exist
+            sets_dict = create_set_list(sets_dict, sets_17lands, sets_scryfall)
+
+            #store the modified list in the Temp folder
+            export_set_list(sets_dict)
+
+        return sets_dict
 
     def _retrieve_scryfall_sets(self):
         '''Retrieve a list of Magic sets using the Scryfall API'''
@@ -1202,6 +1268,12 @@ class FileExtractor:
         '''Parse the Scryfall set list data to extract information for sets that are supported by Arena
            - Scryfall lists all Magic sets (paper and digital), so the application needs to filter out non-Arena sets
            - The application will only display sets that have been released
+
+           This process links the bonus sheets to the main sets by checking for a "parent_set_code" field and linking the set to its parent.
+           - Examples:
+              - "mul" is linked to "mom" because "mul" has a "parent_set_code" of "mom"
+              - "sis" isn't linked to "sir" because "sis" doens't have a "parent_set_code"
+           - If the set has linked sets that can't be identified using the process above, then they need to be added to the CUSTOM_SETS dictionary
         '''
         counter = len(sets)
         side_sets = {}

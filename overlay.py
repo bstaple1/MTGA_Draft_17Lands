@@ -27,7 +27,7 @@ class TableInfo:
     column: str = ""
 
 
-__version__ = 3.08
+__version__ = 3.09
 
 
 if not os.path.exists(constants.DEBUG_LOG_FOLDER):
@@ -186,6 +186,16 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
 
     return location_x, location_y
 
+def toggle_widget(input_widget, enable):
+    '''Hide/Display a UI widget'''
+    try:
+        if enable:
+            input_widget.grid()
+        else:
+            input_widget.grid_remove()
+    except Exception as error:
+        overlay_logger.info("toggle_widget Error: %s", error)
+
 class ScaledWindow:
     def __init__(self):
         self.scale_factor = 1
@@ -286,12 +296,10 @@ class Overlay(ScaledWindow):
             self.configuration.table_width)
 
         self.listener = None
-        
         self.configuration.arena_log_location = FE.search_arena_log_locations([args.file, self.configuration.arena_log_location])
 
         if self.configuration.arena_log_location:
             CL.write_config(self.configuration)
-            
         self.arena_file = self.configuration.arena_log_location
 
         if args.data is None:
@@ -507,10 +515,13 @@ class Overlay(ScaledWindow):
             row=5, column=0, columnspan=2, sticky='nsew')
         self.status_frame.grid(row=6, column=0, columnspan=2, sticky='nsew')
         self.pack_table_frame.grid(row=7, column=0, columnspan=2)
+        self.missing_frame.grid(row=8, column=0, columnspan=2, sticky='nsew')
+        self.missing_table_frame.grid(row=9, column=0, columnspan=2)
+        self.stat_frame.grid(row=10, column=0, columnspan=2, sticky='nsew')
+        self.stat_table.grid(row=11, column=0, columnspan=2, sticky='nsew')
         footnote_label.grid(row=12, column=0, columnspan=2)
-        self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self._enable_missing_cards_table(
-            self.missing_cards_checkbox_value.get())
+        
+        self._display_widgets()
 
         self.refresh_button.pack(expand=True, fill="both")
 
@@ -1025,7 +1036,8 @@ class Overlay(ScaledWindow):
 
             if total_width == 1:
                 self.stat_table.config(height=0)
-                self._enable_deck_stats_table(False)
+                toggle_widget(self.stat_frame, False)
+                toggle_widget(self.stat_table, False)
                 return
 
             # Adjust the width for each column
@@ -1453,10 +1465,9 @@ class Overlay(ScaledWindow):
         '''Set the overlay widgets in the main window to a known state at startup'''
         self._update_data_source_options(False)
         self._update_column_options()
-
-        self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self._enable_missing_cards_table(
-            self.missing_cards_checkbox_value.get())
+  
+        self._display_widgets()
+            
         self._update_current_draft_label(
             self.draft.draft_sets, self.draft.draft_type)
         self._update_pack_pick_label(
@@ -1492,9 +1503,7 @@ class Overlay(ScaledWindow):
         self._update_data_source_options(False)
         self._update_column_options()
 
-        self._enable_deck_stats_table(self.deck_stats_checkbox_value.get())
-        self._enable_missing_cards_table(
-            self.missing_cards_checkbox_value.get())
+        self._display_widgets()
 
         taken_cards = self.draft.retrieve_taken_cards()
 
@@ -2583,36 +2592,12 @@ class Overlay(ScaledWindow):
             self._arena_log_check()
             self._control_trace(True)
 
-    def _enable_deck_stats_table(self, enable):
-        '''Hide/Display the Deck Stats table based on the application settings'''
-        try:
-            if enable:
-                self.stat_frame.grid(
-                    row=10, column=0, columnspan=2, sticky='nsew')
-                self.stat_table.grid(
-                    row=11, column=0, columnspan=2, sticky='nsew')
-            else:
-                self.stat_frame.grid_remove()
-                self.stat_table.grid_remove()
-        except Exception:
-            self.stat_frame.grid(row=10, column=0, columnspan=2, sticky='nsew')
-            self.stat_table.grid(row=11, column=0, columnspan=2, sticky='nsew')
-
-    def _enable_missing_cards_table(self, enable):
-        '''Hide/Display the Missing Cards table based on the application settings'''
-        try:
-            if enable:
-                self.missing_frame.grid(
-                    row=8, column=0, columnspan=2, sticky='nsew')
-                self.missing_table_frame.grid(row=9, column=0, columnspan=2)
-            else:
-                self.missing_frame.grid_remove()
-                self.missing_table_frame.grid_remove()
-        except Exception:
-            self.missing_frame.grid(
-                row=8, column=0, columnspan=2, sticky='nsew')
-            self.missing_table_frame.grid(row=9, column=0, columnspan=2)
-
+    def _display_widgets(self):
+        '''Hide/Display widgets based on the application settings'''
+        toggle_widget(self.stat_frame, self.deck_stats_checkbox_value.get())
+        toggle_widget(self.stat_table, self.deck_stats_checkbox_value.get())
+        toggle_widget(self.missing_frame, self.missing_cards_checkbox_value.get())
+        toggle_widget(self.missing_table_frame, self.missing_cards_checkbox_value.get())
 
 class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''

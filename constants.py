@@ -312,6 +312,8 @@ SET_LIST_ARENA = "arena"
 SET_LIST_SCRYFALL = "scryfall"
 SET_LIST_17LANDS = "17Lands"
 
+SET_LIST_FIELDS = [SET_LIST_ARENA, SET_LIST_SCRYFALL, SET_LIST_17LANDS]
+
 SET_START_DATE = "start_date"
 
 SET_START_DATE_DEFAULT = "2019-1-1"
@@ -334,6 +336,7 @@ DEBUG_LOG_FILE = os.path.join(DEBUG_LOG_FOLDER, "debug.log")
 TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
 TEMP_LOCALIZATION_FILE = os.path.join(TEMP_FOLDER, "temp_localization.json")
 TEMP_CARD_DATA_FILE = os.path.join(TEMP_FOLDER, "temp_card_data.json")
+TEMP_SET_LIST_FILE = os.path.join(TEMP_FOLDER, "temp_set_list.json")
 
 BW_ROW_COLOR_ODD_TAG = "bw_odd"
 BW_ROW_COLOR_EVEN_TAG = "bw_even"

@@ -1,3 +1,13 @@
+===================== RELEASE NOTES 3.09 =====================
+* Bug Fix: Fixed a Scryfall data parsing affected double-sided cards (Issue #30)
+
+* Modifications: 
+** Linked the MOM and MUL sets to the MAT set (Issue #31)
+** Updated the sort order of identifiable sets in the set list to match 17Lands (MAT will be listed after MOM)
+** Improved troubleshooting by displaying the Arena ID for unidentified cards
+
+* New Feature: Added the ability to create a temporary set list file at ./Temp/temp_set_list.json for filling in missing sets
+
 ===================== RELEASE NOTES 3.08 =====================
 * Bug Fix: Fixed a Chrome extension issue that was preventing users from downloading their own tier lists while logged in to 17Lands (Issue #28)
 
