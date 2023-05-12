@@ -3,9 +3,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
-**Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, Traditional Sealed, and Special Events\*\*
+**Supported Events:** Premier Draft\*, Traditional Draft\*, Quick Draft, Sealed, and Traditional Sealed
   * \* For some events, the Arena log doesn't list P1P1 until after P1P2. 
-  * \*\* The application should support all special events that provide log entries (i.e., MWM, Qualifiers, etc.), although not all events have been tested.
 
 ![alt text](https://github.com/bstaple1/MTGA_Draft_17Lands/blob/main/Images/Premier_Draft.PNG?raw=true)
 
