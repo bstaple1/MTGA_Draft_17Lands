@@ -959,11 +959,12 @@ class FileExtractor:
             # The application was able to retrieve the set list from Scryfall
             if sets_17lands:
                 # If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
-                for set_name, set_fields in sets_scryfall.items():
-                    set_code = set_fields[constants.SET_LIST_17LANDS][0]
-                    if set_code in sets_17lands:
-                        sets[set_name] = set_fields
-                        sets_17lands.pop(set_code)
+                for code in list(sets_17lands):
+                    for set_name, set_fields in sets_scryfall.items():
+                        set_code = set_fields[constants.SET_LIST_17LANDS][0]
+                        if set_code == code:
+                            sets[set_name] = set_fields
+                            sets_17lands.pop(set_code)
             else:
                 sets = sets_scryfall
 

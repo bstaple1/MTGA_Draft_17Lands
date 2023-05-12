@@ -6,6 +6,7 @@ import logging
 import math
 import numpy
 import constants
+import copy
 
 logic_logger = logging.getLogger(constants.LOG_TYPE_DEBUG)
 
@@ -108,7 +109,7 @@ class CardResult:
 
         for card in card_list:
             try:
-                selected_card = card
+                selected_card = copy.deepcopy(card)
                 selected_card["results"] = ["NA"] * len(fields)
 
                 for count, option in enumerate(fields.values()):
