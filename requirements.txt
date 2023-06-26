@@ -1,6 +1,7 @@
-Pillow>=9.0.0
-pynput>=1.7.6
-ttkwidgets>=0.12.1
-pyinstaller>=4.8
-pywin32>=303
-numpy>=1.22.2
+pyinstaller; sys_platform == 'win32'
+pywin32; sys_platform == 'win32'
+Pillow
+pynput
+ttkwidgets
+numpy
+pydantic

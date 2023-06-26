@@ -1,4 +1,0 @@
-Pillow>=9.0.0
-pynput>=1.7.6
-ttkwidgets>=0.12.1
-numpy>=1.22.2

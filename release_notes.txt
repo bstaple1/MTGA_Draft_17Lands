@@ -1,3 +1,18 @@
+===================== RELEASE NOTES 3.10 =====================
+* Application updates will no longer reset the settings
+* The visibility of the Current Draft display, Deck Source options, Deck filter options, and Refresh button can now be toggled in the settings menu
+* Columns 2-7 are now fully configurable
+* Table columns can no longer be resized manually
+* Opening duplicate windows is no longer possible
+* Colorless cards now have their own row color
+* Fixed a bug that caused incorrect row colors with the color identity setting
+* Fixed a seald card pool duplication bug
+* Added an About window (Help->About) that has links to Github and 17Lands
+* The Taken Cards window will automatically open when a sealed event is detected
+* Replaced the "Powered by 17Lands" label with a label displaying the Github project name
+* Modified the debug log entries
+* Adjusting the grades so that the mean is now a weak C+ instead of a C
+
 ===================== RELEASE NOTES 3.09 =====================
 * Bug Fix: Fixed a Scryfall data parsing affected double-sided cards (Issue #30)
 
