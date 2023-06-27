@@ -47,7 +47,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
 
 
-## Run Steps: Python (Windows/Mac)
+## Run Steps: Python (Windows/Mac/Linux)
 - **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
 
 - **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
@@ -55,12 +55,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 3:** Download and install the latest version of python 3.
     - [Windows](https://www.python.org/downloads/windows/).
     - [Mac](https://www.python.org/downloads/macos/).
+    - [Linux](https://wiki.python.org/moin/BeginnersGuide/Download#Linux).
 
 - **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
 - **Step 5:** Open the terminal and install the python dependencies by entering ```pip install -r requirements.txt```
 
-- **Step 6:** (Mac Only) Install web certificates by going to `/Applications/Python 3.11/` and double-clicking the file `Install Certificates.command`.
+- **Step 6:**
+    - (Mac Only) Install web certificates by going to `/Applications/Python 3.11/` and double-clicking the file `Install Certificates.command`.
+    - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
 
 - **Step 7:** Start the application by opening the terminal and entering ```python main.py```.
 
