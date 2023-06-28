@@ -67,17 +67,23 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Step 7:** Start the application by opening the terminal and entering ```python main.py```.
 
-- **Step 8:** (Mac Only) Set Arena to window mode.
+- **Step 8:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
+    - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
+    - **Mac:** {username}/Library/Logs/Wizards Of The Coast/MTGA/Player.log
+    - **Bottles (Linux):** 
+    - **Lutris (Linux):**
 
-- **Step 9:** Download the sets that you plan on using (`Data->Add Sets`).
+- **Step 9:** (Mac Only) Set Arena to window mode.
+
+- **Step 10:** Download the sets that you plan on using (`Data->Add Sets`).
     - Event datasets can be used for different events (e.g., you can use the premier draft dataset for a sealed event).
     - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
     
-- **Step 10:** Configure the tool through the [Settings window](#settings).
+- **Step 11:** Configure the tool through the [Settings window](#settings).
     - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
     - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
-- **Step 11:** Start the draft in Arena.
+- **Step 12:** Start the draft in Arena.
     - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
     	- The [Card Compare](#card-compare) feature can be used as a substitute for P1P1.
     - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
