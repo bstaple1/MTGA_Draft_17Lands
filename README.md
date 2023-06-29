@@ -70,8 +70,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 8:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
     - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
     - **Mac:** {username}/Library/Logs/Wizards Of The Coast/MTGA/Player.log
-    - **Bottles (Linux):** 
-    - **Lutris (Linux):**
+    - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/dave/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
+    - **Lutris (Linux):** /home/{username}/Games/magic-the-gathering-arena/drive_c/users/dave/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
 
 - **Step 9:** (Mac Only) Set Arena to window mode.
 
