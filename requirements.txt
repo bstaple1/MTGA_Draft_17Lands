@@ -4,4 +4,4 @@ Pillow
 pynput
 ttkwidgets
 numpy
-pydantic
+pydantic==1.*
