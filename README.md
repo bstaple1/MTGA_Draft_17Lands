@@ -10,7 +10,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 # Table of Contents
 
 - [Run Steps: Windows Executable](#run-steps-windows-executable-windows-only)
-- [Run Steps: Python (Windows/Mac)](#run-steps-python-windowsmac)
+- [Run Steps: Python (Windows/Mac/Linux)](#run-steps-python-windowsmaclinux)
 - [Build Steps: setup.exe](#build-steps-setupexe-windows-only)
 - [UI Features](#ui-features)
 - [Menu Features](#menu-features)
@@ -21,15 +21,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 
 ## Run Steps: Windows Executable (Windows Only)
-- **Step 1:** Download the latest executable (e.g., `MTGA_Draft_Tool_V####_Setup.exe`) from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
+- **Step 1:** Download the latest zip file from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
 
-- **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
+- **Step 2:** Unzip and double-click the exe file to start the installation. 
 
-- **Step 3:** Unzip and double-click `MTGA_Draft_Tool_V####_Setup.exe` to start the installation. 
-
-- **Step 4:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
+- **Step 3:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
     - This step is only required if the application is installed in a directory with write restrictions (i.e., `Program Files` and `Program Files (x86)`).
     - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
+
+- **Step 4:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
 - **Step 5:** Double-click `MTGA_Draft_Tool.exe` to start the program.
 
@@ -38,7 +38,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
     
 - **Step 7:** Configure the tool through the [Settings window](#settings).
-    - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
+    - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
     - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
 - **Step 8:** Start the draft in Arena.
@@ -50,28 +50,28 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ## Run Steps: Python (Windows/Mac/Linux)
 - **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
 
-- **Step 2:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
-
-- **Step 3:** Download and install the latest version of python 3.
+- **Step 2:** Download and install the latest version of python 3.
     - [Windows](https://www.python.org/downloads/windows/).
     - [Mac](https://www.python.org/downloads/macos/).
     - [Linux](https://wiki.python.org/moin/BeginnersGuide/Download#Linux).
 
-- **Step 4:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
+- **Step 3:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
-- **Step 5:** Open the terminal and install the python dependencies by entering ```pip install -r requirements.txt```
+- **Step 4:** Open the terminal and install the python dependencies by entering ```pip install -r requirements.txt```
 
-- **Step 6:**
+- **Step 5:**
     - (Mac Only) Install web certificates by going to `/Applications/Python 3.11/` and double-clicking the file `Install Certificates.command`.
     - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
+
+- **Step 6:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
 - **Step 7:** Start the application by opening the terminal and entering ```python main.py```.
 
 - **Step 8:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
     - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
     - **Mac:** {username}/Library/Logs/Wizards Of The Coast/MTGA/Player.log
-    - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/dave/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
-    - **Lutris (Linux):** /home/{username}/Games/magic-the-gathering-arena/drive_c/users/dave/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
+    - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
+    - **Lutris (Linux):** /home/{username}/Games/magic-the-gathering-arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
 
 - **Step 9:** (Mac Only) Set Arena to window mode.
 
@@ -80,7 +80,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
     
 - **Step 11:** Configure the tool through the [Settings window](#settings).
-    - Users that are new to 17Lands might find the [win rate grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
+    - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
     - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
 - **Step 12:** Start the draft in Arena.
