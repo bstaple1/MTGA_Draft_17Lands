@@ -55,17 +55,17 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [Mac](https://www.python.org/downloads/macos/).
     - [Linux](https://wiki.python.org/moin/BeginnersGuide/Download#Linux).
 
-- **Step 3:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
+- **Step 3:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade``` or ```python3 -m ensurepip --upgrade```.
 
-- **Step 4:** Open the terminal and install the python dependencies by entering ```pip install -r requirements.txt```
+- **Step 4:** Open the terminal and install the python dependencies by entering ```pip install -r requirements.txt``` or ```pip3 install -r requirements.txt```.
 
 - **Step 5:**
-    - (Mac Only) Install web certificates by going to `/Applications/Python 3.11/` and double-clicking the file `Install Certificates.command`.
+    - (Mac Only) Install web certificates by going to `/Applications/Python 3.##/` and double-clicking the file `Install Certificates.command`.
     - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
 
 - **Step 6:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
-- **Step 7:** Start the application by opening the terminal and entering ```python main.py```.
+- **Step 7:** Start the application by opening the terminal and entering ```python main.py``` or ```python3 main.py```.
 
 - **Step 8:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
     - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
@@ -92,9 +92,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ## Build Steps: setup.exe (Windows Only)
 - **Step 1:** Download and install the latest version of python 3.
 
-- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
+- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade``` or ```python3 -m ensurepip --upgrade```.
 
-- **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
+- **Step 3:** Open the terminal and enter ```pip install -r requirements.txt``` or ```pip3 install -r requirements.txt```.
 
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 
@@ -196,9 +196,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Missing Cards:** Displays the missing cards table in the main window.
 
-- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the [card logic](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md##Card-Logic) section.
+- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the [card logic](#card-logic) section.
 
-- **Enable Bayesian Average:** Enables the Bayesian average logic for all win rate fields. See the Bayesian average note in the [card logic](https://github.com/bstaple1/MTGA_Draft_17Lands/edit/main/README.md##Card-Logic) section.
+- **Enable Bayesian Average:** Enables the Bayesian average logic for all win rate fields. See the Bayesian average note in the [card logic](#card-logic) section.
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
