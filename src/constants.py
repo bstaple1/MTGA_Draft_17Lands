@@ -184,6 +184,16 @@ LOCAL_DATA_FOLDER_PATH_WINDOWS = os.path.join(
     "Wizards of the Coast", "MTGA", "MTGA_Data")
 LOCAL_DATA_FOLDER_PATH_OSX = os.path.join(
     "Library", "Application Support", "com.wizards.mtga")
+LOCAL_DATA_FOLDER_PATH_LINUX = next(filter(os.path.exists, [
+    # Steam
+    os.path.join(os.path.expanduser("~"), ".local", "share", "Steam", "steamapps", "common", "MTGA", "MTGA_Data"),
+
+    # Lutris
+    os.path.join(os.path.expanduser("~"), "Games", "magic-the-gathering-arena", "drive_c", "Program Files", "Wizards of the Coast", "MTGA", "MTGA_Data"),
+
+    # Bottles
+    os.path.join(os.path.expanduser("~"), ".var", "app", "com.usebottles.bottles", "data", "bottles", "bottles", "MTG-Arena", "drive_c", "Program Files", "Wizards of the Coast", "MTGA", "MTGA_Data")
+    ]), None)
 
 LOCAL_DOWNLOADS_DATA = os.path.join("Downloads", "Raw")
 
@@ -255,6 +265,7 @@ SCRYFALL_REQUEST_ATTEMPT_MAX = 5
 
 PLATFORM_ID_OSX = "darwin"
 PLATFORM_ID_WINDOWS = "win32"
+PLATFORM_ID_LINUX = "linux"
 
 LOG_NAME = "Player.log"
 
