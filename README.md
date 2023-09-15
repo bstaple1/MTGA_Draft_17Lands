@@ -49,52 +49,57 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Run Steps: Python (Windows/Mac/Linux)
 - **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
+    - Some recent Python-related bug fixes have been made since the 3.10 release. Please download the code from the [main branch](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) instead of the 3.10 release.
 
-- **Step 2:** Download and install the latest version of python 3.
+- **Step 2:** Download and install Python 3.11.
     - [Windows](https://www.python.org/downloads/windows/).
     - [Mac](https://www.python.org/downloads/macos/).
     - [Linux](https://wiki.python.org/moin/BeginnersGuide/Download#Linux).
 
-- **Step 3:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade``` or ```python3 -m ensurepip --upgrade```.
 
-- **Step 4:** Open the terminal and install the python dependencies by entering ```pip install -r requirements.txt``` or ```pip3 install -r requirements.txt```.
+- **Step 3:** Confirm that you're running Python 3.11 by opening the terminal, entering ```python --version```, and checking for a ```Python 3.11.*``` result.
 
-- **Step 5:**
+- **Step 4:** Install the Python package installer Pip by entering ```python -m ensurepip --upgrade```.
+
+- **Step 5:** Open the terminal and install the Python dependencies by entering ```pip install -r requirements.txt```.
+
+- **Step 6:**
     - (Mac Only) Install web certificates by going to `/Applications/Python 3.##/` and double-clicking the file `Install Certificates.command`.
     - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
 
-- **Step 6:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
+- **Step 7:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 
-- **Step 7:** Start the application by opening the terminal and entering ```python main.py``` or ```python3 main.py```.
+- **Step 8:** Start the application by opening the terminal and entering ```python main.py```.
 
-- **Step 8:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
+- **Step 9:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
     - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
     - **Mac:** {username}/Library/Logs/Wizards Of The Coast/MTGA/Player.log
     - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
     - **Lutris (Linux):** /home/{username}/Games/magic-the-gathering-arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
 
-- **Step 9:** (Mac Only) Set Arena to window mode.
+- **Step 10:** (Mac Only) Set Arena to window mode.
 
-- **Step 10:** Download the sets that you plan on using (`Data->Add Sets`).
+- **Step 11:** Download the sets that you plan on using (`Data->Add Sets`).
     - Event datasets can be used for different events (e.g., you can use the premier draft dataset for a sealed event).
+    - Select `Arena Cube` and adjust the start date to download the data from the most recent Arena Cube event.
     - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
     
-- **Step 11:** Configure the tool through the [Settings window](#settings).
+- **Step 12:** Configure the tool through the [Settings window](#settings).
     - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
     - The [UI Size](#ui-size) setting can be used to adjust the image and text size.
 
-- **Step 12:** Start the draft in Arena.
+- **Step 13:** Start the draft in Arena.
     - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
     	- The [Card Compare](#card-compare) feature can be used as a substitute for P1P1.
     - The sealed card pool can be found in the [Taken Cards window](#taken-cards).
 
 
 ## Build Steps: setup.exe (Windows Only)
-- **Step 1:** Download and install the latest version of python 3.
+- **Step 1:** Download and install Python 3.11.
 
-- **Step 2:** Install the python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade``` or ```python3 -m ensurepip --upgrade```.
+- **Step 2:** Install the Python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
-- **Step 3:** Open the terminal and enter ```pip install -r requirements.txt``` or ```pip3 install -r requirements.txt```.
+- **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
 
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 
@@ -196,9 +201,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Enable Missing Cards:** Displays the missing cards table in the main window.
 
-- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the [card logic](#card-logic) section.
+- **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the [Card Logic](#card-logic) section.
 
-- **Enable Bayesian Average:** Enables the Bayesian average logic for all win rate fields. See the Bayesian average note in the [card logic](#card-logic) section.
+- **Enable Bayesian Average:** Enables the Bayesian average logic for all win rate fields. See the Bayesian average note in the [Card Logic](#card-logic) section.
+    - **As of September 2023, this feature has become obsolete. 17Lands no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
@@ -232,6 +238,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - <a id="bayesian-average">**Bayesian Average:** When this feature is activated, the win rate data is subjected to a Bayesian average calculation that takes into account specific assumptions  (e.g., an anticipated range of 40-60% with a mean of 50%). This Bayesian average considers both prior assumptions and observed data, providing a more reliable estimation of the win rate, particularly in cases where sample sizes are small (less than 200 samples) or data availability is limited. A comprehensive explanation can be found [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).</a>
     - Enabled: The application will apply this calculation to all win rate data. However, the adjustment made by the calculation will gradually diminish as the sample count, such as the number of games in hand for the Games in Hand Win Rate, reaches 200. As the sample size increases, the Bayesian average will be more influenced by the observed data rather than the prior assumptions, resulting in a more reliable estimation of the win rate.
     - Disabled: The application will not apply this calculation to the win rate data.
+    - **As of September 2023, this feature has become obsolete. 17Lands no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **Auto Highest Rating:** If the `Auto` filter is set, and the user has taken at least 16 cards, then the application will try and determine the leading color combination from the taken cards. If the tool is unable to identify a definitive leading color pair, then it will display the highest win rate of the top two color combinations for each win rate field (e.g., GIHWR, OHWR, etc.). The filter label will display both color combinations separated by a slash (e.g., `Auto (WB/UBG)`).
     - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG win rate of 66% and a UB rating of 15%, then the displayed win rate will be 66%.
@@ -268,7 +275,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Keep in mind that opening a log file will prevent the application from reading the Arena player log. Therefore, if you wish to initiate a new Arena event, you'll need to restart the application.
 
-- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 200 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 200). Users should consider using the premier draft dataset, enabling the [Bayesian average](#bayesian-average) feature, or downloading a [tier list](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
+- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500* samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500*). Users should consider using the premier draft dataset or downloading a [tier list](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
+  - ***As of September 2023, 17Lands no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.
 
