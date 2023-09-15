@@ -204,7 +204,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Enable Highest Rated:** Enables the highest rated card logic for the `Auto` filter. See the auto highest rating note in the [Card Logic](#card-logic) section.
 
 - **Enable Bayesian Average:** Enables the Bayesian average logic for all win rate fields. See the Bayesian average note in the [Card Logic](#card-logic) section.
-    - **As of September 2023, this feature has become obsolete. 17Lands no longer provides win rate data for cards with fewer than 500 samples.**
+    - **As of September 2023, this feature has become obsolete. The 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 
@@ -238,7 +238,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - <a id="bayesian-average">**Bayesian Average:** When this feature is activated, the win rate data is subjected to a Bayesian average calculation that takes into account specific assumptions  (e.g., an anticipated range of 40-60% with a mean of 50%). This Bayesian average considers both prior assumptions and observed data, providing a more reliable estimation of the win rate, particularly in cases where sample sizes are small (less than 200 samples) or data availability is limited. A comprehensive explanation can be found [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).</a>
     - Enabled: The application will apply this calculation to all win rate data. However, the adjustment made by the calculation will gradually diminish as the sample count, such as the number of games in hand for the Games in Hand Win Rate, reaches 200. As the sample size increases, the Bayesian average will be more influenced by the observed data rather than the prior assumptions, resulting in a more reliable estimation of the win rate.
     - Disabled: The application will not apply this calculation to the win rate data.
-    - **As of September 2023, this feature has become obsolete. 17Lands no longer provides win rate data for cards with fewer than 500 samples.**
+    - **As of September 2023, this feature has become obsolete. The 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **Auto Highest Rating:** If the `Auto` filter is set, and the user has taken at least 16 cards, then the application will try and determine the leading color combination from the taken cards. If the tool is unable to identify a definitive leading color pair, then it will display the highest win rate of the top two color combinations for each win rate field (e.g., GIHWR, OHWR, etc.). The filter label will display both color combinations separated by a slash (e.g., `Auto (WB/UBG)`).
     - Example: If the user has taken primarily black, blue, and green cards, and Generous Visitor has a BG win rate of 66% and a UB rating of 15%, then the displayed win rate will be 66%.
@@ -276,7 +276,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Keep in mind that opening a log file will prevent the application from reading the Arena player log. Therefore, if you wish to initiate a new Arena event, you'll need to restart the application.
 
 - **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500* samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500*). Users should consider using the premier draft dataset or downloading a [tier list](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
-  - ***As of September 2023, 17Lands no longer provides win rate data for cards with fewer than 500 samples.**
+  - ***As of September 2023, the 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.
 
